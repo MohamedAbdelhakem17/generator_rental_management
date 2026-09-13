@@ -1,0 +1,20 @@
+{
+  "name": "generator-rental-management",
+  "private": true,
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@10.27.0",
+  "scripts": {
+    "dev": "pnpm --parallel --filter backend --filter frontend dev",
+    "build": "pnpm --filter backend build && pnpm --filter frontend build",
+    "lint": "pnpm --filter backend lint && pnpm --filter frontend lint",
+    "typecheck": "pnpm --filter backend typecheck && pnpm --filter frontend typecheck",
+    "test": "pnpm --filter backend test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\" --ignore-path .gitignore"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2"
+  }
+}
