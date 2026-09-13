@@ -1,18 +1,28 @@
 import { createApp } from './app.js';
+import { connectDatabase, disconnectDatabase } from './config/database.js';
 import { env } from './config/env.js';
 
-const app = createApp();
+async function main(): Promise<void> {
+  await connectDatabase();
 
-const server = app.listen(env.PORT, () => {
-  console.log(`[backend] listening on port ${env.PORT} (${env.NODE_ENV})`);
-});
+  const app = createApp();
 
-function shutdown(signal: NodeJS.Signals): void {
-  console.log(`[backend] received ${signal}, shutting down gracefully`);
-  server.close(() => {
-    process.exit(0);
+  const server = app.listen(env.PORT, () => {
+    console.log(`[backend] listening on port ${env.PORT} (${env.NODE_ENV})`);
   });
+
+  function shutdown(signal: NodeJS.Signals): void {
+    console.log(`[backend] received ${signal}, shutting down gracefully`);
+    server.close(() => {
+      void disconnectDatabase().finally(() => process.exit(0));
+    });
+  }
+
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 }
 
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+main().catch((error: unknown) => {
+  console.error('[backend] failed to start:', error);
+  process.exit(1);
+});

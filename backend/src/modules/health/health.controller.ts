@@ -1,10 +1,9 @@
 import type { Request, Response } from 'express';
-import mongoose from 'mongoose';
+
+import { isDatabaseConnected } from '../../config/database.js';
 
 export function getHealth(_req: Request, res: Response): void {
-  const dbConnected = mongoose.connection.readyState === 1;
-
-  if (dbConnected) {
+  if (isDatabaseConnected()) {
     res.status(200).json({
       success: true,
       data: { status: 'ok', db: 'connected' },
