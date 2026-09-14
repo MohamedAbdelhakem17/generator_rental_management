@@ -13,6 +13,8 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
+    "seed": "tsx src/scripts/seed/baseline.ts",
+    "seed:demo": "tsx src/scripts/seed/demo.ts --demo",
     "seed:e2e": "tsx src/scripts/seedE2eFixtures.ts"
   },
   "dependencies": {

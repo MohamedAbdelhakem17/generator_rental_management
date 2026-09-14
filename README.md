@@ -34,6 +34,18 @@ pnpm --filter frontend dev    # Next.js app on http://localhost:3000
 pnpm dev                      # both, in parallel
 ```
 
+## Seeding
+
+```bash
+pnpm --filter backend seed         # baseline: 6 roles, one Admin user, default SystemSettings — idempotent
+pnpm --filter backend seed:demo    # baseline + demo data for manual QA; refuses to run when NODE_ENV=production
+```
+
+`seed` is safe to re-run at any time — it only creates missing roles/Admin/settings, never overwrites an
+existing one (so a role's hand-edited permissions are never clobbered). The seeded Admin is
+`admin@example.com` / `Admin123!` by default (override with `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`) —
+change the password after first login.
+
 ## Quality checks
 
 ```bash
