@@ -1,0 +1,174 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --radius: 0.375rem;
+
+  --background: #f7f8f9;
+  --foreground: #1b2126;
+
+  --surface: #ffffff;
+  --surface-foreground: #1b2126;
+  --popover: #ffffff;
+  --popover-foreground: #1b2126;
+
+  --muted: #eef0f2;
+  --muted-foreground: #5b6670;
+
+  --border: #dde1e6;
+  --input: #dde1e6;
+  --ring: #1e5f8c;
+
+  --primary: #1e5f8c;
+  --primary-foreground: #ffffff;
+  --secondary: #eef0f2;
+  --secondary-foreground: #1b2126;
+  --accent: #eaf1f6;
+  --accent-foreground: #14415c;
+  --destructive: #b23b3b;
+  --destructive-foreground: #ffffff;
+
+  /* Status colors mirror the Generator Status Engine states (PRD 6.1) and are
+     reused everywhere a status is shown — never re-derived per component. */
+  --status-available-bg: #e6f5ec;
+  --status-available-fg: #1f7a45;
+  --status-available-border: #bfe3cd;
+
+  --status-rented-bg: #e8f1f8;
+  --status-rented-fg: #1e5f8c;
+  --status-rented-border: #c4dcec;
+
+  --status-maintenance-bg: #fbf1df;
+  --status-maintenance-fg: #a6690f;
+  --status-maintenance-border: #f0d8a6;
+
+  --status-stopped-bg: #fae7e7;
+  --status-stopped-fg: #a03030;
+  --status-stopped-border: #f0c4c4;
+}
+
+.dark {
+  --background: #12161b;
+  --foreground: #e7eaed;
+
+  --surface: #171c22;
+  --surface-foreground: #e7eaed;
+  --popover: #171c22;
+  --popover-foreground: #e7eaed;
+
+  --muted: #1e242b;
+  --muted-foreground: #8b96a0;
+
+  --border: #2a323b;
+  --input: #2a323b;
+  --ring: #4e9bd1;
+
+  --primary: #4e9bd1;
+  --primary-foreground: #0b1620;
+  --secondary: #1e242b;
+  --secondary-foreground: #e7eaed;
+  --accent: #1c2a35;
+  --accent-foreground: #9cc7e4;
+  --destructive: #e06767;
+  --destructive-foreground: #2a0a0a;
+
+  --status-available-bg: #123322;
+  --status-available-fg: #4fc988;
+  --status-available-border: #1e5b3b;
+
+  --status-rented-bg: #12293a;
+  --status-rented-fg: #6bb6e8;
+  --status-rented-border: #1e4560;
+
+  --status-maintenance-bg: #3a2a0e;
+  --status-maintenance-fg: #e3a94a;
+  --status-maintenance-border: #5c4419;
+
+  --status-stopped-bg: #3a1414;
+  --status-stopped-fg: #e88787;
+  --status-stopped-border: #5c2323;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-foreground: var(--surface-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-status-available-bg: var(--status-available-bg);
+  --color-status-available-fg: var(--status-available-fg);
+  --color-status-available-border: var(--status-available-border);
+  --color-status-rented-bg: var(--status-rented-bg);
+  --color-status-rented-fg: var(--status-rented-fg);
+  --color-status-rented-border: var(--status-rented-border);
+  --color-status-maintenance-bg: var(--status-maintenance-bg);
+  --color-status-maintenance-fg: var(--status-maintenance-fg);
+  --color-status-maintenance-border: var(--status-maintenance-border);
+  --color-status-stopped-bg: var(--status-stopped-bg);
+  --color-status-stopped-fg: var(--status-stopped-fg);
+  --color-status-stopped-border: var(--status-stopped-border);
+
+  --font-sans: var(--font-plex-sans), var(--font-plex-sans-arabic), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+    outline-color: var(--color-ring);
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+
+  [dir='rtl'] {
+    font-family: var(--font-plex-sans-arabic), var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  }
+
+  ::selection {
+    background-color: var(--color-accent);
+    color: var(--color-accent-foreground);
+  }
+}
+
+@layer utilities {
+  .tabular-data {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}

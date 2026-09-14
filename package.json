@@ -11,7 +11,7 @@
     "build": "pnpm --filter backend build && pnpm --filter frontend build",
     "lint": "pnpm --filter backend lint && pnpm --filter frontend lint",
     "typecheck": "pnpm --filter backend typecheck && pnpm --filter frontend typecheck",
-    "test": "pnpm --filter backend test",
+    "test": "pnpm --filter backend test && pnpm --filter frontend test",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\" --ignore-path .gitignore"
   },
   "devDependencies": {

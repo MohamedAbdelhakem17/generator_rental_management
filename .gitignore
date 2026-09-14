@@ -5,6 +5,9 @@ build/
 out/
 coverage/
 *.tsbuildinfo
+playwright-report/
+test-results/
+blob-report/
 
 .env
 .env.local
