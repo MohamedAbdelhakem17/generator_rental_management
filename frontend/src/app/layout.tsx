@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
+import { Toaster } from 'sonner';
 
 import { plexSans, plexSansArabic, plexMono } from '@/lib/fonts';
 import { LocaleProvider } from '@/lib/i18n/locale-provider';
-import { DevSessionProvider } from '@/lib/session/dev-session-provider';
+import { SessionProvider } from '@/lib/session/session-provider';
 import { QueryProvider } from '@/lib/query-provider';
 import './globals.css';
 
@@ -16,9 +17,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${plexSans.variable} ${plexSansArabic.variable} ${plexMono.variable}`} suppressHydrationWarning>
       <body suppressHydrationWarning>
         <LocaleProvider>
-          <DevSessionProvider>
-            <QueryProvider>{children}</QueryProvider>
-          </DevSessionProvider>
+          <QueryProvider>
+            <SessionProvider>
+              {children}
+              <Toaster position="bottom-right" />
+            </SessionProvider>
+          </QueryProvider>
         </LocaleProvider>
       </body>
     </html>

@@ -55,3 +55,21 @@ export const MODULE_ACCESS: Record<ModuleKey, Role[]> = {
 export function canAccessModule(role: Role, module: ModuleKey): boolean {
   return MODULE_ACCESS[module].includes(role);
 }
+
+/**
+ * The backend (`modules/auth/permissions.ts`) stores each Role's display name, e.g.
+ * "System Admin" — this is the one place that name is translated to the short `Role`
+ * code the Sidebar/AppShell already key off of (TASK-004).
+ */
+export const ROLE_NAME_TO_KEY: Record<string, Role> = {
+  'System Admin': 'admin',
+  'Operations Manager': 'ops_manager',
+  'Finance Manager': 'finance_manager',
+  Accountant: 'accountant',
+  Technician: 'technician',
+  Viewer: 'viewer',
+};
+
+export function roleNameToKey(roleName: string): Role {
+  return ROLE_NAME_TO_KEY[roleName] ?? 'viewer';
+}

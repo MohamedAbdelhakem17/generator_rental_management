@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { loginAs } from './helpers';
 
 test.describe('DataTable foundation (apiClient + useDataTableQuery)', () => {
   test('sorting, filtering, and paginating update the URL and are reproduced on refresh', async ({ page }) => {
+    await loginAs(page, 'admin');
     await page.goto('/dev/data-table');
     const table = page.locator('table');
     // Wait for real rows, not the loading skeleton (which is also a <tr>).
@@ -41,6 +43,7 @@ test.describe('DataTable foundation (apiClient + useDataTableQuery)', () => {
   });
 
   test('a 500 response shows ErrorState with Retry, not a blank table', async ({ page }) => {
+    await loginAs(page, 'admin');
     await page.goto('/dev/data-table');
     // Wait for the initial (successful) fetch to fully settle before toggling error mode,
     // so the refetch this triggers is a genuinely new request rather than racing the

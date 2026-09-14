@@ -8,6 +8,7 @@ const envSchema = z.object({
   JWT_ACCESS_SECRET: z.string().min(1, 'JWT_ACCESS_SECRET is required'),
   JWT_REFRESH_SECRET: z.string().min(1, 'JWT_REFRESH_SECRET is required'),
   CORS_ORIGIN: z.string().min(1, 'CORS_ORIGIN is required'),
+  BCRYPT_COST: z.coerce.number().int().min(4).max(15).default(12),
 });
 
 export type Env = z.infer<typeof envSchema>;

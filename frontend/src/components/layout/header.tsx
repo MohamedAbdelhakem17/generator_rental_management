@@ -3,7 +3,7 @@
 import { Bell, LogOut, Menu, Search, User } from 'lucide-react';
 
 import { useLocale } from '@/lib/i18n/locale-provider';
-import { useSession } from '@/lib/session/dev-session-provider';
+import { useSession } from '@/lib/session/session-provider';
 import { useSidebarState } from '@/lib/layout/sidebar-context';
 import { useBreadcrumb } from '@/lib/layout/use-breadcrumb';
 import { ROLE_LABELS } from '@/lib/permissions/roles';
@@ -22,7 +22,7 @@ import { Breadcrumb } from './breadcrumb';
 export function Header() {
   const { t } = useLocale();
   const { setMobileOpen } = useSidebarState();
-  const { role, userName } = useSession();
+  const { role, userName, logout } = useSession();
   const breadcrumbItems = useBreadcrumb();
 
   const initials = userName
@@ -92,7 +92,7 @@ export function Header() {
               <User className="size-4" aria-hidden />
               {t('shell.account')}
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void logout()}>
               <LogOut className="size-4" aria-hidden />
               {t('shell.signOut')}
             </DropdownMenuItem>

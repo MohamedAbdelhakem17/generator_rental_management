@@ -6,7 +6,7 @@ import { Zap } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { useLocale } from '@/lib/i18n/locale-provider';
-import { useSession } from '@/lib/session/dev-session-provider';
+import { useSession } from '@/lib/session/session-provider';
 import { canAccessModule } from '@/lib/permissions/roles';
 import { NAV_GROUPS } from '@/lib/nav-config';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
