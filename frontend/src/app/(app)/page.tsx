@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { PackageX, Plus, Trash2 } from 'lucide-react';
 
 import { useLocale } from '@/lib/i18n/locale-provider';
@@ -160,6 +161,12 @@ export default function ShellFoundationPage() {
             <SkeletonTable rows={3} />
           </div>
         </div>
+      </Section>
+
+      <Section title="DataTable foundation" description="TASK-005 preview — apiClient, DataTable, filters, and useDataTableQuery over mock data.">
+        <Link href="/dev/data-table" className="text-sm font-medium text-primary hover:underline">
+          Open the DataTable preview
+        </Link>
       </Section>
     </>
   );

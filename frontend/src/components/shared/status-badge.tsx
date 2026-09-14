@@ -1,60 +1,41 @@
 import { cn } from '@/lib/utils';
 import { useLocale } from '@/lib/i18n/locale-provider';
 import type { TranslationKey } from '@/lib/i18n/dictionary';
+import { STATUS_TONE_CLASSES, type StatusTone } from '@/lib/status-tone';
 
 /** Mirrors the Generator Status Engine's four derived states (PRD 6.1). */
 export type GeneratorStatus = 'available' | 'rented' | 'under_maintenance' | 'stopped';
 
-const STATUS_CONFIG: Record<
-  GeneratorStatus,
-  { labelKey: TranslationKey; bg: string; fg: string; border: string; dot: string }
-> = {
-  available: {
-    labelKey: 'status.available',
-    bg: 'bg-status-available-bg',
-    fg: 'text-status-available-fg',
-    border: 'border-status-available-border',
-    dot: 'bg-status-available-fg',
-  },
-  rented: {
-    labelKey: 'status.rented',
-    bg: 'bg-status-rented-bg',
-    fg: 'text-status-rented-fg',
-    border: 'border-status-rented-border',
-    dot: 'bg-status-rented-fg',
-  },
-  under_maintenance: {
-    labelKey: 'status.underMaintenance',
-    bg: 'bg-status-maintenance-bg',
-    fg: 'text-status-maintenance-fg',
-    border: 'border-status-maintenance-border',
-    dot: 'bg-status-maintenance-fg',
-  },
-  stopped: {
-    labelKey: 'status.stopped',
-    bg: 'bg-status-stopped-bg',
-    fg: 'text-status-stopped-fg',
-    border: 'border-status-stopped-border',
-    dot: 'bg-status-stopped-fg',
-  },
+const STATUS_TONE: Record<GeneratorStatus, StatusTone> = {
+  available: 'success',
+  rented: 'info',
+  under_maintenance: 'warning',
+  stopped: 'danger',
+};
+
+const STATUS_LABEL: Record<GeneratorStatus, TranslationKey> = {
+  available: 'status.available',
+  rented: 'status.rented',
+  under_maintenance: 'status.underMaintenance',
+  stopped: 'status.stopped',
 };
 
 export function StatusBadge({ status, className }: { status: GeneratorStatus; className?: string }) {
   const { t } = useLocale();
-  const config = STATUS_CONFIG[status];
+  const tone = STATUS_TONE_CLASSES[STATUS_TONE[status]];
 
   return (
     <span
       className={cn(
         'inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium',
-        config.bg,
-        config.fg,
-        config.border,
+        tone.bg,
+        tone.fg,
+        tone.border,
         className,
       )}
     >
-      <span className={cn('size-1.5 shrink-0 rounded-full', config.dot)} aria-hidden />
-      {t(config.labelKey)}
+      <span className={cn('size-1.5 shrink-0 rounded-full', tone.dot)} aria-hidden />
+      {t(STATUS_LABEL[status])}
     </span>
   );
 }
