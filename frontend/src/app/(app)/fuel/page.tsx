@@ -18,9 +18,11 @@ import { DataTablePagination } from '@/components/data-table/pagination';
 import { SelectFilter } from '@/components/data-table/filters/select-filter';
 import { DateRangeFilter, type DateRangeValue } from '@/components/data-table/filters/date-range-filter';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import type { GeneratorRow } from '../generators/types';
 import type { ProjectRow } from '../projects/types';
+import { FuelAlertsTab } from './fuel-alerts-tab';
 import { FuelEntryForm } from './fuel-entry-form';
 import type { FuelLogRow } from './types';
 
@@ -78,6 +80,7 @@ export default function FuelPage() {
 function FuelPageContent() {
   const { user } = useSession();
   const canWrite = user?.permissions.includes('fuel:write') ?? false;
+  const canViewAlerts = user?.permissions.includes('fuel-alerts:read') ?? false;
 
   const [isEntering, setIsEntering] = useState(false);
 
@@ -143,6 +146,62 @@ function FuelPageContent() {
         }
       />
 
+      {canViewAlerts ? (
+        <Tabs defaultValue="fillups" className="flex flex-col gap-4">
+          <TabsList>
+            <TabsTrigger value="fillups">Fill-ups</TabsTrigger>
+            <TabsTrigger value="alerts">Alerts</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="fillups" className="flex flex-col gap-4">
+            <FuelFiltersAndTable
+              table={table}
+              dateRange={dateRange}
+              generators={generators}
+              projects={projects}
+              columns={columns}
+              canWrite={canWrite}
+            />
+          </TabsContent>
+
+          <TabsContent value="alerts">
+            <FuelAlertsTab />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <FuelFiltersAndTable
+          table={table}
+          dateRange={dateRange}
+          generators={generators}
+          projects={projects}
+          columns={columns}
+          canWrite={canWrite}
+        />
+      )}
+
+      {canWrite ? <FuelEntryForm open={isEntering} onOpenChange={setIsEntering} /> : null}
+    </>
+  );
+}
+
+function FuelFiltersAndTable({
+  table,
+  dateRange,
+  generators,
+  projects,
+  columns,
+  canWrite,
+}: {
+  table: ReturnType<typeof useDataTableQuery<FuelLogRow>>;
+  dateRange: DateRangeValue;
+  generators: { items: GeneratorRow[] } | undefined;
+  projects: { items: ProjectRow[] } | undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  columns: ColumnDef<FuelLogRow, any>[];
+  canWrite: boolean;
+}) {
+  return (
+    <>
       <div className="flex flex-wrap items-center gap-2">
         <SelectFilter
           value={table.filters.generatorId}
@@ -190,8 +249,6 @@ function FuelPageContent() {
       />
 
       <DataTablePagination meta={table.meta} onPageChange={table.setPage} onPageSizeChange={table.setPageSize} />
-
-      {canWrite ? <FuelEntryForm open={isEntering} onOpenChange={setIsEntering} /> : null}
     </>
   );
 }

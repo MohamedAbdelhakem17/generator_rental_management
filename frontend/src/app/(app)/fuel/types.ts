@@ -26,3 +26,21 @@ export interface FuelLogRow {
 export interface FuelLogDetail extends FuelLogRow {
   contributingOperationLogIds: string[];
 }
+
+export type FuelAlertSeverity = 'Warning' | 'Critical';
+export type FuelAlertStatus = 'Open' | 'Acknowledged' | 'Resolved';
+
+export interface FuelAlertRow {
+  id: string;
+  generator: { id: string; code: string };
+  severity: FuelAlertSeverity;
+  status: FuelAlertStatus;
+  firstOccurrenceAt: string;
+  lastOccurrenceAt: string;
+  occurrenceCount: number;
+  triggeringFuelLogId: string;
+  resolutionNote: string;
+  resolvedAt: string | null;
+  resolvedBy: 'system' | 'user' | null;
+  createdAt: string;
+}

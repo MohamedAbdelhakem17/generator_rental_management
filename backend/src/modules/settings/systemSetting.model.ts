@@ -16,7 +16,12 @@ export interface SystemSettingAttrs {
   key: string;
   vatRatePercent: Types.Decimal128;
   currency: string;
+  /** TASK-017 FR-001: the Fuel Alert Engine's Warning-band threshold (Business Rule 6.5). */
   fuelTolerancePercent: Types.Decimal128;
+  /** TASK-017 FR-001: the Critical-band threshold — added ahead of TASK-030's full Settings
+   * UI, same "the module that needs it now extends this shared seed" precedent as every
+   * other cross-task model extension in this codebase (e.g. TASK-013 on ContractItem). */
+  fuelCriticalTolerancePercent: Types.Decimal128;
 }
 
 const systemSettingSchema = new Schema<SystemSettingAttrs>(
@@ -25,6 +30,7 @@ const systemSettingSchema = new Schema<SystemSettingAttrs>(
     vatRatePercent: { type: Schema.Types.Decimal128, required: true },
     currency: { type: String, required: true },
     fuelTolerancePercent: { type: Schema.Types.Decimal128, required: true },
+    fuelCriticalTolerancePercent: { type: Schema.Types.Decimal128, required: true },
   },
   { timestamps: true },
 );

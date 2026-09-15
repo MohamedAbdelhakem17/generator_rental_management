@@ -2,7 +2,7 @@ import request from 'supertest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../app.js';
-import { createTestUser, resetTestDb, seedTestRoles, startTestDb, stopTestDb } from '../../test/authFixtures.js';
+import { createTestUser, resetTestDb, seedTestRoles, seedTestSettings, startTestDb, stopTestDb } from '../../test/authFixtures.js';
 import { FuelAlertEngineService } from '../fuel-alert-engine/service.js';
 
 const app = createApp();
@@ -61,6 +61,7 @@ describe('fuel log routes (TASK-016)', () => {
 
   it('Section 17: Finance Manager/Accountant/Viewer can view but not create', async () => {
     const roles = await seedTestRoles();
+    await seedTestSettings();
     await createTestUser({ email: 'admin@test.com', password: 'password123', roleId: roles['System Admin']._id });
     await createTestUser({ email: 'finance@test.com', password: 'password123', roleId: roles['Finance Manager']._id });
     const admin = await loginAs('admin@test.com');
@@ -77,6 +78,7 @@ describe('fuel log routes (TASK-016)', () => {
 
   it('AC: 200 liters over 100 operating hours yields a consumption rate of 2, and totalCost is computed server-side', async () => {
     const roles = await seedTestRoles();
+    await seedTestSettings();
     await createTestUser({ email: 'admin@test.com', password: 'password123', roleId: roles['System Admin']._id });
     const admin = await loginAs('admin@test.com');
     const projectId = await createProject(admin);
@@ -96,6 +98,7 @@ describe('fuel log routes (TASK-016)', () => {
 
   it('AC/Edge Case: zero operating hours in the reference window yields consumptionRate null ("N/A"), never an error or zero', async () => {
     const roles = await seedTestRoles();
+    await seedTestSettings();
     await createTestUser({ email: 'admin@test.com', password: 'password123', roleId: roles['System Admin']._id });
     const admin = await loginAs('admin@test.com');
     const projectId = await createProject(admin);
@@ -113,6 +116,7 @@ describe('fuel log routes (TASK-016)', () => {
 
   it('rejects non-positive liters/pricePerLiter with 422', async () => {
     const roles = await seedTestRoles();
+    await seedTestSettings();
     await createTestUser({ email: 'admin@test.com', password: 'password123', roleId: roles['System Admin']._id });
     const admin = await loginAs('admin@test.com');
     const projectId = await createProject(admin);
@@ -127,6 +131,7 @@ describe('fuel log routes (TASK-016)', () => {
 
   it('Section 17/20: a Technician can only log fuel for their assigned generators', async () => {
     const roles = await seedTestRoles();
+    await seedTestSettings();
     await createTestUser({ email: 'admin@test.com', password: 'password123', roleId: roles['System Admin']._id });
     const admin = await loginAs('admin@test.com');
     const projectId = await createProject(admin);
@@ -147,6 +152,7 @@ describe('fuel log routes (TASK-016)', () => {
 
   it('Edge Case: multiple same-day fill-ups are each evaluated against their own reference window, not double-counted', async () => {
     const roles = await seedTestRoles();
+    await seedTestSettings();
     await createTestUser({ email: 'admin@test.com', password: 'password123', roleId: roles['System Admin']._id });
     const admin = await loginAs('admin@test.com');
     const projectId = await createProject(admin);
@@ -165,6 +171,7 @@ describe('fuel log routes (TASK-016)', () => {
 
   it("detail includes the contributing Operation Log ids for the operatingHoursRef", async () => {
     const roles = await seedTestRoles();
+    await seedTestSettings();
     await createTestUser({ email: 'admin@test.com', password: 'password123', roleId: roles['System Admin']._id });
     const admin = await loginAs('admin@test.com');
     const projectId = await createProject(admin);
@@ -180,6 +187,7 @@ describe('fuel log routes (TASK-016)', () => {
 
   it('FR-003/DoD: the fuel alert engine is invoked on every fuel log creation', async () => {
     const roles = await seedTestRoles();
+    await seedTestSettings();
     await createTestUser({ email: 'admin@test.com', password: 'password123', roleId: roles['System Admin']._id });
     const admin = await loginAs('admin@test.com');
     const projectId = await createProject(admin);

@@ -10,6 +10,7 @@ import { requestLogger } from './middleware/requestLogger.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { contractRouter } from './modules/contracts/contract.routes.js';
 import { customerRouter } from './modules/customers/customer.routes.js';
+import { fuelAlertRouter } from './modules/fuel-alert-engine/fuel-alert.routes.js';
 import { fuelLogRouter } from './modules/fuel/fuel-log.routes.js';
 import { generatorRouter } from './modules/generators/generator.routes.js';
 import { healthRouter } from './modules/health/health.routes.js';
@@ -44,6 +45,7 @@ export function createApp(): Express {
   app.use('/api', contractRouter);
   app.use('/api', operationLogRouter);
   app.use('/api', fuelLogRouter);
+  app.use('/api', fuelAlertRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

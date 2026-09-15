@@ -78,6 +78,15 @@ describe('permission matrix (PRD Section 7.2)', () => {
     expect(ROLE_PERMISSIONS.Accountant).not.toContain('fuel:write');
   });
 
+  it('restricts fuel alert visibility to Admin/Ops Manager/Technician, and resolution to Admin/Ops Manager (TASK-017 Section 17)', () => {
+    for (const role of ['Finance Manager', 'Accountant', 'Viewer'] as const) {
+      expect(ROLE_PERMISSIONS[role]).not.toContain('fuel-alerts:read');
+    }
+    expect(ROLE_PERMISSIONS.Technician).toContain('fuel-alerts:acknowledge');
+    expect(ROLE_PERMISSIONS.Technician).not.toContain('fuel-alerts:resolve');
+    expect(ROLE_PERMISSIONS['Operations Manager']).toContain('fuel-alerts:resolve');
+  });
+
   it('identifies valid vs. invalid permission keys', () => {
     expect(isPermissionKey('users:manage')).toBe(true);
     expect(isPermissionKey('not:a-real-permission')).toBe(false);

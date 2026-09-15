@@ -49,6 +49,7 @@ async function seedDefaultSettings(): Promise<boolean> {
     vatRatePercent: '14',
     currency: 'EGP',
     fuelTolerancePercent: '15',
+    fuelCriticalTolerancePercent: '30',
   });
 
   return true;
