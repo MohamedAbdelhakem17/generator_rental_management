@@ -29,8 +29,8 @@ export class NotFoundError extends AppError {
 }
 
 export class ConflictError extends AppError {
-  constructor(message = 'Conflicting state') {
-    super(message, 409);
+  constructor(message = 'Conflicting state', errors: FieldError[] = []) {
+    super(message, 409, errors);
   }
 }
 
