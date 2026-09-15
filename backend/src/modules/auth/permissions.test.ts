@@ -69,6 +69,15 @@ describe('permission matrix (PRD Section 7.2)', () => {
     expect(ROLE_PERMISSIONS.Technician).toContain('operations:write');
   });
 
+  it('grants fuel View to every role except no one is excluded from read (TASK-016 Section 17)', () => {
+    for (const role of ROLE_NAMES) {
+      expect(ROLE_PERMISSIONS[role]).toContain('fuel:read');
+    }
+    expect(ROLE_PERMISSIONS.Technician).toContain('fuel:write');
+    expect(ROLE_PERMISSIONS['Finance Manager']).not.toContain('fuel:write');
+    expect(ROLE_PERMISSIONS.Accountant).not.toContain('fuel:write');
+  });
+
   it('identifies valid vs. invalid permission keys', () => {
     expect(isPermissionKey('users:manage')).toBe(true);
     expect(isPermissionKey('not:a-real-permission')).toBe(false);

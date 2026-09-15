@@ -16,6 +16,7 @@ import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FuelConsumptionChart } from '../../fuel/fuel-consumption-chart';
 import type { OperationLogRow } from '../../operations/types';
 import { GeneratorFormDialog } from '../generator-form-dialog';
 import { StatusHistoryList } from '../status-history-list';
@@ -23,7 +24,6 @@ import { StopGeneratorDialog } from '../stop-generator-dialog';
 import { toBadgeStatus, type GeneratorRow, type StatusHistoryEntry } from '../types';
 
 const PLACEHOLDER_TABS = [
-  { value: 'fuel', label: 'Fuel', description: 'Fuel fill-ups and consumption trends land here once fuel management ships.' },
   { value: 'maintenance', label: 'Maintenance', description: 'Service history and the next due date land here once maintenance tracking ships.' },
   { value: 'contracts', label: 'Contracts', description: 'Rental contracts this unit has been assigned to land here once contract management ships.' },
   { value: 'profitability', label: 'Profitability', description: 'Revenue and cost per hour for this unit land here once the profitability engine ships.' },
@@ -126,6 +126,7 @@ export default function GeneratorProfilePage() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="operations">Operations</TabsTrigger>
+          <TabsTrigger value="fuel">Fuel</TabsTrigger>
           {PLACEHOLDER_TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.label}
@@ -196,6 +197,10 @@ export default function GeneratorProfilePage() {
               ))}
             </ul>
           )}
+        </TabsContent>
+
+        <TabsContent value="fuel">
+          <FuelConsumptionChart generatorId={generator.id} normalFuelConsumption={generator.normalFuelConsumption} />
         </TabsContent>
 
         {PLACEHOLDER_TABS.map((tab) => (
