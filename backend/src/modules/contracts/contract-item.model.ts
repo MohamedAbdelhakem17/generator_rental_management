@@ -16,6 +16,9 @@ export interface ContractItemAttrs extends TimestampFields {
   unitPrice: Types.Decimal128;
   /** Immutable copy of `unitPrice` taken at activation (TASK-012 Data Model) — never edited. */
   priceSnapshot: Types.Decimal128 | null;
+  /** TASK-013 FR-004: an Admin-approved exception to the conflict hard-block, recorded distinctly. */
+  isSharedAssignmentException: boolean;
+  sharedAssignmentJustification: string;
 }
 
 const contractItemSchema = new Schema<ContractItemAttrs>(
@@ -32,6 +35,8 @@ const contractItemSchema = new Schema<ContractItemAttrs>(
       },
     },
     priceSnapshot: { type: Schema.Types.Decimal128, default: null },
+    isSharedAssignmentException: { type: Boolean, default: false },
+    sharedAssignmentJustification: { type: String, default: '', trim: true },
   },
   { timestamps: true },
 );

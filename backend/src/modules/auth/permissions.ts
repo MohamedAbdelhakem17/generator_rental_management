@@ -20,6 +20,7 @@ export const PERMISSION_KEYS = [
   'projects:write',
   'contracts:read',
   'contracts:write',
+  'contracts:sharedAssignmentOverride',
   'operations:read',
   'operations:write',
   'fuel:read',

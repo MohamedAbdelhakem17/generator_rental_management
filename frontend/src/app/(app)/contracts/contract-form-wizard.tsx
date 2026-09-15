@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useFieldArray, useForm } from 'react-hook-form';
-import { Plus, Trash2 } from 'lucide-react';
+import { AlertTriangle, Plus, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -85,6 +85,7 @@ export interface ContractFormWizardProps {
 export function ContractFormWizard({ open, onOpenChange }: ContractFormWizardProps) {
   const queryClient = useQueryClient();
   const [step, setStep] = useState(0);
+  const [conflictWarnings, setConflictWarnings] = useState<Record<number, string[]>>({});
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -97,8 +98,42 @@ export function ContractFormWizard({ open, onOpenChange }: ContractFormWizardPro
     if (!next) {
       form.reset(defaultValues());
       setStep(0);
+      setConflictWarnings({});
     }
     onOpenChange(next);
+  }
+
+  function dismissWarning(index: number) {
+    setConflictWarnings((current) => {
+      const next = { ...current };
+      delete next[index];
+      return next;
+    });
+  }
+
+  /** TASK-013 FR-001/Section 15: informational only — never blocks saving the Draft. */
+  async function checkItemConflict(index: number, generatorId: string) {
+    const { startDate, endDate } = form.getValues();
+    if (!generatorId || !startDate || !endDate) return;
+
+    try {
+      const { conflicts } = await apiClient.post<{ conflicts: { contractNumber: string; status: string }[] }>(
+        '/api/contracts/check-conflict',
+        { generatorId, startDate, endDate },
+      );
+      if (conflicts.length === 0) {
+        dismissWarning(index);
+        return;
+      }
+      setConflictWarnings((current) => ({
+        ...current,
+        [index]: conflicts.map(
+          (conflict) => `Also assigned to ${conflict.status} contract ${conflict.contractNumber} in this period.`,
+        ),
+      }));
+    } catch {
+      // Best-effort — a failed soft check never blocks the wizard.
+    }
   }
 
   async function handleNext() {
@@ -234,39 +269,64 @@ export function ContractFormWizard({ open, onOpenChange }: ContractFormWizardPro
               ) : null}
 
               {fields.map((field, index) => (
-                <div key={field.id} className="flex items-end gap-2 rounded-md border border-border p-3">
-                  <div className="flex-1">
-                    <Label>Generator</Label>
-                    <GeneratorSelect
-                      value={form.watch(`items.${index}.generatorId`)}
-                      onChange={(generatorId) => form.setValue(`items.${index}.generatorId`, generatorId, { shouldValidate: true })}
-                    />
+                <div key={field.id} className="flex flex-col gap-2 rounded-md border border-border p-3">
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Label>Generator</Label>
+                      <GeneratorSelect
+                        value={form.watch(`items.${index}.generatorId`)}
+                        onChange={(generatorId) => {
+                          form.setValue(`items.${index}.generatorId`, generatorId, { shouldValidate: true });
+                          void checkItemConflict(index, generatorId);
+                        }}
+                      />
+                    </div>
+                    <div className="w-32">
+                      <Label>Method</Label>
+                      <Select
+                        value={form.watch(`items.${index}.billingMethod`)}
+                        onValueChange={(value) => form.setValue(`items.${index}.billingMethod`, value as FormValues['rentalMethod'])}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {BILLING_METHODS.map((method) => (
+                            <SelectItem key={method} value={method}>
+                              {method[0]!.toUpperCase() + method.slice(1)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="w-28">
+                      <Label>Unit price</Label>
+                      <Input type="number" step="any" {...form.register(`items.${index}.unitPrice`)} />
+                    </div>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Remove item">
+                      <Trash2 className="size-4" aria-hidden />
+                    </Button>
                   </div>
-                  <div className="w-32">
-                    <Label>Method</Label>
-                    <Select
-                      value={form.watch(`items.${index}.billingMethod`)}
-                      onValueChange={(value) => form.setValue(`items.${index}.billingMethod`, value as FormValues['rentalMethod'])}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {BILLING_METHODS.map((method) => (
-                          <SelectItem key={method} value={method}>
-                            {method[0]!.toUpperCase() + method.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="w-28">
-                    <Label>Unit price</Label>
-                    <Input type="number" step="any" {...form.register(`items.${index}.unitPrice`)} />
-                  </div>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Remove item">
-                    <Trash2 className="size-4" aria-hidden />
-                  </Button>
+
+                  {conflictWarnings[index] ? (
+                    <div className="flex items-start justify-between gap-2 rounded-md bg-status-maintenance-bg px-2.5 py-1.5 text-xs text-status-maintenance-fg">
+                      <div className="flex items-start gap-1.5">
+                        <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+                        <span>
+                          {conflictWarnings[index]!.join(' ')} You can still save — activation will be blocked unless
+                          resolved.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => dismissWarning(index)}
+                        aria-label="Dismiss warning"
+                        className="shrink-0 opacity-70 hover:opacity-100"
+                      >
+                        <X className="size-3.5" aria-hidden />
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               ))}
 

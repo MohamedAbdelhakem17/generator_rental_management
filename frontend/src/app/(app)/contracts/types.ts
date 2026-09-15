@@ -26,6 +26,8 @@ export interface ContractItemRow {
   billingMethod: BillingMethod;
   unitPrice: string;
   priceSnapshot: string | null;
+  isSharedAssignmentException: boolean;
+  sharedAssignmentJustification: string;
 }
 
 export interface ContractRow {

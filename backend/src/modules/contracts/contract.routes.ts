@@ -5,7 +5,9 @@ import { requirePermission } from '../../middleware/requirePermission.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import {
   activateContract,
+  applySharedAssignmentOverride,
   cancelContract,
+  checkConflict,
   createContract,
   getContract,
   listContracts,
@@ -18,8 +20,14 @@ export const contractRouter = Router();
 contractRouter.use('/contracts', requireAuth);
 
 contractRouter.get('/contracts', requirePermission('contracts:read'), asyncHandler(listContracts));
+contractRouter.post('/contracts/check-conflict', requirePermission('contracts:write'), asyncHandler(checkConflict));
 contractRouter.get('/contracts/:id', requirePermission('contracts:read'), asyncHandler(getContract));
 contractRouter.post('/contracts', requirePermission('contracts:write'), asyncHandler(createContract));
 contractRouter.patch('/contracts/:id', requirePermission('contracts:write'), asyncHandler(updateContract));
 contractRouter.post('/contracts/:id/activate', requirePermission('contracts:write'), asyncHandler(activateContract));
 contractRouter.post('/contracts/:id/cancel', requirePermission('contracts:write'), asyncHandler(cancelContract));
+contractRouter.post(
+  '/contracts/:id/items/:itemId/shared-assignment',
+  requirePermission('contracts:sharedAssignmentOverride'),
+  asyncHandler(applySharedAssignmentOverride),
+);

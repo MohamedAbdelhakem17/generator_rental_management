@@ -9,8 +9,10 @@ import { ContractService } from './contract.service.js';
 import type { RentalContractAttrs } from './contract.model.js';
 import {
   cancelContractSchema,
+  checkConflictSchema,
   createContractSchema,
   listContractsQuerySchema,
+  sharedAssignmentOverrideSchema,
   updateContractSchema,
 } from './contract.validation.js';
 
@@ -50,6 +52,8 @@ function toContractResponse(contract: PopulatedContract, extras: { itemCount?: n
             billingMethod: item.billingMethod,
             unitPrice: toDisplayString(item.unitPrice),
             priceSnapshot: item.priceSnapshot ? toDisplayString(item.priceSnapshot) : null,
+            isSharedAssignmentException: item.isSharedAssignmentException,
+            sharedAssignmentJustification: item.sharedAssignmentJustification,
           })),
         }
       : {}),
@@ -106,4 +110,24 @@ export async function cancelContract(req: Request, res: Response): Promise<void>
   const input = parseOrThrow(cancelContractSchema, req.body);
   const contract = await ContractService.cancel(id, input, req.user!.id);
   res.status(200).json(successResponse(toContractResponse(contract as unknown as PopulatedContract)));
+}
+
+/** TASK-013: the Draft-time soft-warning endpoint — never blocks, just reports. */
+export async function checkConflict(req: Request, res: Response): Promise<void> {
+  const input = parseOrThrow(checkConflictSchema, req.body);
+  const conflicts = await ContractService.checkConflict(input);
+  res.status(200).json(successResponse({ conflicts }));
+}
+
+export async function applySharedAssignmentOverride(req: Request, res: Response): Promise<void> {
+  const { id, itemId } = parseOrThrow(idParamSchema.extend({ itemId: idParamSchema.shape.id }), req.params);
+  const input = parseOrThrow(sharedAssignmentOverrideSchema, req.body);
+  const item = await ContractService.applySharedAssignmentOverride(id, itemId, input, req.user!.id);
+  res.status(200).json(
+    successResponse({
+      id: String(item._id),
+      isSharedAssignmentException: item.isSharedAssignmentException,
+      sharedAssignmentJustification: item.sharedAssignmentJustification,
+    }),
+  );
 }

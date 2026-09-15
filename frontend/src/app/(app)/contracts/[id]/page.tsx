@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Play, XCircle } from 'lucide-react';
+import { ArrowLeft, Play, ShieldCheck, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { apiClient, ApiError } from '@/lib/apiClient';
@@ -19,6 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CancelContractDialog } from '../cancel-contract-dialog';
+import { SharedAssignmentDialog } from '../shared-assignment-dialog';
 import type { ContractDetail, ContractStatus } from '../types';
 
 const STATUS_TONES: Record<ContractStatus, StatusTone> = {
@@ -65,10 +66,12 @@ export default function ContractDetailPage() {
   const queryClient = useQueryClient();
   const { user } = useSession();
   const canWrite = user?.permissions.includes('contracts:write') ?? false;
+  const canOverride = user?.permissions.includes('contracts:sharedAssignmentOverride') ?? false;
 
   const [isActivating, setIsActivating] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [itemErrors, setItemErrors] = useState<Map<number, string[]>>(new Map());
+  const [overrideTarget, setOverrideTarget] = useState<{ itemId: string; generatorCode: string } | null>(null);
 
   const { data: contract, isLoading, isError, refetch } = useQuery({
     queryKey: ['contracts', params.id],
@@ -200,10 +203,25 @@ export default function ContractDetailPage() {
                       <span className="tabular-data">{item.unitPrice}</span>
                     </div>
                   </div>
-                  {itemErrors.get(index) ? (
-                    <p className="rounded-md bg-status-stopped-bg px-2 py-1 text-xs text-status-stopped-fg">
-                      {itemErrors.get(index)!.join(' · ')}
+                  {item.isSharedAssignmentException ? (
+                    <p className="flex items-center gap-1.5 rounded-md bg-status-rented-bg px-2 py-1 text-xs text-status-rented-fg">
+                      <ShieldCheck className="size-3.5 shrink-0" aria-hidden />
+                      Shared Assignment approved — {item.sharedAssignmentJustification}
                     </p>
+                  ) : null}
+                  {itemErrors.get(index) ? (
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-status-stopped-bg px-2 py-1 text-xs text-status-stopped-fg">
+                      <span>{itemErrors.get(index)!.join(' · ')}</span>
+                      {canOverride && contract.status === 'Draft' ? (
+                        <button
+                          type="button"
+                          className="shrink-0 font-medium underline underline-offset-2 hover:no-underline"
+                          onClick={() => setOverrideTarget({ itemId: item.id, generatorCode: item.generatorCode })}
+                        >
+                          Apply Shared Assignment override
+                        </button>
+                      ) : null}
+                    </div>
                   ) : null}
                 </li>
               ))}
@@ -232,6 +250,19 @@ export default function ContractDetailPage() {
         contractNumber={contract.number}
         onCancelled={async (reason) => {
           await apiClient.post(`/api/contracts/${contract.id}/cancel`, { reason });
+          await invalidate();
+        }}
+      />
+
+      <SharedAssignmentDialog
+        open={overrideTarget !== null}
+        onOpenChange={(open) => !open && setOverrideTarget(null)}
+        generatorCode={overrideTarget?.generatorCode ?? ''}
+        onApproved={async (justification) => {
+          if (!overrideTarget) return;
+          await apiClient.post(`/api/contracts/${contract.id}/items/${overrideTarget.itemId}/shared-assignment`, {
+            justification,
+          });
           await invalidate();
         }}
       />

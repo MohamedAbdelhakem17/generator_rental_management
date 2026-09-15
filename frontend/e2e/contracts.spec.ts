@@ -98,3 +98,92 @@ test.describe('Contracts (TASK-012)', () => {
     await expect(page.getByRole('button', { name: 'New contract' })).toHaveCount(0);
   });
 });
+
+test.describe('Contract Conflict Detection (TASK-013)', () => {
+  test('a blocked activation shows the conflict inline, and a Shared Assignment override lets it succeed', async ({ page }) => {
+    await loginAs(page, 'admin');
+    const suffix = Date.now().toString().slice(-6);
+
+    const companyName = `E2E Conflict Co ${suffix}`;
+    await page.goto('/customers');
+    await page.getByRole('button', { name: 'New customer' }).click();
+    await page.getByLabel('Code').fill(`CUST-CFL-${suffix}`);
+    await page.getByLabel('Company name').fill(companyName);
+    await page.getByRole('button', { name: 'Add customer' }).click();
+    await expect(page.getByText(`Added ${companyName}`)).toBeVisible();
+
+    const projectName = `Site Conflict ${suffix}`;
+    await page.goto('/projects');
+    await page.getByRole('button', { name: 'New project' }).click();
+    await page.getByLabel('Code').fill(`PROJ-CFL-${suffix}`);
+    await page.getByLabel('Name').fill(projectName);
+    await page.getByRole('button', { name: 'Choose a customer…' }).click();
+    await page.getByPlaceholder('Search customers…').fill(companyName);
+    await page.getByRole('button', { name: new RegExp(companyName) }).click();
+    await page.getByLabel('Start date').fill(isoDate(-30));
+    await page.getByRole('button', { name: 'Add project' }).click();
+    await expect(page.getByText(`Added ${projectName}`)).toBeVisible();
+
+    const generatorCode = `GEN-CFL-${suffix}`;
+    await page.goto('/generators');
+    await page.getByRole('button', { name: 'New generator' }).click();
+    await page.getByLabel('Code').fill(generatorCode);
+    await page.getByLabel('kVA').fill('300');
+    await page.getByLabel('Brand').fill('Cummins');
+    await page.getByLabel('Model').fill('C300D5');
+    await page.getByLabel('Serial number').fill(`SN-${generatorCode}`);
+    await page.getByLabel('Normal fuel use (L/h)').fill('18');
+    await page.getByRole('button', { name: 'Register generator' }).click();
+    await expect(page.getByText(`Registered ${generatorCode}`)).toBeVisible();
+
+    async function createContractDraft(startOffset: number, endOffset: number): Promise<string> {
+      await page.goto('/contracts');
+      await page.getByRole('button', { name: 'New contract' }).click();
+      await page.getByRole('button', { name: 'Choose a customer…' }).click();
+      await page.getByPlaceholder('Search customers…').fill(companyName);
+      await page.getByRole('button', { name: new RegExp(companyName) }).click();
+      await page.getByRole('combobox').filter({ hasText: 'Choose a project' }).click();
+      await page.getByRole('option', { name: new RegExp(projectName) }).click();
+      await page.getByRole('button', { name: 'Next' }).click();
+      await page.getByLabel('Start date').fill(isoDate(startOffset));
+      await page.getByLabel('End date').fill(isoDate(endOffset));
+      await page.getByRole('button', { name: 'Next' }).click();
+      await page.getByRole('button', { name: 'Add generator' }).click();
+      const row = page.locator('div').filter({ has: page.getByLabel('Unit price') }).last();
+      await row.getByRole('combobox').first().click();
+      await page.getByRole('option', { name: new RegExp(generatorCode) }).click();
+      await row.getByLabel('Unit price').fill('15000');
+      await page.getByRole('button', { name: 'Create Draft' }).click();
+      await expect(page.getByText('Contract created as Draft')).toBeVisible();
+      const link = page.getByRole('link', { name: /^CN-\d{4}-\d{4}$/ }).first();
+      const number = (await link.textContent())!.trim();
+      return number;
+    }
+
+    // First contract: today ± 15 days.
+    await createContractDraft(-15, 15);
+    await page.getByRole('link', { name: /^CN-\d{4}-\d{4}$/ }).first().click();
+    await page.getByRole('button', { name: 'Activate' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Activate' }).click();
+    await expect(page.getByTestId('contract-header-status').getByText('Active', { exact: true })).toBeVisible();
+
+    // Second, overlapping contract for the same generator.
+    await createContractDraft(0, 30);
+    await page.getByRole('link', { name: /^CN-\d{4}-\d{4}$/ }).first().click();
+    await page.getByRole('button', { name: 'Activate' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Activate' }).click();
+
+    await page.getByRole('tab', { name: 'Items' }).click();
+    await expect(page.getByText(/overlaps with Active contract/)).toBeVisible();
+
+    await page.getByRole('button', { name: 'Apply Shared Assignment override' }).click();
+    await page.getByLabel('Justification').fill('Approved emergency shared use across two sites');
+    await page.getByRole('button', { name: 'Apply override' }).click();
+    await expect(page.getByText(`Shared Assignment override applied to ${generatorCode}`)).toBeVisible();
+    await expect(page.getByText('Shared Assignment approved')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Activate' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Activate' }).click();
+    await expect(page.getByTestId('contract-header-status').getByText('Active', { exact: true })).toBeVisible();
+  });
+});

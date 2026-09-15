@@ -338,4 +338,83 @@ describe('contract routes (TASK-012)', () => {
     expect(byStatus.body.data).toHaveLength(1);
     expect(byStatus.body.data[0].customer.id).toBe(otherCustomerId);
   });
+
+  it('TASK-013 Section 17: only Admin/Ops Manager can run the soft conflict check', async () => {
+    const ctx = await setupContext();
+    const roles = await seedTestRoles();
+    await createTestUser({ email: 'viewer@test.com', password: 'password123', roleId: roles.Viewer._id });
+    const viewer = await loginAs('viewer@test.com');
+
+    const forbidden = await viewer.post('/api/contracts/check-conflict').send({
+      generatorId: ctx.generatorId,
+      startDate: '2026-01-01',
+      endDate: '2026-01-31',
+    });
+    expect(forbidden.status).toBe(403);
+
+    const malformed = await ctx.admin.post('/api/contracts/check-conflict').send({ generatorId: ctx.generatorId });
+    expect(malformed.status).toBe(422);
+
+    const first = await ctx.admin
+      .post('/api/contracts')
+      .send(draftPayload(ctx, { startDate: '2026-01-01', endDate: '2026-01-31' }));
+
+    const ok = await ctx.admin.post('/api/contracts/check-conflict').send({
+      generatorId: ctx.generatorId,
+      startDate: '2026-01-15',
+      endDate: '2026-02-15',
+    });
+    expect(ok.status).toBe(200);
+    expect(ok.body.data.conflicts).toHaveLength(1);
+    expect(ok.body.data.conflicts[0].contractNumber).toBe(first.body.data.number);
+
+    const excluded = await ctx.admin.post('/api/contracts/check-conflict').send({
+      generatorId: ctx.generatorId,
+      startDate: '2026-01-15',
+      endDate: '2026-02-15',
+      excludeContractId: first.body.data.id,
+    });
+    expect(excluded.body.data.conflicts).toHaveLength(0);
+  });
+
+  it('TASK-013 AC: a Shared Assignment override lets a previously-blocked activation succeed and is audited', async () => {
+    const ctx = await setupContext();
+    const roles = await seedTestRoles();
+    await createTestUser({ email: 'ops@test.com', password: 'password123', roleId: roles['Operations Manager']._id });
+    const ops = await loginAs('ops@test.com');
+
+    const first = await ctx.admin
+      .post('/api/contracts')
+      .send(draftPayload(ctx, { startDate: '2026-01-01', endDate: '2026-01-31' }));
+    await ctx.admin.post(`/api/contracts/${first.body.data.id}/activate`);
+
+    const second = await ctx.admin
+      .post('/api/contracts')
+      .send(draftPayload(ctx, { startDate: '2026-01-15', endDate: '2026-02-15' }));
+    const blocked = await ctx.admin.post(`/api/contracts/${second.body.data.id}/activate`);
+    expect(blocked.status).toBe(409);
+
+    const detail = await ctx.admin.get(`/api/contracts/${second.body.data.id}`);
+    const itemId = detail.body.data.items[0].id;
+
+    const opsAttempt = await ops
+      .post(`/api/contracts/${second.body.data.id}/items/${itemId}/shared-assignment`)
+      .send({ justification: 'Approved by ops' });
+    expect(opsAttempt.status).toBe(403);
+
+    const missingJustification = await ctx.admin
+      .post(`/api/contracts/${second.body.data.id}/items/${itemId}/shared-assignment`)
+      .send({});
+    expect(missingJustification.status).toBe(422);
+
+    const override = await ctx.admin
+      .post(`/api/contracts/${second.body.data.id}/items/${itemId}/shared-assignment`)
+      .send({ justification: 'Approved emergency shared use across two sites' });
+    expect(override.status).toBe(200);
+    expect(override.body.data.isSharedAssignmentException).toBe(true);
+
+    const retry = await ctx.admin.post(`/api/contracts/${second.body.data.id}/activate`);
+    expect(retry.status).toBe(200);
+    expect(retry.body.data.status).toBe('Active');
+  });
 });

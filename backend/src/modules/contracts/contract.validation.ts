@@ -72,6 +72,17 @@ export const cancelContractSchema = z.object({
   reason: z.string().trim().min(1, 'A reason is required'),
 });
 
+export const checkConflictSchema = z.object({
+  generatorId: objectIdSchema,
+  startDate: dateSchema,
+  endDate: dateSchema,
+  excludeContractId: objectIdSchema.optional(),
+});
+
+export const sharedAssignmentOverrideSchema = z.object({
+  justification: z.string().trim().min(1, 'A justification is required'),
+});
+
 export const listContractsQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional(),
   limit: z.coerce.number().int().positive().optional(),
@@ -88,3 +99,5 @@ export type CreateContractInput = z.infer<typeof createContractSchema>;
 export type UpdateContractInput = z.infer<typeof updateContractSchema>;
 export type CancelContractInput = z.infer<typeof cancelContractSchema>;
 export type ListContractsQuery = z.infer<typeof listContractsQuerySchema>;
+export type CheckConflictInput = z.infer<typeof checkConflictSchema>;
+export type SharedAssignmentOverrideInput = z.infer<typeof sharedAssignmentOverrideSchema>;

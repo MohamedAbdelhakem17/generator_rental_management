@@ -1,5 +1,5 @@
 import { AuditService } from '../audit/audit.service.js';
-import { ConflictEngineService } from '../contract-conflict-engine/service.js';
+import { ConflictEngineService, type ConflictMatch } from '../contract-conflict-engine/service.js';
 import { CustomerModel } from '../customers/customer.model.js';
 import { GeneratorModel } from '../generators/generator.model.js';
 import { ProjectModel } from '../projects/project.model.js';
@@ -12,9 +12,11 @@ import { nextContractNumber } from './contract-number.js';
 import { RentalContractModel, type RentalContractAttrs, type RentalContractDocument } from './contract.model.js';
 import type {
   CancelContractInput,
+  CheckConflictInput,
   ContractItemInput,
   CreateContractInput,
   ListContractsQuery,
+  SharedAssignmentOverrideInput,
   UpdateContractInput,
 } from './contract.validation.js';
 
@@ -336,5 +338,49 @@ export const ContractService = {
 
     await populateRefs(contract);
     return contract;
+  },
+
+  /** TASK-013: the Draft-time soft warning — informational only, never blocks saving. */
+  async checkConflict(input: CheckConflictInput): Promise<ConflictMatch[]> {
+    return ConflictEngineService.checkGenerator(input.generatorId, input.startDate, input.endDate, {
+      excludeContractId: input.excludeContractId,
+      includeDraft: true,
+    });
+  },
+
+  /**
+   * TASK-013 FR-004: an Admin-only, justified exception to the conflict hard-block, recorded
+   * distinctly on the item (never a normal non-conflicting assignment). Applied to a Draft's
+   * item so a retried activation skips that item's conflict check (ConflictEngineService).
+   */
+  async applySharedAssignmentOverride(
+    contractId: string,
+    itemId: string,
+    input: SharedAssignmentOverrideInput,
+    actorUserId: string,
+  ): Promise<ContractItemDocument> {
+    const contract = await findOrThrow(contractId);
+    if (contract.status !== 'Draft') {
+      throw new ConflictError('Shared Assignment overrides can only be applied to a Draft contract');
+    }
+
+    const item = await ContractItemModel.findOne({ _id: itemId, contractId });
+    if (!item) {
+      throw new NotFoundError('Contract item not found');
+    }
+
+    item.isSharedAssignmentException = true;
+    item.sharedAssignmentJustification = input.justification;
+    await item.save();
+
+    await AuditService.record({
+      action: 'contract.sharedAssignmentOverride',
+      actorUserId,
+      entityType: 'ContractItem',
+      entityId: itemId,
+      metadata: { contractId, generatorId: String(item.generatorId), justification: input.justification },
+    });
+
+    return item;
   },
 };

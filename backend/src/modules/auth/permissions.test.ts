@@ -47,6 +47,13 @@ describe('permission matrix (PRD Section 7.2)', () => {
     }
   });
 
+  it('restricts the Shared Assignment override to System Admin only (TASK-013 Section 17)', () => {
+    for (const role of ROLE_NAMES) {
+      if (role === 'System Admin') continue;
+      expect(ROLE_PERMISSIONS[role]).not.toContain('contracts:sharedAssignmentOverride');
+    }
+  });
+
   it('identifies valid vs. invalid permission keys', () => {
     expect(isPermissionKey('users:manage')).toBe(true);
     expect(isPermissionKey('not:a-real-permission')).toBe(false);
