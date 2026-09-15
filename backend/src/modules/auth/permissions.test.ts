@@ -87,6 +87,19 @@ describe('permission matrix (PRD Section 7.2)', () => {
     expect(ROLE_PERMISSIONS['Operations Manager']).toContain('fuel-alerts:resolve');
   });
 
+  it('grants Maintenance View to every role, Open/Edit/Start to Admin/Ops Manager/Technician, and Complete/Cancel to Admin/Ops Manager only (TASK-018 Section 17)', () => {
+    for (const role of ROLE_NAMES) {
+      expect(ROLE_PERMISSIONS[role]).toContain('maintenance:read');
+    }
+    expect(ROLE_PERMISSIONS.Technician).toContain('maintenance:write');
+    expect(ROLE_PERMISSIONS.Technician).not.toContain('maintenance:complete');
+    expect(ROLE_PERMISSIONS['Operations Manager']).toContain('maintenance:complete');
+    for (const role of ['Finance Manager', 'Accountant', 'Viewer'] as const) {
+      expect(ROLE_PERMISSIONS[role]).not.toContain('maintenance:write');
+      expect(ROLE_PERMISSIONS[role]).not.toContain('maintenance:complete');
+    }
+  });
+
   it('identifies valid vs. invalid permission keys', () => {
     expect(isPermissionKey('users:manage')).toBe(true);
     expect(isPermissionKey('not:a-real-permission')).toBe(false);

@@ -14,6 +14,7 @@ import { fuelAlertRouter } from './modules/fuel-alert-engine/fuel-alert.routes.j
 import { fuelLogRouter } from './modules/fuel/fuel-log.routes.js';
 import { generatorRouter } from './modules/generators/generator.routes.js';
 import { healthRouter } from './modules/health/health.routes.js';
+import { maintenanceRouter } from './modules/maintenance/maintenance.routes.js';
 import { operationLogRouter } from './modules/operations/operation-log.routes.js';
 import { projectRouter } from './modules/projects/project.routes.js';
 import { roleRouter } from './modules/roles/role.routes.js';
@@ -46,6 +47,7 @@ export function createApp(): Express {
   app.use('/api', operationLogRouter);
   app.use('/api', fuelLogRouter);
   app.use('/api', fuelAlertRouter);
+  app.use('/api', maintenanceRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
