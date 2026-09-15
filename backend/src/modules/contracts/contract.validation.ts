@@ -83,6 +83,16 @@ export const sharedAssignmentOverrideSchema = z.object({
   justification: z.string().trim().min(1, 'A justification is required'),
 });
 
+export const previewRentSchema = z
+  .object({
+    periodStart: dateSchema,
+    periodEnd: dateSchema,
+  })
+  .refine((data) => data.periodEnd >= data.periodStart, {
+    message: 'periodEnd must be on or after periodStart',
+    path: ['periodEnd'],
+  });
+
 export const listContractsQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional(),
   limit: z.coerce.number().int().positive().optional(),
@@ -101,3 +111,4 @@ export type CancelContractInput = z.infer<typeof cancelContractSchema>;
 export type ListContractsQuery = z.infer<typeof listContractsQuerySchema>;
 export type CheckConflictInput = z.infer<typeof checkConflictSchema>;
 export type SharedAssignmentOverrideInput = z.infer<typeof sharedAssignmentOverrideSchema>;
+export type PreviewRentInput = z.infer<typeof previewRentSchema>;

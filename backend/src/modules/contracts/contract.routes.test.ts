@@ -417,4 +417,66 @@ describe('contract routes (TASK-012)', () => {
     expect(retry.status).toBe(200);
     expect(retry.body.data.status).toBe('Active');
   });
+
+  it('TASK-014 Section 17: only Admin/Finance Manager/Accountant can preview rent', async () => {
+    const ctx = await setupContext();
+    const roles = await seedTestRoles();
+    await createTestUser({ email: 'finance@test.com', password: 'password123', roleId: roles['Finance Manager']._id });
+    await createTestUser({ email: 'ops@test.com', password: 'password123', roleId: roles['Operations Manager']._id });
+    const finance = await loginAs('finance@test.com');
+    const ops = await loginAs('ops@test.com');
+
+    const create = await ctx.admin.post('/api/contracts').send(draftPayload(ctx));
+    const id = create.body.data.id;
+
+    const opsAttempt = await ops.post(`/api/contracts/${id}/preview-rent`).send({
+      periodStart: create.body.data.startDate,
+      periodEnd: create.body.data.endDate,
+    });
+    expect(opsAttempt.status).toBe(403);
+
+    const financeAttempt = await finance.post(`/api/contracts/${id}/preview-rent`).send({
+      periodStart: create.body.data.startDate,
+      periodEnd: create.body.data.endDate,
+    });
+    expect(financeAttempt.status).toBe(200);
+    expect(financeAttempt.body.data.items).toHaveLength(1);
+    expect(financeAttempt.body.data.items[0]).toMatchObject({ generatorId: ctx.generatorId, method: 'monthly' });
+  });
+
+  it('TASK-014 Section 16: a period is clipped to the contract dates, and one entirely outside is rejected with 422', async () => {
+    const ctx = await setupContext();
+    const create = await ctx.admin.post('/api/contracts').send(draftPayload(ctx));
+    const id = create.body.data.id;
+
+    const outside = await ctx.admin.post(`/api/contracts/${id}/preview-rent`).send({
+      periodStart: isoDate(100),
+      periodEnd: isoDate(120),
+    });
+    expect(outside.status).toBe(422);
+
+    // Requested period starts 100 days before the contract and ends inside it — clipped to
+    // the contract's own startDate rather than rejected.
+    const clipped = await ctx.admin.post(`/api/contracts/${id}/preview-rent`).send({
+      periodStart: isoDate(-100),
+      periodEnd: isoDate(0),
+    });
+    expect(clipped.status).toBe(200);
+    expect(Number(clipped.body.data.items[0].amount)).toBeGreaterThan(0);
+  });
+
+  it('TASK-014 FR-004/Section 19: Hourly items with no operation logs preview at 0.00 with a warning', async () => {
+    const ctx = await setupContext();
+    const create = await ctx.admin.post('/api/contracts').send(
+      draftPayload(ctx, { rentalMethod: 'hourly', items: [{ generatorId: ctx.generatorId, billingMethod: 'hourly', unitPrice: 50 }] }),
+    );
+
+    const preview = await ctx.admin.post(`/api/contracts/${create.body.data.id}/preview-rent`).send({
+      periodStart: create.body.data.startDate,
+      periodEnd: create.body.data.endDate,
+    });
+    expect(preview.status).toBe(200);
+    expect(preview.body.data.items[0]).toMatchObject({ amount: '0.00', method: 'hourly' });
+    expect(preview.body.data.items[0].breakdown.warning).toBe('no operation logs in period');
+  });
 });

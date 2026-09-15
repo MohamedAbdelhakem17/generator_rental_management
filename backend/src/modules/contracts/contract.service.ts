@@ -1,11 +1,12 @@
 import { AuditService } from '../audit/audit.service.js';
 import { ConflictEngineService, type ConflictMatch } from '../contract-conflict-engine/service.js';
+import { PricingEngineService } from '../contract-pricing-engine/service.js';
 import { CustomerModel } from '../customers/customer.model.js';
 import { GeneratorModel } from '../generators/generator.model.js';
 import { ProjectModel } from '../projects/project.model.js';
 import { StatusEngineService } from '../status-engine/status-engine.service.js';
 import { ConflictError, NotFoundError, ValidationError, type FieldError } from '../../utils/AppError.js';
-import { toDecimal128 } from '../../services/money.js';
+import { toDecimal128, toDisplayString } from '../../services/money.js';
 import { paginateQuery } from '../../services/pagination.js';
 import { ContractItemModel, type ContractItemDocument } from './contract-item.model.js';
 import { nextContractNumber } from './contract-number.js';
@@ -16,6 +17,7 @@ import type {
   ContractItemInput,
   CreateContractInput,
   ListContractsQuery,
+  PreviewRentInput,
   SharedAssignmentOverrideInput,
   UpdateContractInput,
 } from './contract.validation.js';
@@ -382,5 +384,49 @@ export const ContractService = {
     });
 
     return item;
+  },
+
+  /**
+   * TASK-014: preview-only — never creates an Extract. Section 16: a period outside the
+   * contract's own dates is rejected; a period that only partially overlaps is clipped to
+   * the intersection rather than rejected.
+   */
+  async previewRent(
+    contractId: string,
+    input: PreviewRentInput,
+  ): Promise<{ generatorId: string; method: string; amount: string; breakdown: Record<string, unknown> }[]> {
+    const contract = await findOrThrow(contractId);
+
+    const clippedStart = input.periodStart < contract.startDate ? contract.startDate : input.periodStart;
+    const clippedEnd = input.periodEnd > contract.endDate ? contract.endDate : input.periodEnd;
+    if (clippedStart > clippedEnd) {
+      throw new ValidationError('Validation failed', [
+        { field: 'periodStart', message: "The period falls entirely outside the contract's date range" },
+      ]);
+    }
+
+    const items = await ContractItemModel.find({ contractId });
+
+    return Promise.all(
+      items.map(async (item) => {
+        const { amount, breakdown } = await PricingEngineService.calculateRent(
+          {
+            generatorId: String(item.generatorId),
+            projectId: String(contract.projectId),
+            billingMethod: item.billingMethod,
+            unitPrice: item.unitPrice,
+          },
+          clippedStart,
+          clippedEnd,
+        );
+
+        return {
+          generatorId: String(item.generatorId),
+          method: item.billingMethod,
+          amount: toDisplayString(amount),
+          breakdown,
+        };
+      }),
+    );
   },
 };

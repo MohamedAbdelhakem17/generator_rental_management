@@ -11,6 +11,7 @@ import {
   createContract,
   getContract,
   listContracts,
+  previewRent,
   updateContract,
 } from './contract.controller.js';
 import './contract.registrations.js';
@@ -31,3 +32,4 @@ contractRouter.post(
   requirePermission('contracts:sharedAssignmentOverride'),
   asyncHandler(applySharedAssignmentOverride),
 );
+contractRouter.post('/contracts/:id/preview-rent', requirePermission('contracts:previewRent'), asyncHandler(previewRent));

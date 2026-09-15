@@ -12,6 +12,7 @@ import {
   checkConflictSchema,
   createContractSchema,
   listContractsQuerySchema,
+  previewRentSchema,
   sharedAssignmentOverrideSchema,
   updateContractSchema,
 } from './contract.validation.js';
@@ -130,4 +131,12 @@ export async function applySharedAssignmentOverride(req: Request, res: Response)
       sharedAssignmentJustification: item.sharedAssignmentJustification,
     }),
   );
+}
+
+/** TASK-014: preview-only rent calculation, never creates an Extract. */
+export async function previewRent(req: Request, res: Response): Promise<void> {
+  const { id } = parseOrThrow(idParamSchema, req.params);
+  const input = parseOrThrow(previewRentSchema, req.body);
+  const items = await ContractService.previewRent(id, input);
+  res.status(200).json(successResponse({ items }));
 }

@@ -54,6 +54,14 @@ describe('permission matrix (PRD Section 7.2)', () => {
     }
   });
 
+  it('grants rent preview to Admin/Finance Manager/Accountant only, not Ops Manager (TASK-014 Section 17)', () => {
+    expect(ROLE_PERMISSIONS['System Admin']).toContain('contracts:previewRent');
+    expect(ROLE_PERMISSIONS['Finance Manager']).toContain('contracts:previewRent');
+    expect(ROLE_PERMISSIONS.Accountant).toContain('contracts:previewRent');
+    expect(ROLE_PERMISSIONS['Operations Manager']).not.toContain('contracts:previewRent');
+    expect(ROLE_PERMISSIONS.Viewer).not.toContain('contracts:previewRent');
+  });
+
   it('identifies valid vs. invalid permission keys', () => {
     expect(isPermissionKey('users:manage')).toBe(true);
     expect(isPermissionKey('not:a-real-permission')).toBe(false);
