@@ -38,6 +38,7 @@ export const PERMISSION_KEYS = [
   'extracts:read',
   'extracts:create',
   'extracts:approve',
+  'extracts:cancel',
   'receipts:read',
   'receipts:write',
   'expenses:read',
@@ -96,6 +97,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, PermissionKey[]> = {
     'maintenance:complete',
     'maintenance-alerts:read',
     'maintenance-alerts:acknowledge',
+    'extracts:read',
     'reports:read',
   ],
   'Finance Manager': [
@@ -111,6 +113,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, PermissionKey[]> = {
     'extracts:read',
     'extracts:create',
     'extracts:approve',
+    'extracts:cancel',
     'receipts:read',
     'receipts:write',
     'expenses:read',

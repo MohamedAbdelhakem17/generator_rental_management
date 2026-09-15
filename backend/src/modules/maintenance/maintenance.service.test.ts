@@ -59,14 +59,18 @@ describe('MaintenanceService (TASK-018)', () => {
       'System Admin',
     );
 
-    const error = await MaintenanceService.open(
-      { generatorId: String(generator._id), type: 'Corrective', date: new Date('2026-01-02'), meter: 110 },
-      '000000000000000000000001',
-      'System Admin',
-    ).catch((caught: unknown) => caught as { statusCode: number; errors: { field?: string; message: string }[] });
-
-    expect(error.statusCode).toBe(409);
-    expect(error.errors[0]!.message).toContain(String(first._id));
+    try {
+      await MaintenanceService.open(
+        { generatorId: String(generator._id), type: 'Corrective', date: new Date('2026-01-02'), meter: 110 },
+        '000000000000000000000001',
+        'System Admin',
+      );
+      expect.unreachable('expected a second Open attempt to throw');
+    } catch (caught) {
+      const error = caught as { statusCode: number; errors: { field?: string; message: string }[] };
+      expect(error.statusCode).toBe(409);
+      expect(error.errors[0]!.message).toContain(String(first._id));
+    }
   });
 
   it('a new Open record can be created once the previous one is Cancelled', async () => {
@@ -159,14 +163,18 @@ describe('MaintenanceService (TASK-018)', () => {
 
   it('rejects a meter below the generator current meter', async () => {
     const generator = await createGenerator({ currentMeter: 500 });
-    const error = await MaintenanceService.open(
-      { generatorId: String(generator._id), type: 'Preventive', date: new Date('2026-01-01'), meter: 100 },
-      '000000000000000000000001',
-      'System Admin',
-    ).catch((caught: unknown) => caught as { statusCode: number; errors: { field?: string; message: string }[] });
-
-    expect(error.statusCode).toBe(422);
-    expect(error.errors[0]!.message).toContain('current meter');
+    try {
+      await MaintenanceService.open(
+        { generatorId: String(generator._id), type: 'Preventive', date: new Date('2026-01-01'), meter: 100 },
+        '000000000000000000000001',
+        'System Admin',
+      );
+      expect.unreachable('expected a below-current-meter Open attempt to throw');
+    } catch (caught) {
+      const error = caught as { statusCode: number; errors: { field?: string; message: string }[] };
+      expect(error.statusCode).toBe(422);
+      expect(error.errors[0]!.message).toContain('current meter');
+    }
   });
 
   it('DoD: the partial unique index blocks a second concurrent Open/In Progress record at the DB level', async () => {

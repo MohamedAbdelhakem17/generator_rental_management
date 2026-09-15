@@ -230,7 +230,15 @@ export default function ContractDetailPage() {
         </TabsContent>
 
         <TabsContent value="extracts">
-          <EmptyState title="No extracts yet" description="Billing extracts generated from this contract land here once extract management ships." />
+          <EmptyState
+            title="View this customer's extracts"
+            description="Extracts aren't filterable by contract yet — see every billing document for this customer instead."
+            action={
+              <Link href={`/extracts?customerId=${contract.customer.id}`} className="text-sm font-medium text-primary hover:underline">
+                Go to Extracts
+              </Link>
+            }
+          />
         </TabsContent>
       </Tabs>
 

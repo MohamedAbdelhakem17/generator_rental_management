@@ -108,6 +108,22 @@ describe('permission matrix (PRD Section 7.2)', () => {
     expect(ROLE_PERMISSIONS['Operations Manager']).toContain('maintenance-alerts:acknowledge');
   });
 
+  it('grants Extract View to Admin/Finance Manager/Accountant/Ops Manager/Viewer, Create to Admin/Finance Manager/Accountant, and Approve/Cancel to Admin/Finance Manager only (TASK-020 Section 17)', () => {
+    for (const role of ['System Admin', 'Finance Manager', 'Accountant', 'Operations Manager', 'Viewer'] as const) {
+      expect(ROLE_PERMISSIONS[role]).toContain('extracts:read');
+    }
+    expect(ROLE_PERMISSIONS.Technician).not.toContain('extracts:read');
+
+    expect(ROLE_PERMISSIONS['Finance Manager']).toContain('extracts:create');
+    expect(ROLE_PERMISSIONS.Accountant).toContain('extracts:create');
+    expect(ROLE_PERMISSIONS['Operations Manager']).not.toContain('extracts:create');
+
+    expect(ROLE_PERMISSIONS['Finance Manager']).toContain('extracts:approve');
+    expect(ROLE_PERMISSIONS['Finance Manager']).toContain('extracts:cancel');
+    expect(ROLE_PERMISSIONS.Accountant).not.toContain('extracts:approve');
+    expect(ROLE_PERMISSIONS.Accountant).not.toContain('extracts:cancel');
+  });
+
   it('identifies valid vs. invalid permission keys', () => {
     expect(isPermissionKey('users:manage')).toBe(true);
     expect(isPermissionKey('not:a-real-permission')).toBe(false);
