@@ -35,3 +35,12 @@ const API_TO_BADGE_STATUS: Record<ApiGeneratorStatus, BadgeStatus> = {
 export function toBadgeStatus(status: ApiGeneratorStatus): BadgeStatus {
   return API_TO_BADGE_STATUS[status];
 }
+
+/** TASK-009: one entry from the Status Engine's `StatusChangeLog`, most recent first. */
+export interface StatusHistoryEntry {
+  from: ApiGeneratorStatus;
+  to: ApiGeneratorStatus;
+  reason: string;
+  triggeredBy: 'system' | 'user';
+  at: string;
+}

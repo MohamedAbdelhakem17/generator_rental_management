@@ -65,7 +65,10 @@ export const GeneratorService = {
   },
 
   async create(input: CreateGeneratorInput, actorUserId: string): Promise<GeneratorDocument> {
-    const { status, commercialStatus } = StatusEngineService.derive(null);
+    // A brand-new generator can't yet have an active contract or open maintenance record,
+    // so this is the one call site allowed to set status directly rather than via
+    // `StatusEngineService.recalculate` (which needs an existing document to re-read).
+    const { status, commercialStatus } = StatusEngineService.computeStatus(null, false, false);
 
     let generator: GeneratorDocument;
     try {
@@ -129,23 +132,26 @@ export const GeneratorService = {
     const before = { manualStatus: generator.manualStatus, status: generator.status };
 
     generator.manualStatus = 'Stopped';
-    const { status, commercialStatus } = StatusEngineService.derive(generator.manualStatus);
-    generator.status = status;
-    generator.commercialStatus = commercialStatus;
     await generator.save();
+
+    const { generator: recalculated } = await StatusEngineService.recalculate(generatorId, {
+      reason: input.reason,
+      triggeredBy: 'user',
+    });
 
     await AuditService.record({
       action: 'generator.stop',
       actorUserId,
       entityType: 'Generator',
       entityId: generatorId,
-      metadata: { before, after: { manualStatus: generator.manualStatus, status: generator.status }, reason: input.reason },
+      metadata: {
+        before,
+        after: { manualStatus: recalculated.manualStatus, status: recalculated.status },
+        reason: input.reason,
+      },
     });
 
-    // Business Rule 6.1: a "stopped while commercially assigned" warning notification is
-    // owned by the Notification Engine (TASK-026), which doesn't exist yet — wired in then.
-
-    return generator;
+    return recalculated;
   },
 
   async resume(generatorId: string, actorUserId: string): Promise<GeneratorDocument> {
@@ -153,20 +159,22 @@ export const GeneratorService = {
     const before = { manualStatus: generator.manualStatus, status: generator.status };
 
     generator.manualStatus = null;
-    const { status, commercialStatus } = StatusEngineService.derive(generator.manualStatus);
-    generator.status = status;
-    generator.commercialStatus = commercialStatus;
     await generator.save();
+
+    const { generator: recalculated } = await StatusEngineService.recalculate(generatorId, {
+      reason: 'Manual resume',
+      triggeredBy: 'user',
+    });
 
     await AuditService.record({
       action: 'generator.resume',
       actorUserId,
       entityType: 'Generator',
       entityId: generatorId,
-      metadata: { before, after: { manualStatus: generator.manualStatus, status: generator.status } },
+      metadata: { before, after: { manualStatus: recalculated.manualStatus, status: recalculated.status } },
     });
 
-    return generator;
+    return recalculated;
   },
 
   /** FR-002: the one Admin-only exception to "currentMeter only moves via Operation Log entries" (TASK-013). */

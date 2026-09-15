@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { requireAuth } from '../../middleware/requireAuth.js';
 import { requirePermission } from '../../middleware/requirePermission.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
+import { getGeneratorStatusHistory } from '../status-engine/status-engine.controller.js';
 import {
   correctGeneratorMeter,
   createGenerator,
@@ -20,6 +21,11 @@ generatorRouter.use('/generators', requireAuth);
 
 generatorRouter.get('/generators', requirePermission('generators:read'), asyncHandler(listGenerators));
 generatorRouter.get('/generators/:id', requirePermission('generators:read'), asyncHandler(getGenerator));
+generatorRouter.get(
+  '/generators/:id/status-history',
+  requirePermission('generators:read'),
+  asyncHandler(getGeneratorStatusHistory),
+);
 generatorRouter.post('/generators', requirePermission('generators:write'), asyncHandler(createGenerator));
 generatorRouter.patch('/generators/:id', requirePermission('generators:write'), asyncHandler(updateGenerator));
 generatorRouter.post('/generators/:id/stop', requirePermission('generators:write'), asyncHandler(stopGenerator));

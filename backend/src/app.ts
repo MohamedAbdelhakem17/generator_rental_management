@@ -11,6 +11,7 @@ import { authRouter } from './modules/auth/auth.routes.js';
 import { generatorRouter } from './modules/generators/generator.routes.js';
 import { healthRouter } from './modules/health/health.routes.js';
 import { roleRouter } from './modules/roles/role.routes.js';
+import { statusEngineRouter } from './modules/status-engine/status-engine.routes.js';
 import { userRouter } from './modules/users/user.routes.js';
 
 export function createApp(): Express {
@@ -32,6 +33,7 @@ export function createApp(): Express {
   app.use('/api', userRouter);
   app.use('/api', roleRouter);
   app.use('/api', generatorRouter);
+  app.use('/api', statusEngineRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

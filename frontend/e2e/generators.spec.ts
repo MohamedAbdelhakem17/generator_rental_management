@@ -50,12 +50,15 @@ test.describe('Generators (TASK-008)', () => {
     await page.getByRole('button', { name: 'Stop generator' }).click();
 
     await expect(page.getByText(`${code} marked Stopped`)).toBeVisible();
-    await expect(page.getByText('Stopped', { exact: true })).toBeVisible();
+    await expect(page.getByTestId('generator-header-status').getByText('Stopped', { exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: 'Resume' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Resume' }).click();
     await expect(page.getByText(`${code} resumed`)).toBeVisible();
-    await expect(page.getByText('Available', { exact: true })).toBeVisible();
+    await expect(page.getByTestId('generator-header-status').getByText('Available', { exact: true })).toBeVisible();
+
+    await expect(page.getByText('Status history')).toBeVisible();
+    await expect(page.getByText('E2E test stop')).toBeVisible();
   });
 
   test('a Viewer sees the fleet read-only, with no create/edit/stop actions', async ({ page }) => {

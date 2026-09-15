@@ -12,6 +12,7 @@ export const PERMISSION_KEYS = [
   'generators:override',
   'generators:delete',
   'generators:meterCorrection',
+  'status-engine:recalculate',
   'customers:read',
   'customers:write',
   'customers:delete',

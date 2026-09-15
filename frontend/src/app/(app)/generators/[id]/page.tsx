@@ -17,8 +17,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GeneratorFormDialog } from '../generator-form-dialog';
+import { StatusHistoryList } from '../status-history-list';
 import { StopGeneratorDialog } from '../stop-generator-dialog';
-import { toBadgeStatus, type GeneratorRow } from '../types';
+import { toBadgeStatus, type GeneratorRow, type StatusHistoryEntry } from '../types';
 
 const PLACEHOLDER_TABS = [
   { value: 'operations', label: 'Operations', description: 'Operation log entries and running hours land here once daily operations tracking ships.' },
@@ -42,6 +43,12 @@ export default function GeneratorProfilePage() {
   const { data: generator, isLoading, isError, refetch } = useQuery({
     queryKey: ['generators', params.id],
     queryFn: ({ signal }) => apiClient.get<GeneratorRow>(`/api/generators/${params.id}`, undefined, signal),
+  });
+
+  const { data: statusHistory, isLoading: isStatusHistoryLoading } = useQuery({
+    queryKey: ['generators', params.id, 'status-history'],
+    queryFn: ({ signal }) =>
+      apiClient.get<StatusHistoryEntry[]>(`/api/generators/${params.id}/status-history`, undefined, signal),
   });
 
   function invalidate() {
@@ -84,7 +91,9 @@ export default function GeneratorProfilePage() {
               <ArrowLeft className="size-4" aria-hidden />
               Back to fleet
             </Button>
-            <StatusBadge status={toBadgeStatus(generator.status)} />
+            <span data-testid="generator-header-status">
+              <StatusBadge status={toBadgeStatus(generator.status)} />
+            </span>
             {canWrite ? (
               <>
                 <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
@@ -147,6 +156,10 @@ export default function GeneratorProfilePage() {
                 <Field label="Maintenance cycle" value={`${generator.maintenanceCycleHours} h`} />
               </dl>
             </div>
+          </div>
+
+          <div className="mt-4">
+            <StatusHistoryList entries={statusHistory ?? []} isLoading={isStatusHistoryLoading} />
           </div>
         </TabsContent>
 
