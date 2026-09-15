@@ -88,7 +88,6 @@ export const ROLE_PERMISSIONS: Record<RoleName, PermissionKey[]> = {
     'customers:write',
     'customers:delete',
     'projects:read',
-    'projects:write',
     'extracts:read',
     'extracts:create',
     'extracts:approve',
@@ -102,6 +101,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, PermissionKey[]> = {
   Accountant: [
     'generators:read',
     'customers:read',
+    'projects:read',
     'extracts:read',
     'extracts:create',
     'receipts:read',

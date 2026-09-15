@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Pencil, Power, PowerOff } from 'lucide-react';
+import { ArrowLeft, FolderKanban, Pencil, Power, PowerOff } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { apiClient, ApiError } from '@/lib/apiClient';
+import { apiClient, ApiError, type PaginatedResponse } from '@/lib/apiClient';
 import { useSession } from '@/lib/session/session-provider';
 import { cn } from '@/lib/utils';
 import { STATUS_TONE_CLASSES } from '@/lib/status-tone';
@@ -16,11 +17,11 @@ import { ErrorState } from '@/components/shared/error-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type { ProjectRow } from '../../projects/types';
 import { CustomerFormDialog } from '../customer-form-dialog';
 import type { CustomerRow } from '../types';
 
 const PLACEHOLDER_TABS = [
-  { value: 'projects', label: 'Projects', description: 'This customer’s job sites land here once project management ships.' },
   { value: 'contracts', label: 'Contracts', description: 'Rental contracts with this customer land here once contract management ships.' },
   { value: 'extracts', label: 'Extracts', description: 'Billing extracts land here once extract management ships.' },
   { value: 'receipts', label: 'Receipts', description: 'Payments received land here once receipt tracking ships.' },
@@ -49,6 +50,12 @@ export default function CustomerProfilePage() {
   const { data: customer, isLoading, isError, refetch } = useQuery({
     queryKey: ['customers', params.id],
     queryFn: ({ signal }) => apiClient.get<CustomerRow>(`/api/customers/${params.id}`, undefined, signal),
+  });
+
+  const { data: projects, isLoading: isProjectsLoading } = useQuery({
+    queryKey: ['projects', { customerId: params.id }],
+    queryFn: ({ signal }): Promise<PaginatedResponse<ProjectRow>> =>
+      apiClient.getPaginated<ProjectRow>('/api/projects', { customerId: params.id, limit: 50, sort: 'name' }, signal),
   });
 
   function invalidate() {
@@ -112,6 +119,7 @@ export default function CustomerProfilePage() {
       <Tabs defaultValue="overview" className="flex flex-col gap-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="projects">Projects</TabsTrigger>
           {PLACEHOLDER_TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.label}
@@ -131,6 +139,32 @@ export default function CustomerProfilePage() {
           </div>
         </TabsContent>
 
+        <TabsContent value="projects">
+          {isProjectsLoading ? (
+            <Skeleton className="h-32 w-full" />
+          ) : !projects || projects.items.length === 0 ? (
+            <EmptyState
+              icon={FolderKanban}
+              title="No projects yet"
+              description="Job sites created under this customer show up here."
+            />
+          ) : (
+            <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-surface">
+              {projects.items.map((project) => (
+                <li key={project.id} className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm">
+                  <div className="flex flex-col">
+                    <Link href={`/projects/${project.id}`} className="font-medium text-primary hover:underline">
+                      {project.name}
+                    </Link>
+                    <span className="text-xs text-muted-foreground">{project.code}</span>
+                  </div>
+                  <ProjectStatusBadge status={project.status} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </TabsContent>
+
         {PLACEHOLDER_TABS.map((tab) => (
           <TabsContent key={tab.value} value={tab.value}>
             <EmptyState title={`No ${tab.label.toLowerCase()} data yet`} description={tab.description} />
@@ -140,6 +174,16 @@ export default function CustomerProfilePage() {
 
       <CustomerFormDialog open={isEditing} onOpenChange={setIsEditing} customer={customer} />
     </>
+  );
+}
+
+function ProjectStatusBadge({ status }: { status: ProjectRow['status'] }) {
+  const tone = STATUS_TONE_CLASSES[status === 'Active' ? 'success' : 'neutral'];
+  return (
+    <span className={cn('inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium', tone.bg, tone.fg, tone.border)}>
+      <span className={cn('size-1.5 shrink-0 rounded-full', tone.dot)} aria-hidden />
+      {status}
+    </span>
   );
 }
 
