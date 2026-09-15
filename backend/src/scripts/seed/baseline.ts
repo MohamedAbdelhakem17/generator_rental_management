@@ -50,6 +50,7 @@ async function seedDefaultSettings(): Promise<boolean> {
     currency: 'EGP',
     fuelTolerancePercent: '15',
     fuelCriticalTolerancePercent: '30',
+    maintenanceUpcomingBufferHours: 50,
   });
 
   return true;

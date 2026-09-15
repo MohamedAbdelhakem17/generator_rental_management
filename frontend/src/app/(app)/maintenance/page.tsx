@@ -18,6 +18,7 @@ import { DataTablePagination } from '@/components/data-table/pagination';
 import { createActionsColumn } from '@/components/data-table/columns';
 import { SelectFilter } from '@/components/data-table/filters/select-filter';
 import { DateRangeFilter, type DateRangeValue } from '@/components/data-table/filters/date-range-filter';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +28,7 @@ import {
 import { Button } from '@/components/ui/button';
 import type { GeneratorRow } from '../generators/types';
 import { CancelDialog } from './cancel-dialog';
+import { MaintenanceAlertsTab } from './maintenance-alerts-tab';
 import { MaintenanceFormDialog } from './maintenance-form-dialog';
 import type { MaintenanceRow, MaintenanceStatus } from './types';
 
@@ -67,6 +69,7 @@ function MaintenancePageContent() {
   const { user } = useSession();
   const canWrite = user?.permissions.includes('maintenance:write') ?? false;
   const canComplete = user?.permissions.includes('maintenance:complete') ?? false;
+  const canViewAlerts = user?.permissions.includes('maintenance-alerts:read') ?? false;
 
   const [isOpening, setIsOpening] = useState(false);
   const [editTarget, setEditTarget] = useState<MaintenanceRow | null>(null);
@@ -182,6 +185,79 @@ function MaintenancePageContent() {
         }
       />
 
+      {canViewAlerts ? (
+        <Tabs defaultValue="records" className="flex flex-col gap-4">
+          <TabsList>
+            <TabsTrigger value="records">Records</TabsTrigger>
+            <TabsTrigger value="alerts">Alerts</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="records" className="flex flex-col gap-4">
+            <MaintenanceFiltersAndTable
+              table={table}
+              dateRange={dateRange}
+              generators={generators}
+              columns={columns}
+              canWrite={canWrite}
+            />
+          </TabsContent>
+
+          <TabsContent value="alerts">
+            <MaintenanceAlertsTab />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <MaintenanceFiltersAndTable
+          table={table}
+          dateRange={dateRange}
+          generators={generators}
+          columns={columns}
+          canWrite={canWrite}
+        />
+      )}
+
+      {canWrite ? <MaintenanceFormDialog open={isOpening} onOpenChange={setIsOpening} /> : null}
+
+      {canWrite ? (
+        <MaintenanceFormDialog
+          open={editTarget !== null}
+          onOpenChange={(open) => !open && setEditTarget(null)}
+          record={editTarget}
+        />
+      ) : null}
+
+      {canComplete ? (
+        <CancelDialog
+          open={cancelTarget !== null}
+          onOpenChange={(open) => !open && setCancelTarget(null)}
+          generatorCode={cancelTarget?.generator.code ?? ''}
+          onCancelled={async (reason) => {
+            if (!cancelTarget) return;
+            await apiClient.post(`/api/maintenance/${cancelTarget.id}/cancel`, { reason });
+            await invalidate();
+          }}
+        />
+      ) : null}
+    </>
+  );
+}
+
+function MaintenanceFiltersAndTable({
+  table,
+  dateRange,
+  generators,
+  columns,
+  canWrite,
+}: {
+  table: ReturnType<typeof useDataTableQuery<MaintenanceRow>>;
+  dateRange: DateRangeValue;
+  generators: { items: GeneratorRow[] } | undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  columns: ColumnDef<MaintenanceRow, any>[];
+  canWrite: boolean;
+}) {
+  return (
+    <>
       <div className="flex flex-wrap items-center gap-2">
         <SelectFilter
           value={table.filters.generatorId}
@@ -244,29 +320,6 @@ function MaintenancePageContent() {
       />
 
       <DataTablePagination meta={table.meta} onPageChange={table.setPage} onPageSizeChange={table.setPageSize} />
-
-      {canWrite ? <MaintenanceFormDialog open={isOpening} onOpenChange={setIsOpening} /> : null}
-
-      {canWrite ? (
-        <MaintenanceFormDialog
-          open={editTarget !== null}
-          onOpenChange={(open) => !open && setEditTarget(null)}
-          record={editTarget}
-        />
-      ) : null}
-
-      {canComplete ? (
-        <CancelDialog
-          open={cancelTarget !== null}
-          onOpenChange={(open) => !open && setCancelTarget(null)}
-          generatorCode={cancelTarget?.generator.code ?? ''}
-          onCancelled={async (reason) => {
-            if (!cancelTarget) return;
-            await apiClient.post(`/api/maintenance/${cancelTarget.id}/cancel`, { reason });
-            await invalidate();
-          }}
-        />
-      ) : null}
     </>
   );
 }

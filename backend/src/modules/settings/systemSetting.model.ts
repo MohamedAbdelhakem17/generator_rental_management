@@ -22,6 +22,10 @@ export interface SystemSettingAttrs {
    * UI, same "the module that needs it now extends this shared seed" precedent as every
    * other cross-task model extension in this codebase (e.g. TASK-013 on ContractItem). */
   fuelCriticalTolerancePercent: Types.Decimal128;
+  /** TASK-019 FR-002: the Maintenance Schedule Engine's "Upcoming" buffer, in meter-hours
+   * before `nextMaintenanceMeter` — a plain Number (not Decimal128), since it's a meter-hours
+   * count, not money. */
+  maintenanceUpcomingBufferHours: number;
 }
 
 const systemSettingSchema = new Schema<SystemSettingAttrs>(
@@ -31,6 +35,7 @@ const systemSettingSchema = new Schema<SystemSettingAttrs>(
     currency: { type: String, required: true },
     fuelTolerancePercent: { type: Schema.Types.Decimal128, required: true },
     fuelCriticalTolerancePercent: { type: Schema.Types.Decimal128, required: true },
+    maintenanceUpcomingBufferHours: { type: Number, required: true, default: 50, min: 0 },
   },
   { timestamps: true },
 );

@@ -19,3 +19,18 @@ export interface MaintenanceRow {
   cancelReason: string;
   createdAt: string;
 }
+
+export type MaintenanceAlertLevel = 'Upcoming' | 'Overdue';
+export type MaintenanceAlertStatus = 'Open' | 'Acknowledged' | 'Resolved';
+
+export interface MaintenanceAlertRow {
+  id: string;
+  generator: { id: string; code: string };
+  level: MaintenanceAlertLevel;
+  status: MaintenanceAlertStatus;
+  dueAtMeter: number;
+  currentMeterAtCreation: number;
+  resolvedAt: string | null;
+  resolvedBy: 'system' | 'user' | null;
+  createdAt: string;
+}

@@ -169,6 +169,10 @@ export const MaintenanceService = {
     // order, so opening (not only starting) must recalculate status.
     await recalculateStatus(String(record.generatorId), 'Maintenance opened');
 
+    // TASK-019 Edge Case (Section 20): a new Maintenance record addresses any outstanding
+    // schedule alert for this generator.
+    await MaintenanceScheduleEngineService.autoResolveForGenerator(String(record.generatorId), String(record._id));
+
     await populateRefs(record);
     return record;
   },

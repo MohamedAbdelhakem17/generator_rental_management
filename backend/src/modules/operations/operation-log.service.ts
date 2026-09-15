@@ -1,5 +1,6 @@
 import { AuditService } from '../audit/audit.service.js';
 import { GeneratorModel } from '../generators/generator.model.js';
+import { MaintenanceScheduleEngineService } from '../maintenance-schedule-engine/service.js';
 import { ProjectModel } from '../projects/project.model.js';
 import { isGeneratorAssignedToUser } from '../users/user.service.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../utils/AppError.js';
@@ -139,6 +140,10 @@ export const OperationLogService = {
       metadata: { after: log.toObject() },
     });
 
+    // TASK-019 FR-002: re-evaluate on every write, not only the hourly sweep, so an Overdue
+    // alert appears promptly after the meter crosses the threshold.
+    await MaintenanceScheduleEngineService.evaluateGenerator(input.generatorId);
+
     await populateRefs(log);
     return log;
   },
@@ -186,6 +191,9 @@ export const OperationLogService = {
         reason: input.reason,
       },
     });
+
+    // TASK-019 FR-002: a correction can also move currentMeter across the due threshold.
+    await MaintenanceScheduleEngineService.evaluateGenerator(String(original.generatorId));
 
     await populateRefs(corrected);
     return corrected;

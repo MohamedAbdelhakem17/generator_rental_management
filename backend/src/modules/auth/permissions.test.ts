@@ -100,6 +100,14 @@ describe('permission matrix (PRD Section 7.2)', () => {
     }
   });
 
+  it('restricts maintenance-alert visibility and acknowledgement to Admin/Ops Manager/Technician (TASK-019 Section 17)', () => {
+    for (const role of ['Finance Manager', 'Accountant', 'Viewer'] as const) {
+      expect(ROLE_PERMISSIONS[role]).not.toContain('maintenance-alerts:read');
+    }
+    expect(ROLE_PERMISSIONS.Technician).toContain('maintenance-alerts:acknowledge');
+    expect(ROLE_PERMISSIONS['Operations Manager']).toContain('maintenance-alerts:acknowledge');
+  });
+
   it('identifies valid vs. invalid permission keys', () => {
     expect(isPermissionKey('users:manage')).toBe(true);
     expect(isPermissionKey('not:a-real-permission')).toBe(false);
