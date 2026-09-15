@@ -8,6 +8,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { authRouter } from './modules/auth/auth.routes.js';
+import { customerRouter } from './modules/customers/customer.routes.js';
 import { generatorRouter } from './modules/generators/generator.routes.js';
 import { healthRouter } from './modules/health/health.routes.js';
 import { roleRouter } from './modules/roles/role.routes.js';
@@ -34,6 +35,7 @@ export function createApp(): Express {
   app.use('/api', roleRouter);
   app.use('/api', generatorRouter);
   app.use('/api', statusEngineRouter);
+  app.use('/api', customerRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
