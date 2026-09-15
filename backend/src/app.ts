@@ -12,6 +12,7 @@ import { contractRouter } from './modules/contracts/contract.routes.js';
 import { customerRouter } from './modules/customers/customer.routes.js';
 import { generatorRouter } from './modules/generators/generator.routes.js';
 import { healthRouter } from './modules/health/health.routes.js';
+import { operationLogRouter } from './modules/operations/operation-log.routes.js';
 import { projectRouter } from './modules/projects/project.routes.js';
 import { roleRouter } from './modules/roles/role.routes.js';
 import { statusEngineRouter } from './modules/status-engine/status-engine.routes.js';
@@ -40,6 +41,7 @@ export function createApp(): Express {
   app.use('/api', customerRouter);
   app.use('/api', projectRouter);
   app.use('/api', contractRouter);
+  app.use('/api', operationLogRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

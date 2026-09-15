@@ -8,6 +8,7 @@ export const createUserSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
   role: objectIdSchema,
   active: z.boolean().optional(),
+  assignedGenerators: z.array(objectIdSchema).optional(),
 });
 
 export const updateUserSchema = z
@@ -16,6 +17,7 @@ export const updateUserSchema = z
     email: z.string().trim().email('Invalid email format').optional(),
     role: objectIdSchema.optional(),
     active: z.boolean().optional(),
+    assignedGenerators: z.array(objectIdSchema).optional(),
   })
   .refine((data) => Object.keys(data).length > 0, { message: 'At least one field is required' });
 

@@ -1,4 +1,5 @@
 import { AuditService } from '../audit/audit.service.js';
+import { GeneratorModel } from '../generators/generator.model.js';
 import { RoleModel } from '../roles/role.model.js';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../utils/AppError.js';
 import { hashPassword } from '../../utils/password.js';
@@ -23,6 +24,26 @@ async function assertRoleExists(roleId: string) {
     throw new ValidationError('Validation failed', [{ field: 'role', message: 'Role does not exist' }]);
   }
   return role;
+}
+
+async function assertGeneratorsExist(generatorIds: string[]): Promise<void> {
+  if (generatorIds.length === 0) return;
+  const count = await GeneratorModel.countDocuments({ _id: { $in: generatorIds }, isDeleted: { $ne: true } });
+  if (count !== generatorIds.length) {
+    throw new ValidationError('Validation failed', [
+      { field: 'assignedGenerators', message: 'One or more generators do not exist' },
+    ]);
+  }
+}
+
+/**
+ * Shared by every module whose Section 17 matrix says "Technician (assigned only)" —
+ * Operations (TASK-015), Fuel (TASK-016), Maintenance (TASK-018), and their alert modules —
+ * so the assignment check has exactly one owner.
+ */
+export async function isGeneratorAssignedToUser(userId: string, generatorId: string): Promise<boolean> {
+  const count = await UserModel.countDocuments({ _id: userId, assignedGenerators: generatorId });
+  return count > 0;
 }
 
 async function countActiveAdmins(excludeUserId?: string): Promise<number> {
@@ -56,11 +77,13 @@ export const UserService = {
     });
 
     await UserModel.populate(result.items, { path: 'role', select: 'name' });
+    await UserModel.populate(result.items, { path: 'assignedGenerators', select: 'code' });
     return result;
   },
 
   async create(input: CreateUserInput, actorUserId: string): Promise<UserDocument> {
     await assertRoleExists(input.role);
+    await assertGeneratorsExist(input.assignedGenerators ?? []);
 
     const existing = await UserModel.findOne({ email: input.email.toLowerCase() });
     if (existing) {
@@ -74,6 +97,7 @@ export const UserService = {
       passwordHash,
       role: input.role,
       active: input.active ?? true,
+      assignedGenerators: input.assignedGenerators ?? [],
     });
 
     await AuditService.record({
@@ -85,6 +109,7 @@ export const UserService = {
     });
 
     await user.populate<{ role: { name: string } }>('role', 'name');
+    await user.populate('assignedGenerators', 'code');
     return user;
   },
 
@@ -113,6 +138,10 @@ export const UserService = {
       await assertRoleExists(input.role);
       user.role = input.role as unknown as UserDocument['role'];
     }
+    if (input.assignedGenerators !== undefined) {
+      await assertGeneratorsExist(input.assignedGenerators);
+      user.assignedGenerators = input.assignedGenerators as unknown as UserDocument['assignedGenerators'];
+    }
     if (input.name !== undefined) user.name = input.name;
     if (input.email !== undefined) user.email = input.email.toLowerCase();
     if (input.active !== undefined) user.active = input.active;
@@ -135,6 +164,7 @@ export const UserService = {
     });
 
     await user.populate<{ role: { name: string } }>('role', 'name');
+    await user.populate('assignedGenerators', 'code');
     return user;
   },
 

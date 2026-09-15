@@ -7,6 +7,8 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
+import { useQuery } from '@tanstack/react-query';
+
 import { apiClient, ApiError } from '@/lib/apiClient';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -21,8 +23,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { GeneratorRow } from '../generators/types';
 import { useRolesQuery } from './use-roles';
 import type { UserRow } from './types';
+
+const TECHNICIAN_ROLE_NAME = 'Technician';
 
 const baseSchema = z.object({
   name: z.string().trim().min(2, 'Enter at least 2 characters'),
@@ -30,6 +35,7 @@ const baseSchema = z.object({
   password: z.string().optional(),
   role: z.string().min(1, 'Choose a role'),
   active: z.boolean(),
+  assignedGenerators: z.array(z.string()),
 });
 
 /** Password is required on create only — one schema shape so the form's type stays stable across modes. */
@@ -54,20 +60,34 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
   const isEdit = Boolean(user);
   const queryClient = useQueryClient();
   const { data: roles } = useRolesQuery();
+  const { data: generators } = useQuery({
+    queryKey: ['generators', 'select'],
+    queryFn: ({ signal }) => apiClient.getPaginated<GeneratorRow>('/api/generators', { limit: 100, sort: 'code' }, signal),
+  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(buildSchema(isEdit)),
-    defaultValues: { name: '', email: '', password: '', role: '', active: true },
+    defaultValues: { name: '', email: '', password: '', role: '', active: true, assignedGenerators: [] },
   });
 
   useEffect(() => {
     if (!open) return;
     form.reset(
       user
-        ? { name: user.name, email: user.email, password: '', role: user.role.id, active: user.active }
-        : { name: '', email: '', password: '', role: '', active: true },
+        ? {
+            name: user.name,
+            email: user.email,
+            password: '',
+            role: user.role.id,
+            active: user.active,
+            assignedGenerators: user.assignedGenerators.map((generator) => generator.id),
+          }
+        : { name: '', email: '', password: '', role: '', active: true, assignedGenerators: [] },
     );
   }, [open, user, form]);
+
+  const selectedRoleName = roles?.items.find((role) => role.id === form.watch('role'))?.name;
+  const isTechnician = selectedRoleName === TECHNICIAN_ROLE_NAME;
 
   async function onSubmit(values: FormValues) {
     try {
@@ -77,6 +97,7 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
           email: values.email,
           role: values.role,
           active: values.active,
+          assignedGenerators: values.assignedGenerators,
         });
         toast.success(`Updated ${values.name}`);
       } else {
@@ -145,6 +166,39 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
               <p className="text-xs text-destructive">{form.formState.errors.role.message}</p>
             ) : null}
           </div>
+
+          {isTechnician ? (
+            <div className="flex flex-col gap-1.5">
+              <Label>Assigned generators</Label>
+              <p className="text-xs text-muted-foreground">
+                A Technician may only log operations/fuel/maintenance entries for generators assigned here.
+              </p>
+              <div className="flex max-h-40 flex-col gap-2 overflow-y-auto rounded-md border border-border p-2.5">
+                {generators?.items.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No generators registered yet.</p>
+                ) : (
+                  generators?.items.map((generator) => {
+                    const assigned = form.watch('assignedGenerators');
+                    const checked = assigned.includes(generator.id);
+                    return (
+                      <label key={generator.id} className="flex items-center gap-2 text-sm text-foreground">
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(next) =>
+                            form.setValue(
+                              'assignedGenerators',
+                              next ? [...assigned, generator.id] : assigned.filter((id) => id !== generator.id),
+                            )
+                          }
+                        />
+                        {generator.code}
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          ) : null}
 
           <label className="flex items-center gap-2 text-sm text-foreground">
             <Checkbox

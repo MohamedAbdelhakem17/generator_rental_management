@@ -7,8 +7,11 @@ import type { UserAttrs } from './user.model.js';
 import { UserService } from './user.service.js';
 import { createUserSchema, listUsersQuerySchema, updateUserSchema } from './user.validation.js';
 
-/** `role` is always populated with at least `name` before this runs — see UserService. */
-type PopulatedUser = Omit<UserAttrs, 'role'> & { role: { _id: Types.ObjectId; name: string } };
+/** `role`/`assignedGenerators` are always populated before this runs — see UserService. */
+type PopulatedUser = Omit<UserAttrs, 'role' | 'assignedGenerators'> & {
+  role: { _id: Types.ObjectId; name: string };
+  assignedGenerators: { _id: Types.ObjectId; code: string }[];
+};
 
 function toSafeUser(user: PopulatedUser) {
   return {
@@ -17,6 +20,7 @@ function toSafeUser(user: PopulatedUser) {
     email: user.email,
     role: { id: String(user.role._id), name: user.role.name },
     active: user.active,
+    assignedGenerators: user.assignedGenerators.map((generator) => ({ id: String(generator._id), code: generator.code })),
     lastLoginAt: user.lastLoginAt,
     createdAt: user.createdAt,
   };

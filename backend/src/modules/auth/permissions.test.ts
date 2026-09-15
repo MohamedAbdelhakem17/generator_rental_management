@@ -62,6 +62,13 @@ describe('permission matrix (PRD Section 7.2)', () => {
     expect(ROLE_PERMISSIONS.Viewer).not.toContain('contracts:previewRent');
   });
 
+  it('grants operation log correction to Admin/Ops Manager only, not Technician (TASK-015 Section 17)', () => {
+    expect(ROLE_PERMISSIONS['System Admin']).toContain('operations:correct');
+    expect(ROLE_PERMISSIONS['Operations Manager']).toContain('operations:correct');
+    expect(ROLE_PERMISSIONS.Technician).not.toContain('operations:correct');
+    expect(ROLE_PERMISSIONS.Technician).toContain('operations:write');
+  });
+
   it('identifies valid vs. invalid permission keys', () => {
     expect(isPermissionKey('users:manage')).toBe(true);
     expect(isPermissionKey('not:a-real-permission')).toBe(false);

@@ -16,13 +16,13 @@ import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type { OperationLogRow } from '../../operations/types';
 import { GeneratorFormDialog } from '../generator-form-dialog';
 import { StatusHistoryList } from '../status-history-list';
 import { StopGeneratorDialog } from '../stop-generator-dialog';
 import { toBadgeStatus, type GeneratorRow, type StatusHistoryEntry } from '../types';
 
 const PLACEHOLDER_TABS = [
-  { value: 'operations', label: 'Operations', description: 'Operation log entries and running hours land here once daily operations tracking ships.' },
   { value: 'fuel', label: 'Fuel', description: 'Fuel fill-ups and consumption trends land here once fuel management ships.' },
   { value: 'maintenance', label: 'Maintenance', description: 'Service history and the next due date land here once maintenance tracking ships.' },
   { value: 'contracts', label: 'Contracts', description: 'Rental contracts this unit has been assigned to land here once contract management ships.' },
@@ -49,6 +49,12 @@ export default function GeneratorProfilePage() {
     queryKey: ['generators', params.id, 'status-history'],
     queryFn: ({ signal }) =>
       apiClient.get<StatusHistoryEntry[]>(`/api/generators/${params.id}/status-history`, undefined, signal),
+  });
+
+  const { data: operationLogs, isLoading: isOperationLogsLoading } = useQuery({
+    queryKey: ['operations', { generatorId: params.id }],
+    queryFn: ({ signal }) =>
+      apiClient.getPaginated<OperationLogRow>('/api/operations', { generatorId: params.id, limit: 20, sort: '-date' }, signal),
   });
 
   function invalidate() {
@@ -119,6 +125,7 @@ export default function GeneratorProfilePage() {
       <Tabs defaultValue="overview" className="flex flex-col gap-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="operations">Operations</TabsTrigger>
           {PLACEHOLDER_TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.label}
@@ -161,6 +168,34 @@ export default function GeneratorProfilePage() {
           <div className="mt-4">
             <StatusHistoryList entries={statusHistory ?? []} isLoading={isStatusHistoryLoading} />
           </div>
+        </TabsContent>
+
+        <TabsContent value="operations">
+          {isOperationLogsLoading ? (
+            <Skeleton className="h-32 w-full" />
+          ) : !operationLogs || operationLogs.items.length === 0 ? (
+            <EmptyState
+              icon={Gauge}
+              title="No operation logs yet"
+              description="Daily meter readings for this generator show up here once they're logged."
+            />
+          ) : (
+            <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-surface">
+              {operationLogs.items.map((log) => (
+                <li key={log.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-sm">
+                  <div className="flex flex-col">
+                    <span className="text-foreground">{new Date(log.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                    <span className="text-xs text-muted-foreground">{log.project.name}</span>
+                  </div>
+                  <span className="tabular-data text-muted-foreground">
+                    {log.startMeter} → {log.endMeter}
+                  </span>
+                  <span className="tabular-data text-foreground">{log.operatingHours}h</span>
+                  {log.status === 'Superseded' ? <span className="text-xs text-muted-foreground">Superseded</span> : null}
+                </li>
+              ))}
+            </ul>
+          )}
         </TabsContent>
 
         {PLACEHOLDER_TABS.map((tab) => (

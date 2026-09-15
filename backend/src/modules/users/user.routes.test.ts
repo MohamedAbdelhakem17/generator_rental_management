@@ -66,6 +66,41 @@ describe('user routes (permission matrix + business rules)', () => {
     expect(update.body.data.active).toBe(false);
   });
 
+  it('TASK-015: creates a Technician with assigned generators and can replace the list on update', async () => {
+    const roles = await seedTestRoles();
+    await createTestUser({ email: 'admin@test.com', password: 'password123', roleId: roles['System Admin']._id });
+    const admin = await loginAs('admin@test.com');
+
+    const generator = await admin.post('/api/generators').send({
+      code: 'GEN-ASSIGN-1',
+      specifications: { kva: 100, brand: 'Cummins', model: 'C100', serialNumber: 'SN-ASSIGN-1' },
+      normalFuelConsumption: 10,
+    });
+
+    const create = await admin.post('/api/users').send({
+      name: 'Field Tech',
+      email: 'fieldtech@test.com',
+      password: 'password123',
+      role: String(roles.Technician._id),
+      assignedGenerators: [generator.body.data.id],
+    });
+    expect(create.status).toBe(201);
+    expect(create.body.data.assignedGenerators).toEqual([{ id: generator.body.data.id, code: 'GEN-ASSIGN-1' }]);
+
+    const unknownGenerator = await admin.post('/api/users').send({
+      name: 'Bad Tech',
+      email: 'badtech@test.com',
+      password: 'password123',
+      role: String(roles.Technician._id),
+      assignedGenerators: ['000000000000000000000000'],
+    });
+    expect(unknownGenerator.status).toBe(422);
+
+    const update = await admin.patch(`/api/users/${create.body.data.id}`).send({ assignedGenerators: [] });
+    expect(update.status).toBe(200);
+    expect(update.body.data.assignedGenerators).toEqual([]);
+  });
+
   it('rejects creating a user with a duplicate email with 409', async () => {
     const roles = await seedTestRoles();
     await createTestUser({ email: 'admin@test.com', password: 'password123', roleId: roles['System Admin']._id });

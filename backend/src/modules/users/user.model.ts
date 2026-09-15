@@ -11,6 +11,10 @@ export interface UserAttrs extends SoftDeleteFields, TimestampFields {
   role: Types.ObjectId;
   active: boolean;
   lastLoginAt: Date | null;
+  /** TASK-015 FR: which generators a Technician may log Operations/Fuel/Maintenance entries
+   * for — enforced server-side wherever a task says "Technician (assigned only)". Meaningless
+   * for non-Technician roles but harmless to carry on any user. */
+  assignedGenerators: Types.ObjectId[];
 }
 
 const userSchema = createBaseSchema({
@@ -20,6 +24,7 @@ const userSchema = createBaseSchema({
   role: { type: Schema.Types.ObjectId, ref: 'Role', required: true },
   active: { type: Boolean, default: true },
   lastLoginAt: { type: Date, default: null },
+  assignedGenerators: [{ type: Schema.Types.ObjectId, ref: 'Generator' }],
 });
 
 userSchema.index({ email: 1 }, { unique: true, name: 'users_email_idx' });
