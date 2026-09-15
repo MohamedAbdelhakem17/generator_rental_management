@@ -36,7 +36,7 @@ export type ModuleKey =
 /** Roles listed for a module have at least read (👁) access per the PRD matrix. */
 export const MODULE_ACCESS: Record<ModuleKey, Role[]> = {
   dashboard: ['admin', 'ops_manager', 'finance_manager', 'accountant', 'viewer'],
-  generators: ['admin', 'ops_manager', 'viewer'],
+  generators: ['admin', 'ops_manager', 'finance_manager', 'accountant', 'technician', 'viewer'],
   customers: ['admin', 'ops_manager', 'finance_manager', 'viewer'],
   projects: ['admin', 'ops_manager', 'finance_manager', 'viewer'],
   contracts: ['admin', 'ops_manager', 'viewer'],

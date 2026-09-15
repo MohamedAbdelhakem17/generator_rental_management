@@ -10,8 +10,11 @@ export const PERMISSION_KEYS = [
   'generators:read',
   'generators:write',
   'generators:override',
+  'generators:delete',
+  'generators:meterCorrection',
   'customers:read',
   'customers:write',
+  'customers:delete',
   'projects:read',
   'projects:write',
   'contracts:read',
@@ -50,7 +53,14 @@ export type RoleName = (typeof ROLE_NAMES)[number];
 
 const ALL_PERMISSIONS = [...PERMISSION_KEYS];
 
-/** Row-by-row translation of PRD Section 7.2 into permission keys per role. */
+/**
+ * Row-by-row translation of PRD Section 7.2 into permission keys per role — refined by
+ * each module task's own, more detailed Section 17 matrix where the two disagree (7.2
+ * is explicitly "a summary — module matrices repeat the relevant rows"; e.g. TASK-008
+ * gives Technician/Finance Manager/Accountant generator *read* access 7.2's coarse
+ * "Manage Generators" row didn't show, and both TASK-008 and TASK-010 split a stricter
+ * Admin/Finance-Manager-only "Deactivate" action out of the broader "write" grant).
+ */
 export const ROLE_PERMISSIONS: Record<RoleName, PermissionKey[]> = {
   'System Admin': ALL_PERMISSIONS,
   'Operations Manager': [
@@ -72,8 +82,10 @@ export const ROLE_PERMISSIONS: Record<RoleName, PermissionKey[]> = {
     'reports:read',
   ],
   'Finance Manager': [
+    'generators:read',
     'customers:read',
     'customers:write',
+    'customers:delete',
     'projects:read',
     'projects:write',
     'extracts:read',
@@ -87,6 +99,8 @@ export const ROLE_PERMISSIONS: Record<RoleName, PermissionKey[]> = {
     'settings:finance',
   ],
   Accountant: [
+    'generators:read',
+    'customers:read',
     'extracts:read',
     'extracts:create',
     'receipts:read',
@@ -95,7 +109,15 @@ export const ROLE_PERMISSIONS: Record<RoleName, PermissionKey[]> = {
     'expenses:write',
     'reports:read',
   ],
-  Technician: ['operations:read', 'operations:write', 'fuel:read', 'fuel:write', 'maintenance:read', 'maintenance:write'],
+  Technician: [
+    'generators:read',
+    'operations:read',
+    'operations:write',
+    'fuel:read',
+    'fuel:write',
+    'maintenance:read',
+    'maintenance:write',
+  ],
   Viewer: [
     'generators:read',
     'customers:read',
