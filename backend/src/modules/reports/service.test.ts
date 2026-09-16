@@ -19,7 +19,10 @@ describe('ReportsService (TASK-028)', () => {
   });
 
   it('returns paginated uncollected extracts with Decimal-safe balances', async () => {
-    const customer = await CustomerModel.create({ code: 'RPT-001', companyName: 'Report Customer' });
+    const customer = await CustomerModel.create({
+      code: 'RPT-001',
+      companyName: 'Report Customer',
+    });
 
     await ExtractModel.create({
       number: 'EX-RPT-001',

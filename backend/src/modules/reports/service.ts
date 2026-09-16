@@ -3,12 +3,12 @@ import { Decimal } from 'decimal.js';
 import { toDecimal, toDisplayString } from '../../services/money.js';
 import { paginateQuery, type PaginatedResult } from '../../services/pagination.js';
 import { CustomerLedgerService } from '../customer-ledger-engine/service.js';
-import { ExtractModel, type ExtractAttrs } from '../extracts/extract.model.js';
-import { ProfitabilityEngineService } from '../profitability-engine/service.js';
 import { ExpenseModel } from '../expenses/expense.model.js';
+import { ExtractModel, type ExtractAttrs } from '../extracts/extract.model.js';
 import { FuelLogModel } from '../fuel/fuel-log.model.js';
 import { MaintenanceModel } from '../maintenance/maintenance.model.js';
 import { OperationLogModel } from '../operations/operation-log.model.js';
+import { ProfitabilityEngineService } from '../profitability-engine/service.js';
 
 export interface UncollectedExtractRow {
   extractNumber: string;
@@ -86,7 +86,9 @@ export const ReportsService = {
       .plus(item.cost.parts)
       .plus(item.unallocatedExpenses);
     return {
-      items: [{ revenue: item.revenue, expenses: toDisplayString(expenses), netProfit: item.netProfit }],
+      items: [
+        { revenue: item.revenue, expenses: toDisplayString(expenses), netProfit: item.netProfit },
+      ],
       meta: result.meta,
     };
   },
@@ -163,7 +165,13 @@ export const ReportsService = {
     };
   },
 
-  async expenses(query: UncollectedExtractQuery & { projectId?: string; generatorId?: string; category?: string }) {
+  async expenses(
+    query: UncollectedExtractQuery & {
+      projectId?: string;
+      generatorId?: string;
+      category?: string;
+    },
+  ) {
     const filters: Record<string, unknown> = { status: 'Confirmed' };
     if (query.projectId) filters.projectId = query.projectId;
     if (query.generatorId) filters.generatorId = query.generatorId;
@@ -181,7 +189,10 @@ export const ReportsService = {
       allowedSortFields: ['date', 'category', 'createdAt'],
     });
     return {
-      items: result.items.map((expense) => ({ ...expense.toObject(), amount: toDisplayString(expense.amount) })),
+      items: result.items.map((expense) => ({
+        ...expense.toObject(),
+        amount: toDisplayString(expense.amount),
+      })),
       meta: result.meta,
     };
   },

@@ -14,7 +14,9 @@ export async function getUncollectedExtracts(req: Request, res: Response): Promi
 export async function getCustomerStatement(req: Request, res: Response): Promise<void> {
   const query = parseOrThrow(reportQuerySchema, { ...req.query, customerId: req.query.customerId });
   if (!query.customerId) {
-    res.status(422).json({ success: false, data: null, message: 'customerId is required', errors: [] });
+    res
+      .status(422)
+      .json({ success: false, data: null, message: 'customerId is required', errors: [] });
     return;
   }
 
