@@ -98,7 +98,7 @@ export function RolePermissionsDialog({ role, open, onOpenChange }: RolePermissi
                     checked={allChecked ? true : someChecked ? 'indeterminate' : false}
                     onCheckedChange={(checked) => toggleGroup(group.keys, Boolean(checked))}
                   />
-                  {t(PERMISSION_GROUP_LABEL_KEYS[group.label])}
+                  {t(PERMISSION_GROUP_LABEL_KEYS[group.label]!)}
                 </label>
                 <div className="ms-6 flex flex-col gap-1.5">
                   {group.keys.map((key) => (

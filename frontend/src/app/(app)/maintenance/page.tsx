@@ -322,6 +322,7 @@ function MaintenanceFiltersAndTable({
   columns: ColumnDef<MaintenanceRow, any>[];
   canWrite: boolean;
 }) {
+  const { t } = useLocale();
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">

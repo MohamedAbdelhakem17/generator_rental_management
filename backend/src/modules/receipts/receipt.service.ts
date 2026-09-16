@@ -56,8 +56,12 @@ function getRemainingBalance(extract: ExtractDocument): Decimal {
   return total.minus(collected);
 }
 
+export interface ReceiptListItem extends ReceiptAttrs {
+  customerName: string;
+}
+
 export const ReceiptService = {
-  async list(options: ListReceiptsQuery): Promise<PaginatedResult<ReceiptAttrs>> {
+  async list(options: ListReceiptsQuery): Promise<PaginatedResult<ReceiptListItem>> {
     const filters: Record<string, unknown> = {};
     if (options.customerId) filters.customerId = options.customerId;
     if (options.paymentMethod) filters.paymentMethod = options.paymentMethod;
@@ -74,7 +78,20 @@ export const ReceiptService = {
       sort: options.sort ?? '-date',
       allowedSortFields: ALLOWED_SORT_FIELDS,
     });
-    return result;
+
+    const customerIds = Array.from(new Set(result.items.map((item) => String(item.customerId))));
+    const customers = await CustomerModel.find({ _id: { $in: customerIds } });
+    const customerNameById = new Map(
+      customers.map((customer) => [String(customer._id), customer.companyName]),
+    );
+
+    return {
+      items: result.items.map((item) => ({
+        ...(item as unknown as ReceiptAttrs),
+        customerName: customerNameById.get(String(item.customerId)) ?? '',
+      })),
+      meta: result.meta,
+    };
   },
 
   async getById(receiptId: string): Promise<ReceiptDocument> {

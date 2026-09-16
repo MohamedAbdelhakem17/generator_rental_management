@@ -27,9 +27,9 @@ import { fetchMockGenerators, type MockGenerator } from './mock-generators';
 
 const columnHelper = createColumnHelper<MockGenerator>();
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function createColumns(
   t: (key: TranslationKey, params?: Record<string, string | number>) => string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): ColumnDef<MockGenerator, any>[] {
   return [
     createSelectionColumn<MockGenerator>(),

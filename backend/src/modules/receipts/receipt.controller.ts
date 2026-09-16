@@ -14,6 +14,7 @@ function toReceiptResponse(receipt: {
   _id: { toString(): string };
   number: string;
   customerId: unknown;
+  customerName?: string;
   date: Date;
   amount: MoneyInput;
   paymentMethod: string;
@@ -28,6 +29,7 @@ function toReceiptResponse(receipt: {
     id: String(receipt._id),
     number: receipt.number,
     customerId: String(receipt.customerId),
+    customerName: receipt.customerName ?? '',
     date: receipt.date,
     amount: toDisplayString(receipt.amount),
     paymentMethod: receipt.paymentMethod,
