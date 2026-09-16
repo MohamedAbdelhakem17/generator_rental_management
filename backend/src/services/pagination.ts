@@ -14,6 +14,9 @@ export interface PaginateOptions {
   allowedSortFields?: readonly string[];
   /** Admin-only escape hatch to include soft-deleted documents. */
   includeDeleted?: boolean;
+  /** TASK-029 export path only: raises the 100-row page cap so an export can pull up to the
+   * async-export threshold in one page, without changing any regular list endpoint's cap. */
+  maxLimit?: number;
 }
 
 export interface PaginatedResult<T> {
@@ -26,11 +29,11 @@ export interface PaginatedResult<T> {
   };
 }
 
-function clampLimit(limit?: number): number {
+function clampLimit(limit?: number, maxLimit: number = MAX_LIMIT): number {
   if (limit === undefined || Number.isNaN(limit)) {
     return DEFAULT_LIMIT;
   }
-  return Math.min(Math.max(Math.trunc(limit), 1), MAX_LIMIT);
+  return Math.min(Math.max(Math.trunc(limit), 1), maxLimit);
 }
 
 function clampPage(page?: number): number {
@@ -70,7 +73,7 @@ export async function paginateQuery<T>(
   options: PaginateOptions = {},
 ): Promise<PaginatedResult<T>> {
   const page = clampPage(options.page);
-  const limit = clampLimit(options.limit);
+  const limit = clampLimit(options.limit, options.maxLimit);
   const sort = parseSort(options.sort, options.allowedSortFields);
 
   const queryFilters = (

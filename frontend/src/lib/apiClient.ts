@@ -132,6 +132,54 @@ async function requestPaginated<T>(path: string, options?: RequestOptions): Prom
   return { items: data, meta: meta as unknown as PaginationMeta };
 }
 
+export interface FileDownloadResult {
+  mode: 'file';
+  blob: Blob;
+  filename: string;
+}
+
+export interface AsyncJobResult {
+  mode: 'async';
+  jobId: string;
+}
+
+function filenameFromContentDisposition(header: string | null): string {
+  const match = header?.match(/filename="([^"]+)"/);
+  return match?.[1] ?? 'export';
+}
+
+/**
+ * TASK-029: POST /api/exports returns either a raw file stream (200, sync path) or a JSON
+ * envelope with a job id (202, async path) — neither fits `requestData`'s always-JSON
+ * assumption, so this bypasses `requestEnvelope` entirely for the 200 case.
+ */
+async function postForFileOrJob(
+  path: string,
+  body: unknown,
+): Promise<FileDownloadResult | AsyncJobResult> {
+  const response = await fetch(buildUrl(path), {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (response.status === 202) {
+    const envelope = (await response.json()) as SuccessEnvelope<{ jobId: string }>;
+    return { mode: 'async', jobId: envelope.data.jobId };
+  }
+
+  if (!response.ok) {
+    const envelope = (await response.json()) as ErrorEnvelope;
+    if (response.status === 401) unauthorizedHandler();
+    throw new ApiError(envelope.message, response.status, envelope.errors);
+  }
+
+  const blob = await response.blob();
+  const filename = filenameFromContentDisposition(response.headers.get('Content-Disposition'));
+  return { mode: 'file', blob, filename };
+}
+
 export const apiClient = {
   get<T>(path: string, params?: Record<string, QueryParamValue>, signal?: AbortSignal) {
     return requestData<T>(path, { method: 'GET', params, signal });
@@ -150,5 +198,18 @@ export const apiClient = {
   },
   delete<T>(path: string, signal?: AbortSignal) {
     return requestData<T>(path, { method: 'DELETE', signal });
+  },
+  postForFileOrJob(path: string, body: unknown) {
+    return postForFileOrJob(path, body);
+  },
+  async downloadFile(path: string): Promise<FileDownloadResult> {
+    const response = await fetch(buildUrl(path), { credentials: 'include' });
+    if (!response.ok) {
+      const envelope = (await response.json()) as ErrorEnvelope;
+      throw new ApiError(envelope.message, response.status, envelope.errors);
+    }
+    const blob = await response.blob();
+    const filename = filenameFromContentDisposition(response.headers.get('Content-Disposition'));
+    return { mode: 'file', blob, filename };
   },
 };

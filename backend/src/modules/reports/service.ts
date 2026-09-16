@@ -58,6 +58,8 @@ export interface UncollectedExtractQuery {
   customerId?: string;
   page?: number;
   limit?: number;
+  /** TASK-029 export path only — see PaginateOptions.maxLimit. */
+  maxLimit?: number;
 }
 
 export interface CustomerStatementQuery {
@@ -102,6 +104,7 @@ export const ReportsService = {
     const result = await paginateQuery(ExtractModel, filters, {
       page: query.page,
       limit: query.limit,
+      maxLimit: query.maxLimit,
       sort: '-period.end',
       allowedSortFields: ['period.end', 'number', 'createdAt'],
     });
@@ -152,6 +155,7 @@ export const ReportsService = {
     const result = await paginateQuery(OperationLogModel, filters, {
       page: query.page,
       limit: query.limit,
+      maxLimit: query.maxLimit,
       sort: '-date',
       allowedSortFields: ['date', 'createdAt'],
     });
@@ -183,6 +187,7 @@ export const ReportsService = {
     const result = await paginateQuery(FuelLogModel, filters, {
       page: query.page,
       limit: query.limit,
+      maxLimit: query.maxLimit,
       sort: '-date',
       allowedSortFields: ['date', 'createdAt'],
     });
@@ -222,6 +227,7 @@ export const ReportsService = {
     const result = await paginateQuery(MaintenanceModel, filters, {
       page: query.page,
       limit: query.limit,
+      maxLimit: query.maxLimit,
       sort: '-date',
       allowedSortFields: ['date', 'createdAt'],
     });
@@ -262,6 +268,7 @@ export const ReportsService = {
     const result = await paginateQuery(ExpenseModel, filters, {
       page: query.page,
       limit: query.limit,
+      maxLimit: query.maxLimit,
       sort: '-date',
       allowedSortFields: ['date', 'category', 'createdAt'],
     });
@@ -346,6 +353,7 @@ export const ReportsService = {
     const result = await paginateQuery<ExtractAttrs>(ExtractModel, filters, {
       page: query.page,
       limit: query.limit,
+      maxLimit: query.maxLimit,
       sort: '-period.end',
       allowedSortFields: ['period.end', 'number', 'createdAt'],
     });

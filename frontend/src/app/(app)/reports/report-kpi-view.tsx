@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
+import { ExportButton } from '@/components/shared/export-button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiClient } from '@/lib/apiClient';
 import { useLocale } from '@/lib/i18n/locale-provider';
@@ -59,7 +60,10 @@ export function ReportKpiView({ definition }: { definition: KpiReportDefinition 
 
   return (
     <div className="flex flex-col gap-4">
-      <ReportFilters kinds={definition.filters} value={filters} onChange={setFilters} />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <ReportFilters kinds={definition.filters} value={filters} onChange={setFilters} />
+        <ExportButton reportType={definition.id} filters={filters} />
+      </div>
 
       {isLoading ? (
         <Skeleton className="h-40 w-full" />

@@ -94,11 +94,20 @@ export function StatementTab({ customerId }: { customerId: string }) {
           onChange={setDateRange}
           placeholder={t('customers.statementPeriodPlaceholder')}
         />
-        {canCreateCreditNote ? (
-          <Button variant="outline" size="sm" onClick={() => setIsCreatingCreditNote(true)}>
-            {t('customers.newCreditNote')}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open(`/customers/${customerId}/statement-print`, '_blank', 'noopener,noreferrer')}
+          >
+            {t('export.printButtonLabel')}
           </Button>
-        ) : null}
+          {canCreateCreditNote ? (
+            <Button variant="outline" size="sm" onClick={() => setIsCreatingCreditNote(true)}>
+              {t('customers.newCreditNote')}
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <div className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3">

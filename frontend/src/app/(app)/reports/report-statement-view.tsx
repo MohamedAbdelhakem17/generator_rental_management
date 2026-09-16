@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { DataTablePagination } from '@/components/data-table/pagination';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
+import { ExportButton } from '@/components/shared/export-button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiClient } from '@/lib/apiClient';
 import { useLocale } from '@/lib/i18n/locale-provider';
@@ -51,7 +52,14 @@ export function ReportStatementView({ definition }: { definition: StatementRepor
 
   return (
     <div className="flex flex-col gap-4">
-      <ReportFilters kinds={definition.filters} value={filters} onChange={handleFiltersChange} />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <ReportFilters kinds={definition.filters} value={filters} onChange={handleFiltersChange} />
+        <ExportButton
+          reportType={definition.id}
+          filters={filters}
+          printHref={filters.customerId ? `/customers/${filters.customerId}/statement-print` : undefined}
+        />
+      </div>
 
       {!filters.customerId ? (
         <EmptyState title={t('reports.chooseCustomerTitle')} description={t('reports.chooseCustomerDescription')} />

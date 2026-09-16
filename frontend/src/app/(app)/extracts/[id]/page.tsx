@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, CheckCircle2, Pencil, Send, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Pencil, Printer, Send, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -149,6 +149,14 @@ export default function ExtractDetailPage() {
               {t('extracts.backToExtracts')}
             </Button>
             <StatusBadge status={extract.status} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(`/extracts/${extract.id}/print`, '_blank', 'noopener,noreferrer')}
+            >
+              <Printer className="size-4" aria-hidden />
+              {t('export.printButtonLabel')}
+            </Button>
             {canWrite && !isLocked ? (
               <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
                 <Pencil className="size-4" aria-hidden />
