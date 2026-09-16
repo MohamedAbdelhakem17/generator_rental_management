@@ -30,13 +30,13 @@ describe('NotificationEngineService (TASK-026)', () => {
       readAt: null,
     });
 
-    const items = await NotificationEngineService.listForUser(
+    const result = await NotificationEngineService.listForUser(
       { id: '000000000000000000000099', role: 'Operations Manager' },
       { status: 'Unread' },
     );
 
-    expect(items).toHaveLength(1);
-    expect(items[0]!.message).toContain('fuel');
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]!.message).toContain('fuel');
 
     const updated = await NotificationEngineService.markRead(String(created._id), {
       id: '000000000000000000000099',
@@ -66,6 +66,61 @@ describe('NotificationEngineService (TASK-026)', () => {
       { status: 'Unread' },
     );
 
-    expect(visible).toHaveLength(0);
+    expect(visible.items).toHaveLength(0);
+  });
+
+  it('marks all visible unread notifications as read in one action', async () => {
+    await NotificationModel.create([
+      {
+        type: 'FuelAlert',
+        severity: 'warning',
+        title: 'Abnormal fuel use',
+        message: 'Generator A is using more fuel than expected',
+        entityType: 'FuelAlert',
+        entityId: '000000000000000000000003',
+        recipientRoles: ['Operations Manager'],
+        status: 'Unread',
+        readAt: null,
+      },
+      {
+        type: 'FuelAlert',
+        severity: 'warning',
+        title: 'Abnormal fuel use',
+        message: 'Generator B is using more fuel than expected',
+        entityType: 'FuelAlert',
+        entityId: '000000000000000000000004',
+        recipientRoles: ['Operations Manager'],
+        status: 'Unread',
+        readAt: null,
+      },
+    ]);
+
+    const user = { id: '000000000000000000000099', role: 'Operations Manager' };
+    const { updated } = await NotificationEngineService.markAllRead(user);
+    expect(updated).toBe(2);
+
+    const remaining = await NotificationEngineService.listForUser(user, { status: 'Unread' });
+    expect(remaining.items).toHaveLength(0);
+  });
+
+  it('rejects marking a notification not visible to the current user as read', async () => {
+    const created = await NotificationModel.create({
+      type: 'FuelAlert',
+      severity: 'warning',
+      title: 'Abnormal fuel use',
+      message: 'Generator is using more fuel than expected',
+      entityType: 'FuelAlert',
+      entityId: '000000000000000000000005',
+      recipientRoles: ['Finance Manager'],
+      status: 'Unread',
+      readAt: null,
+    });
+
+    await expect(
+      NotificationEngineService.markRead(String(created._id), {
+        id: '000000000000000000000099',
+        role: 'Operations Manager',
+      }),
+    ).rejects.toThrow('Notification not found');
   });
 });

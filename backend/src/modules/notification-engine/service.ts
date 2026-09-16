@@ -1,8 +1,12 @@
+import { NotFoundError } from '../../utils/AppError.js';
+import { paginateQuery, type PaginatedResult } from '../../services/pagination.js';
 import {
   NotificationModel,
   type NotificationAttrs,
   type NotificationDocument,
+  type NotificationSeverity,
   type NotificationStatus,
+  type NotificationType,
 } from './notification.model.js';
 
 export interface NotifyInput {
@@ -23,6 +27,24 @@ export interface NotificationUserContext {
 
 export interface NotificationListQuery {
   status?: NotificationStatus;
+  severity?: NotificationSeverity;
+  type?: NotificationType;
+  page?: number;
+  limit?: number;
+}
+
+function visibilityFilter(
+  user: NotificationUserContext,
+  filters: Pick<NotificationListQuery, 'status' | 'severity' | 'type'> = {},
+) {
+  const result: Record<string, unknown> = { recipientRoles: user.role };
+  if (filters.status) result.status = filters.status;
+  if (filters.severity) result.severity = filters.severity;
+  if (filters.type) result.type = filters.type;
+  if (user.role === 'Technician') {
+    result.$or = [{ assignedUserId: null }, { assignedUserId: user.id }];
+  }
+  return result;
 }
 
 export const NotificationEngineService = {
@@ -44,20 +66,20 @@ export const NotificationEngineService = {
   async listForUser(
     user: NotificationUserContext,
     query: NotificationListQuery = {},
-  ): Promise<NotificationAttrs[]> {
-    const filters: Record<string, unknown> = { recipientRoles: user.role };
-    if (query.status) filters.status = query.status;
+  ): Promise<PaginatedResult<NotificationAttrs>> {
+    return paginateQuery(
+      NotificationModel,
+      visibilityFilter(user, { status: query.status, severity: query.severity, type: query.type }),
+      {
+        page: query.page,
+        limit: query.limit,
+        sort: '-createdAt',
+      },
+    );
+  },
 
-    if (user.role === 'Technician') {
-      const result = await NotificationModel.find({
-        ...filters,
-        $or: [{ assignedUserId: null }, { assignedUserId: user.id }],
-      }).sort({ createdAt: -1 });
-      return result.map((doc) => doc.toObject());
-    }
-
-    const result = await NotificationModel.find(filters).sort({ createdAt: -1 });
-    return result.map((doc) => doc.toObject());
+  async unreadCount(user: NotificationUserContext): Promise<number> {
+    return NotificationModel.countDocuments(visibilityFilter(user, { status: 'Unread' }));
   },
 
   async markRead(
@@ -66,19 +88,24 @@ export const NotificationEngineService = {
   ): Promise<NotificationDocument> {
     const notification = await NotificationModel.findOne({
       _id: notificationId,
-      recipientRoles: user.role,
-      ...(user.role === 'Technician'
-        ? { $or: [{ assignedUserId: null }, { assignedUserId: user.id }] }
-        : {}),
+      ...visibilityFilter(user),
     });
 
     if (!notification) {
-      throw new Error('Notification not found or not visible to this user');
+      throw new NotFoundError('Notification not found');
     }
 
     notification.status = 'Read';
     notification.readAt = new Date();
     await notification.save();
     return notification;
+  },
+
+  async markAllRead(user: NotificationUserContext): Promise<{ updated: number }> {
+    const result = await NotificationModel.updateMany(
+      visibilityFilter(user, { status: 'Unread' }),
+      { $set: { status: 'Read', readAt: new Date() } },
+    );
+    return { updated: result.modifiedCount };
   },
 };

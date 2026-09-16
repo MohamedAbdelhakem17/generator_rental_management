@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Languages, LogOut, Menu, Search, User } from 'lucide-react';
+import { Languages, LogOut, Menu, Search, User } from 'lucide-react';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import { useBreadcrumb } from '@/lib/layout/use-breadcrumb';
 import { ROLE_LABEL_KEYS } from '@/lib/permissions/roles';
 import { useSession } from '@/lib/session/session-provider';
 import { Breadcrumb } from './breadcrumb';
+import { NotificationBell } from './notification-bell';
 
 export function Header() {
   const { t, locale, setLocale } = useLocale();
@@ -72,20 +73,7 @@ export function Header() {
           <span className="text-xs font-medium">{locale === 'ar' ? 'EN' : 'ع'}</span>
         </Button>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label={t('shell.notifications')}>
-              <Bell className="size-4" aria-hidden />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64">
-            <DropdownMenuLabel>{t('shell.notifications')}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <p className="px-2 py-4 text-center text-sm text-muted-foreground">
-              {t('shell.noNotifications')}
-            </p>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <NotificationBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
