@@ -26,6 +26,7 @@ import { operationLogRouter } from './modules/operations/operation-log.routes.js
 import { profitabilityRouter } from './modules/profitability-engine/routes.js';
 import { projectRouter } from './modules/projects/project.routes.js';
 import { receiptRouter } from './modules/receipts/receipt.routes.js';
+import { reportsRouter } from './modules/reports/routes.js';
 import { roleRouter } from './modules/roles/role.routes.js';
 import { statusEngineRouter } from './modules/status-engine/status-engine.routes.js';
 import { userRouter } from './modules/users/user.routes.js';
@@ -63,6 +64,7 @@ export function createApp(): Express {
   app.use('/api', notificationRouter);
   app.use('/api', extractRouter);
   app.use('/api', receiptRouter);
+  app.use('/api', reportsRouter);
   app.use('/api', expenseRouter);
   app.use('/api', profitabilityRouter);
   app.use('/api', dashboardRouter);
