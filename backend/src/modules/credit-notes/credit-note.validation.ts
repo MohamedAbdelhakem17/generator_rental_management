@@ -10,3 +10,5 @@ export const createCreditNoteSchema = z.object({
     .optional()
     .nullable(),
 });
+
+export type CreateCreditNoteInput = z.infer<typeof createCreditNoteSchema>;

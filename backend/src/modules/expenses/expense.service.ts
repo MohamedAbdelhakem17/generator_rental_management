@@ -1,4 +1,5 @@
 import { Decimal } from 'decimal.js';
+import { Types } from 'mongoose';
 
 import { toDecimal, toDecimal128 } from '../../services/money.js';
 import { paginateQuery, type PaginatedResult } from '../../services/pagination.js';
@@ -134,11 +135,11 @@ export const ExpenseService = {
 
     if (input.generatorId !== undefined) {
       if (input.generatorId) await assertGeneratorExists(input.generatorId);
-      expense.generatorId = input.generatorId ?? null;
+      expense.generatorId = input.generatorId ? new Types.ObjectId(input.generatorId) : null;
     }
     if (input.projectId !== undefined) {
       if (input.projectId) await assertProjectExists(input.projectId);
-      expense.projectId = input.projectId ?? null;
+      expense.projectId = input.projectId ? new Types.ObjectId(input.projectId) : null;
     }
     if (input.category !== undefined) expense.category = input.category;
     if (input.date !== undefined) expense.date = input.date;

@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 
-import { toDisplayString } from '../../services/money.js';
+import { toDisplayString, type MoneyInput } from '../../services/money.js';
 import { successResponse } from '../../utils/responseEnvelope.js';
 import { parseOrThrow } from '../../utils/validate.js';
 import { CreditNoteService } from './credit-note.service.js';
@@ -9,7 +9,7 @@ import { createCreditNoteSchema } from './credit-note.validation.js';
 function toCreditNoteResponse(creditNote: {
   _id: { toString(): string };
   customerId: unknown;
-  amount: unknown;
+  amount: MoneyInput;
   reason: string;
   relatedExtractId?: unknown | null;
   status: string;

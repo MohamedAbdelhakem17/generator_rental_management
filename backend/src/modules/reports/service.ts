@@ -79,6 +79,9 @@ export const ReportsService = {
   async profitExpenseSummary(query: ProfitabilityReportQuery) {
     const result = await ReportsService.profitability(query);
     const item = result.items[0];
+    if (!item) {
+      return { items: [], meta: result.meta };
+    }
     const expenses = new Decimal(item.cost.fuel)
       .plus(item.cost.maintenance)
       .plus(item.cost.transport)
@@ -128,7 +131,7 @@ export const ReportsService = {
     });
     return {
       items: result.items.map((log) => ({
-        ...log.toObject(),
+        ...(log as unknown as { toObject(): Record<string, unknown> }).toObject(),
         pricePerLiter: toDisplayString(log.pricePerLiter),
         totalCost: toDisplayString(log.totalCost),
       })),
@@ -154,7 +157,7 @@ export const ReportsService = {
     });
     return {
       items: result.items.map((record) => ({
-        ...record.toObject(),
+        ...(record as unknown as { toObject(): Record<string, unknown> }).toObject(),
         partsCost: toDisplayString(record.partsCost),
         oilCost: toDisplayString(record.oilCost),
         laborCost: toDisplayString(record.laborCost),
@@ -190,7 +193,7 @@ export const ReportsService = {
     });
     return {
       items: result.items.map((expense) => ({
-        ...expense.toObject(),
+        ...(expense as unknown as { toObject(): Record<string, unknown> }).toObject(),
         amount: toDisplayString(expense.amount),
       })),
       meta: result.meta,

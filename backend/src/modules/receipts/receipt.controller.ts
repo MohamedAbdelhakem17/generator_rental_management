@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 
-import { toDisplayString } from '../../services/money.js';
+import { toDisplayString, type MoneyInput } from '../../services/money.js';
 import { successResponse } from '../../utils/responseEnvelope.js';
 import { idParamSchema, parseOrThrow } from '../../utils/validate.js';
 import { ReceiptService } from './receipt.service.js';
@@ -12,19 +12,21 @@ import {
 
 function toReceiptResponse(receipt: {
   _id: { toString(): string };
+  number: string;
   customerId: unknown;
   date: Date;
-  amount: unknown;
+  amount: MoneyInput;
   paymentMethod: string;
   account: string;
   transferNumber: string;
-  allocations: Array<{ extractId: unknown; amount: unknown }>;
+  allocations: Array<{ extractId: unknown; amount: MoneyInput }>;
   status: string;
   cancelReason: string;
   createdAt: Date;
 }) {
   return {
     id: String(receipt._id),
+    number: receipt.number,
     customerId: String(receipt.customerId),
     date: receipt.date,
     amount: toDisplayString(receipt.amount),

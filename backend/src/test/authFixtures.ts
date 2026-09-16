@@ -11,7 +11,7 @@ import { hashPassword } from '../utils/password.js';
 let mongod: MongoMemoryServer | null = null;
 
 export async function startTestDb(): Promise<void> {
-  mongod = await MongoMemoryServer.create({ replSet: { count: 1 } });
+  mongod = await MongoMemoryServer.create();
   await mongoose.connect(mongod.getUri());
 }
 

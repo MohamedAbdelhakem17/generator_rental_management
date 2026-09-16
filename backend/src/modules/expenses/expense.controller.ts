@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 
-import { toDisplayString } from '../../services/money.js';
+import { toDisplayString, type MoneyInput } from '../../services/money.js';
 import { successResponse } from '../../utils/responseEnvelope.js';
 import { idParamSchema, parseOrThrow } from '../../utils/validate.js';
 import { ExpenseService } from './expense.service.js';
@@ -15,7 +15,7 @@ function toExpenseResponse(expense: {
   _id: { toString(): string };
   category: string;
   date: Date;
-  amount: unknown;
+  amount: MoneyInput;
   generatorId?: unknown | null;
   projectId?: unknown | null;
   description: string;

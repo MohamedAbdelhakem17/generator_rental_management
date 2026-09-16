@@ -1,7 +1,9 @@
 import { Decimal } from 'decimal.js';
-import { startSession } from 'mongoose';
+import { startSession, type ClientSession } from 'mongoose';
 
-async function runAtomicOrFallback<T>(work: (session: any) => Promise<T>): Promise<T> {
+async function runAtomicOrFallback<T>(
+  work: (session: ClientSession | null) => Promise<T>,
+): Promise<T> {
   const session = await startSession();
 
   try {
@@ -24,7 +26,7 @@ import { paginateQuery, type PaginatedResult } from '../../services/pagination.j
 import { ForbiddenError, NotFoundError, ValidationError } from '../../utils/AppError.js';
 import { AuditService } from '../audit/audit.service.js';
 import { CustomerModel } from '../customers/customer.model.js';
-import { ExtractModel } from '../extracts/extract.model.js';
+import { ExtractModel, type ExtractDocument } from '../extracts/extract.model.js';
 import { nextReceiptNumber } from './receipt-number.js';
 import { ReceiptModel, type ReceiptAttrs, type ReceiptDocument } from './receipt.model.js';
 import type {
@@ -48,23 +50,7 @@ async function assertCustomerExists(customerId: string): Promise<void> {
   }
 }
 
-async function getExtractForReceipt(extractId: string): Promise<any> {
-  const extract = await ExtractModel.findOne({
-    _id: extractId,
-    status: { $in: ['Approved', 'Partially Collected', 'Collected'] },
-  });
-  if (!extract) {
-    throw new ValidationError('Validation failed', [
-      {
-        field: 'allocations',
-        message: 'Only Approved or open extracts can receive a receipt allocation',
-      },
-    ]);
-  }
-  return extract;
-}
-
-function getRemainingBalance(extract: any): Decimal {
+function getRemainingBalance(extract: ExtractDocument): Decimal {
   const total = toDecimal(extract.finalTotal ?? '0');
   const collected = toDecimal(extract.collectedAmount ?? '0');
   return total.minus(collected);
@@ -115,7 +101,7 @@ export const ReceiptService = {
 
     let receipt: ReceiptDocument | null = null;
 
-    await runAtomicOrFallback(async (session: any) => {
+    await runAtomicOrFallback(async (session) => {
       const uniqueExtractIds = new Set<string>();
       for (const allocation of input.allocations) {
         uniqueExtractIds.add(allocation.extractId);
@@ -123,7 +109,7 @@ export const ReceiptService = {
 
       const extracts = await ExtractModel.find({
         _id: { $in: Array.from(uniqueExtractIds) },
-      }).session(session as any);
+      }).session(session);
       const extractedMap = new Map(extracts.map((extract) => [String(extract._id), extract]));
 
       for (const allocation of input.allocations) {
@@ -164,7 +150,11 @@ export const ReceiptService = {
         session ? { session } : undefined,
       );
 
-      receipt = created[0];
+      const createdReceipt = created[0];
+      if (!createdReceipt) {
+        throw new Error('Receipt creation failed');
+      }
+      receipt = createdReceipt;
       for (const allocation of input.allocations) {
         const extract = extractedMap.get(allocation.extractId)!;
         const newCollected = clampAmount(extract.collectedAmount).plus(
@@ -205,11 +195,9 @@ export const ReceiptService = {
       throw new ForbiddenError('This receipt has already been cancelled');
     }
 
-    await runAtomicOrFallback(async (session: any) => {
+    await runAtomicOrFallback(async (session) => {
       const extractIds = receipt.allocations.map((allocation) => String(allocation.extractId));
-      const extracts = await ExtractModel.find({ _id: { $in: extractIds } }).session(
-        session as any,
-      );
+      const extracts = await ExtractModel.find({ _id: { $in: extractIds } }).session(session);
       const map = new Map(extracts.map((extract) => [String(extract._id), extract]));
 
       for (const allocation of receipt.allocations) {
