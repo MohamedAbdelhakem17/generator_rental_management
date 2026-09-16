@@ -8,6 +8,7 @@ import { createCreditNoteSchema } from './credit-note.validation.js';
 
 function toCreditNoteResponse(creditNote: {
   _id: { toString(): string };
+  number: string;
   customerId: unknown;
   amount: MoneyInput;
   reason: string;
@@ -17,6 +18,7 @@ function toCreditNoteResponse(creditNote: {
 }) {
   return {
     id: String(creditNote._id),
+    number: creditNote.number,
     customerId: String(creditNote.customerId),
     amount: toDisplayString(creditNote.amount),
     reason: creditNote.reason,

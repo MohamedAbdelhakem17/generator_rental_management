@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { ProjectRow } from '../../projects/types';
 import { CustomerFormDialog } from '../customer-form-dialog';
 import type { CustomerRow } from '../types';
+import { StatementTab } from './statement-tab';
 
 function ActiveBadge({ active }: { active: boolean }) {
   const { t } = useLocale();
@@ -45,7 +46,6 @@ export default function CustomerProfilePage() {
     { value: 'contracts', label: t('customers.tabContracts'), description: t('customers.tabContractsDescription') },
     { value: 'extracts', label: t('customers.tabExtracts'), description: t('customers.tabExtractsDescription') },
     { value: 'receipts', label: t('customers.tabReceipts'), description: t('customers.tabReceiptsDescription') },
-    { value: 'statement', label: t('customers.tabStatement'), description: t('customers.tabStatementDescription') },
   ] as const;
 
   const [isEditing, setIsEditing] = useState(false);
@@ -127,6 +127,7 @@ export default function CustomerProfilePage() {
         <TabsList>
           <TabsTrigger value="overview">{t('customers.tabOverview')}</TabsTrigger>
           <TabsTrigger value="projects">{t('customers.tabProjects')}</TabsTrigger>
+          <TabsTrigger value="statement">{t('customers.tabStatement')}</TabsTrigger>
           {PLACEHOLDER_TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.label}
@@ -170,6 +171,10 @@ export default function CustomerProfilePage() {
               ))}
             </ul>
           )}
+        </TabsContent>
+
+        <TabsContent value="statement">
+          <StatementTab customerId={customer.id} />
         </TabsContent>
 
         {PLACEHOLDER_TABS.map((tab) => (

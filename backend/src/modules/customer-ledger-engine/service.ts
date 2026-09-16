@@ -16,6 +16,7 @@ export interface StatementEntry {
   date: string;
   type: 'Extract' | 'Receipt' | 'Credit Note' | 'Cancelled Extract';
   reference: string;
+  referenceId: string;
   debit: string;
   credit: string;
   runningBalance: string;
@@ -100,6 +101,7 @@ export const CustomerLedgerService = {
       date: Date;
       type: StatementEntry['type'];
       reference: string;
+      referenceId: string;
       debit: Decimal;
       credit: Decimal;
     }> = [];
@@ -113,6 +115,7 @@ export const CustomerLedgerService = {
           date: extractDate,
           type: 'Cancelled Extract',
           reference: extract.number,
+          referenceId: String(extract._id),
           debit: new Decimal(0),
           credit: toDecimal(extract.finalTotal ?? '0'),
         });
@@ -124,6 +127,7 @@ export const CustomerLedgerService = {
           date: extractDate,
           type: 'Extract',
           reference: extract.number,
+          referenceId: String(extract._id),
           debit: toDecimal(extract.finalTotal ?? '0'),
           credit: new Decimal(0),
         });
@@ -139,6 +143,7 @@ export const CustomerLedgerService = {
           date,
           type: 'Receipt',
           reference: receipt.number,
+          referenceId: String(receipt._id),
           debit: new Decimal(0),
           credit: toDecimal(receipt.amount),
         });
@@ -154,6 +159,7 @@ export const CustomerLedgerService = {
           date,
           type: 'Credit Note',
           reference: creditNote.number,
+          referenceId: String(creditNote._id),
           debit: new Decimal(0),
           credit: toDecimal(creditNote.amount),
         });
@@ -169,6 +175,7 @@ export const CustomerLedgerService = {
         date: toIsoDate(entry.date),
         type: entry.type,
         reference: entry.reference,
+        referenceId: entry.referenceId,
         debit: toMoneyString(entry.debit),
         credit: toMoneyString(entry.credit),
         runningBalance: toMoneyString(runningBalance),
