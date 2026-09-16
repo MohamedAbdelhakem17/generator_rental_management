@@ -1,6 +1,7 @@
 import { Decimal } from 'decimal.js';
 import type { Types } from 'mongoose';
 
+import { computeDiff } from '../audit/audit.diff.js';
 import { AuditService } from '../audit/audit.service.js';
 import { CustomerModel } from '../customers/customer.model.js';
 import { RentalContractModel } from '../contracts/contract.model.js';
@@ -243,7 +244,10 @@ export const ExtractService = {
       actorUserId,
       entityType: 'Extract',
       entityId: String(extract._id),
-      metadata: { before, after: extract.toObject() },
+      ...computeDiff(
+        before as unknown as Record<string, unknown>,
+        extract.toObject() as unknown as Record<string, unknown>,
+      ),
     });
 
     await populateRefs(extract);
@@ -304,6 +308,8 @@ export const ExtractService = {
       vatRate: vatRateFraction,
     });
 
+    const before = { status: extract.status, vatRateSnapshot: extract.vatRateSnapshot };
+
     extract.vatRateSnapshot = vatRateFraction.toNumber();
     extract.totalBeforeVat = totals.netBeforeVat;
     extract.vat = totals.vat;
@@ -317,7 +323,8 @@ export const ExtractService = {
       actorUserId,
       entityType: 'Extract',
       entityId: String(extract._id),
-      metadata: { vatRateSnapshot: extract.vatRateSnapshot, finalTotal: totals.finalTotal.toString() },
+      before,
+      after: { status: extract.status, vatRateSnapshot: extract.vatRateSnapshot },
     });
 
     await populateRefs(extract);
