@@ -84,7 +84,6 @@ describe('ExpenseService (TASK-024)', () => {
         ],
       },
       actorUserId,
-      'Finance Manager',
     );
 
     const children = await ExpenseModel.find({ allocatedFrom: parent._id }).sort({ amount: 1 });
@@ -121,7 +120,6 @@ describe('ExpenseService (TASK-024)', () => {
           ],
         },
         actorUserId,
-        'Finance Manager',
       ),
     ).rejects.toThrow('Validation failed');
   });

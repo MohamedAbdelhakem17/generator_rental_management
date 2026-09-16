@@ -65,6 +65,6 @@ export async function updateExpense(req: Request, res: Response): Promise<void> 
 export async function allocateExpense(req: Request, res: Response): Promise<void> {
   const { id } = parseOrThrow(idParamSchema, req.params);
   const input = parseOrThrow(allocateExpenseSchema, req.body);
-  const items = await ExpenseService.allocate(id, input, req.user!.id, req.user!.role);
+  const items = await ExpenseService.allocate(id, input, req.user!.id);
   res.status(200).json(successResponse(items.map(toExpenseResponse)));
 }

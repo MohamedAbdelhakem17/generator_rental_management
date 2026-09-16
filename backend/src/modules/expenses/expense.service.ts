@@ -163,14 +163,7 @@ export const ExpenseService = {
     expenseId: string,
     input: AllocateExpenseInput,
     actorUserId: string,
-    actorRole: string,
   ): Promise<ExpenseDocument[]> {
-    if (actorRole !== 'Admin' && actorRole !== 'Finance Manager') {
-      throw new ValidationError('Validation failed', [
-        { field: 'role', message: 'Only Admin and Finance Manager can allocate expenses' },
-      ]);
-    }
-
     const expense = await ExpenseModel.findById(expenseId);
     if (!expense) {
       throw new NotFoundError('Expense not found');

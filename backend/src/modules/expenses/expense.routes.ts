@@ -24,6 +24,6 @@ expenseRouter.patch(
 );
 expenseRouter.post(
   '/expenses/:id/allocate',
-  requirePermission('expenses:write'),
+  requirePermission('expenses:allocate'),
   asyncHandler(allocateExpense),
 );
