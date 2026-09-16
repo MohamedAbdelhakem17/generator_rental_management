@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FuelConsumptionChart } from '../../fuel/fuel-consumption-chart';
 import type { OperationLogRow } from '../../operations/types';
 import { GeneratorFormDialog } from '../generator-form-dialog';
+import { ProfitabilityTab } from '../profitability-tab';
 import { StatusHistoryList } from '../status-history-list';
 import { StopGeneratorDialog } from '../stop-generator-dialog';
 import { toBadgeStatus, type GeneratorRow, type StatusHistoryEntry } from '../types';
@@ -31,11 +32,11 @@ export default function GeneratorProfilePage() {
   const queryClient = useQueryClient();
   const { user } = useSession();
   const canWrite = user?.permissions.includes('generators:write') ?? false;
+  const canViewProfitability = user?.permissions.includes('profitability:read') ?? false;
 
   const PLACEHOLDER_TABS = [
     { value: 'maintenance', label: t('generators.tabMaintenance'), description: t('generators.tabMaintenanceDescription') },
     { value: 'contracts', label: t('generators.tabContracts'), description: t('generators.tabContractsDescription') },
-    { value: 'profitability', label: t('generators.tabProfitability'), description: t('generators.tabProfitabilityDescription') },
   ] as const;
 
   const [isEditing, setIsEditing] = useState(false);
@@ -129,6 +130,9 @@ export default function GeneratorProfilePage() {
           <TabsTrigger value="overview">{t('generators.tabOverview')}</TabsTrigger>
           <TabsTrigger value="operations">{t('generators.tabOperations')}</TabsTrigger>
           <TabsTrigger value="fuel">{t('generators.tabFuel')}</TabsTrigger>
+          {canViewProfitability ? (
+            <TabsTrigger value="profitability">{t('generators.tabProfitability')}</TabsTrigger>
+          ) : null}
           {PLACEHOLDER_TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.label}
@@ -204,6 +208,12 @@ export default function GeneratorProfilePage() {
         <TabsContent value="fuel">
           <FuelConsumptionChart generatorId={generator.id} normalFuelConsumption={generator.normalFuelConsumption} />
         </TabsContent>
+
+        {canViewProfitability ? (
+          <TabsContent value="profitability">
+            <ProfitabilityTab generatorId={generator.id} />
+          </TabsContent>
+        ) : null}
 
         {PLACEHOLDER_TABS.map((tab) => (
           <TabsContent key={tab.value} value={tab.value}>

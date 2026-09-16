@@ -10,6 +10,6 @@ export const profitabilityRouter = Router();
 profitabilityRouter.use('/profitability', requireAuth);
 profitabilityRouter.get(
   '/profitability',
-  requirePermission('reports:read'),
+  requirePermission('profitability:read'),
   asyncHandler(getProfitability),
 );

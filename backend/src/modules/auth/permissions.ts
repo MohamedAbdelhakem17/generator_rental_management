@@ -46,6 +46,7 @@ export const PERMISSION_KEYS = [
   'expenses:read',
   'expenses:write',
   'expenses:allocate',
+  'profitability:read',
   'reports:read',
   'settings:manage',
   'settings:finance',
@@ -101,6 +102,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, PermissionKey[]> = {
     'maintenance-alerts:read',
     'maintenance-alerts:acknowledge',
     'extracts:read',
+    'profitability:read',
     'reports:read',
   ],
   'Finance Manager': [
@@ -124,6 +126,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, PermissionKey[]> = {
     'expenses:read',
     'expenses:write',
     'expenses:allocate',
+    'profitability:read',
     'reports:read',
     'settings:finance',
   ],
@@ -141,6 +144,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, PermissionKey[]> = {
     'receipts:write',
     'expenses:read',
     'expenses:write',
+    'profitability:read',
     'reports:read',
   ],
   Technician: [

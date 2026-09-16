@@ -47,6 +47,14 @@
   --status-stopped-bg: #fae7e7;
   --status-stopped-fg: #a03030;
   --status-stopped-border: #f0c4c4;
+
+  /* Categorical chart series (dataviz skill reference palette, slots 1-5) — used by
+     the Profitability cost-breakdown chart; fixed order, never reassigned per chart. */
+  --chart-series-1: #2a78d6;
+  --chart-series-2: #eb6834;
+  --chart-series-3: #1baf7a;
+  --chart-series-4: #eda100;
+  --chart-series-5: #e87ba4;
 }
 
 .dark {
@@ -89,6 +97,12 @@
   --status-stopped-bg: #3a1414;
   --status-stopped-fg: #e88787;
   --status-stopped-border: #5c2323;
+
+  --chart-series-1: #3987e5;
+  --chart-series-2: #d95926;
+  --chart-series-3: #199e70;
+  --chart-series-4: #c98500;
+  --chart-series-5: #d55181;
 }
 
 @theme inline {
