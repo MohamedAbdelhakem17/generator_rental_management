@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 
 import { apiClient, ApiError } from '@/lib/apiClient';
 import { useDataTableQuery } from '@/hooks/useDataTableQuery';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { useSession } from '@/lib/session/session-provider';
 import { PageHeader } from '@/components/layout/page-header';
 import { DataTable } from '@/components/data-table/data-table';
@@ -32,13 +33,6 @@ import { toBadgeStatus, type ApiGeneratorStatus, type GeneratorRow } from './typ
 
 const columnHelper = createColumnHelper<GeneratorRow>();
 
-const STATUS_OPTIONS: { value: ApiGeneratorStatus; label: string; tone: 'success' | 'info' | 'warning' | 'danger' }[] = [
-  { value: 'Available', label: 'Available', tone: 'success' },
-  { value: 'Rented', label: 'Rented', tone: 'info' },
-  { value: 'Under Maintenance', label: 'Under Maintenance', tone: 'warning' },
-  { value: 'Stopped', label: 'Stopped', tone: 'danger' },
-];
-
 export default function GeneratorsPage() {
   // useDataTableQuery reads useSearchParams(), which needs a Suspense boundary (TASK-005).
   return (
@@ -49,10 +43,18 @@ export default function GeneratorsPage() {
 }
 
 function GeneratorsPageContent() {
+  const { t } = useLocale();
   const queryClient = useQueryClient();
   const { user } = useSession();
   const canWrite = user?.permissions.includes('generators:write') ?? false;
   const canDeactivate = user?.permissions.includes('generators:delete') ?? false;
+
+  const STATUS_OPTIONS: { value: ApiGeneratorStatus; label: string; tone: 'success' | 'info' | 'warning' | 'danger' }[] = [
+    { value: 'Available', label: t('status.available'), tone: 'success' },
+    { value: 'Rented', label: t('status.rented'), tone: 'info' },
+    { value: 'Under Maintenance', label: t('status.underMaintenance'), tone: 'warning' },
+    { value: 'Stopped', label: t('status.stopped'), tone: 'danger' },
+  ];
 
   const [formGenerator, setFormGenerator] = useState<GeneratorRow | 'new' | null>(null);
   const [stopTarget, setStopTarget] = useState<GeneratorRow | null>(null);
@@ -78,10 +80,10 @@ function GeneratorsPageContent() {
     if (!resumeTarget) return;
     try {
       await apiClient.post(`/api/generators/${resumeTarget.id}/resume`);
-      toast.success(`${resumeTarget.code} resumed`);
+      toast.success(t('generators.resumedToast', { code: resumeTarget.code }));
       await invalidate();
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Couldn't resume this generator.");
+      toast.error(error instanceof ApiError ? error.message : t('generators.resumeFailedToast'));
       throw error;
     }
   }
@@ -90,10 +92,10 @@ function GeneratorsPageContent() {
     if (!deactivateTarget) return;
     try {
       await apiClient.delete(`/api/generators/${deactivateTarget.id}`);
-      toast.success(`Deactivated ${deactivateTarget.code}`);
+      toast.success(t('generators.deactivatedToast', { code: deactivateTarget.code }));
       await invalidate();
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Couldn't deactivate this generator.");
+      toast.error(error instanceof ApiError ? error.message : t('generators.deactivateFailedToast'));
       throw error;
     }
   }
@@ -101,7 +103,7 @@ function GeneratorsPageContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: ColumnDef<GeneratorRow, any>[] = [
     columnHelper.accessor('code', {
-      header: 'Code',
+      header: t('generators.columnCode'),
       cell: (info) => (
         <Link href={`/generators/${info.row.original.id}`} className="font-medium text-primary hover:underline">
           {info.getValue()}
@@ -110,28 +112,28 @@ function GeneratorsPageContent() {
     }),
     columnHelper.accessor((row) => `${row.specifications.brand} ${row.specifications.model}`, {
       id: 'brandModel',
-      header: 'Brand / model',
+      header: t('generators.columnBrandModel'),
       enableSorting: false,
     }),
     columnHelper.accessor((row) => row.specifications.kva, {
       id: 'kva',
-      header: 'kVA',
+      header: t('generators.columnKva'),
       enableSorting: false,
       cell: (info) => <span className="tabular-data">{info.getValue()}</span>,
     }),
     columnHelper.accessor('status', {
-      header: 'Status',
+      header: t('table.status'),
       cell: (info) => <StatusBadge status={toBadgeStatus(info.getValue())} />,
     }),
-    columnHelper.accessor('location', { header: 'Location', enableSorting: false }),
+    columnHelper.accessor('location', { header: t('generators.columnLocation'), enableSorting: false }),
     columnHelper.accessor('currentMeter', {
-      header: 'Meter (h)',
+      header: t('generators.columnMeter'),
       cell: (info) => <span className="tabular-data">{info.getValue().toLocaleString()}</span>,
     }),
     createActionsColumn<GeneratorRow>((row) => (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="size-7" aria-label={`Actions for ${row.code}`}>
+          <Button variant="ghost" size="icon" className="size-7" aria-label={t('generators.actionsFor', { code: row.code })}>
             <MoreHorizontal className="size-4" aria-hidden />
           </Button>
         </DropdownMenuTrigger>
@@ -139,25 +141,25 @@ function GeneratorsPageContent() {
           {canWrite ? (
             <DropdownMenuItem onClick={() => setFormGenerator(row)}>
               <Pencil className="size-4" aria-hidden />
-              Edit
+              {t('generators.edit')}
             </DropdownMenuItem>
           ) : null}
           {canWrite && row.manualStatus === 'Stopped' ? (
             <DropdownMenuItem onClick={() => setResumeTarget(row)}>
               <Play className="size-4" aria-hidden />
-              Resume
+              {t('generators.resume')}
             </DropdownMenuItem>
           ) : null}
           {canWrite && row.manualStatus !== 'Stopped' ? (
             <DropdownMenuItem onClick={() => setStopTarget(row)}>
               <Power className="size-4" aria-hidden />
-              Stop
+              {t('generators.stop')}
             </DropdownMenuItem>
           ) : null}
           {canDeactivate ? (
             <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeactivateTarget(row)}>
               <ShieldOff className="size-4" aria-hidden />
-              Deactivate
+              {t('generators.deactivate')}
             </DropdownMenuItem>
           ) : null}
         </DropdownMenuContent>
@@ -168,13 +170,13 @@ function GeneratorsPageContent() {
   return (
     <>
       <PageHeader
-        title="Generators"
-        description="The fleet's master records — specs, meter, and status."
+        title={t('generators.title')}
+        description={t('generators.description')}
         action={
           canWrite ? (
             <Button size="sm" onClick={() => setFormGenerator('new')}>
               <Plus className="size-4" aria-hidden />
-              New generator
+              {t('generators.newGenerator')}
             </Button>
           ) : undefined
         }
@@ -184,19 +186,19 @@ function GeneratorsPageContent() {
         <SearchInput
           value={table.search}
           onChange={table.setSearch}
-          placeholder="Search code, brand, model, serial…"
+          placeholder={t('generators.searchPlaceholder')}
           className="w-72"
         />
         <StatusFilter
           value={table.filters.status}
           onChange={(value) => table.setFilter('status', value)}
           options={STATUS_OPTIONS}
-          placeholder="Status"
+          placeholder={t('table.status')}
         />
-        <SearchInput value={table.filters.location ?? ''} onChange={(value) => table.setFilter('location', value || undefined)} placeholder="Location…" className="w-48" />
+        <SearchInput value={table.filters.location ?? ''} onChange={(value) => table.setFilter('location', value || undefined)} placeholder={t('generators.locationPlaceholder')} className="w-48" />
         {table.hasActiveFilters ? (
           <Button variant="ghost" size="sm" onClick={table.clearFilters}>
-            Clear filters
+            {t('table.clearFilters')}
           </Button>
         ) : null}
       </div>
@@ -213,8 +215,8 @@ function GeneratorsPageContent() {
         hasActiveFilters={table.hasActiveFilters}
         onClearFilters={table.clearFilters}
         showColumnVisibility={false}
-        emptyTitle="No generators yet"
-        emptyDescription={canWrite ? 'Register the first unit to start tracking the fleet.' : 'The fleet will appear here once units are registered.'}
+        emptyTitle={t('generators.emptyTitle')}
+        emptyDescription={canWrite ? t('generators.emptyDescriptionWrite') : t('generators.emptyDescriptionReadOnly')}
       />
 
       <DataTablePagination meta={table.meta} onPageChange={table.setPage} onPageSizeChange={table.setPageSize} />
@@ -241,9 +243,9 @@ function GeneratorsPageContent() {
           <ConfirmDialog
             open={resumeTarget !== null}
             onOpenChange={(open) => !open && setResumeTarget(null)}
-            title={resumeTarget ? `Resume ${resumeTarget.code}?` : ''}
-            description="Its status goes back to being derived from contracts and maintenance."
-            confirmLabel="Resume"
+            title={resumeTarget ? t('generators.resumeConfirmTitle', { code: resumeTarget.code }) : ''}
+            description={t('generators.resumeConfirmDescription')}
+            confirmLabel={t('generators.resume')}
             confirmVariant="default"
             onConfirm={confirmResume}
           />
@@ -254,9 +256,9 @@ function GeneratorsPageContent() {
         <ConfirmDialog
           open={deactivateTarget !== null}
           onOpenChange={(open) => !open && setDeactivateTarget(null)}
-          title={deactivateTarget ? `Deactivate ${deactivateTarget.code}?` : ''}
-          description="This soft-deletes the record — it's blocked while an active contract or open maintenance references it, and stays visible in historical reports."
-          confirmLabel="Deactivate"
+          title={deactivateTarget ? t('generators.deactivateConfirmTitle', { code: deactivateTarget.code }) : ''}
+          description={t('generators.deactivateConfirmDescription')}
+          confirmLabel={t('generators.deactivate')}
           onConfirm={confirmDeactivate}
         />
       ) : null}

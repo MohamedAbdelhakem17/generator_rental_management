@@ -5,7 +5,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { apiClient, ApiError } from '@/lib/apiClient';
-import { PERMISSION_GROUPS, permissionLabel, type PermissionKey } from '@/lib/permissions/permission-keys';
+import { useLocale } from '@/lib/i18n/locale-provider';
+import { PERMISSION_GROUPS, PERMISSION_GROUP_LABEL_KEYS, PERMISSION_LABEL_KEYS, type PermissionKey } from '@/lib/permissions/permission-keys';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -26,6 +27,7 @@ export interface RolePermissionsDialogProps {
 }
 
 export function RolePermissionsDialog({ role, open, onOpenChange }: RolePermissionsDialogProps) {
+  const { t } = useLocale();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Set<PermissionKey>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
@@ -59,11 +61,11 @@ export function RolePermissionsDialog({ role, open, onOpenChange }: RolePermissi
     setIsSaving(true);
     try {
       await apiClient.patch(`/api/roles/${role.id}`, { permissions: Array.from(selected) });
-      toast.success(`Updated ${role.name}`);
+      toast.success(t('users.permissionsUpdatedToast', { name: role.name }));
       await queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
       onOpenChange(false);
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Couldn't save these permissions.");
+      toast.error(error instanceof ApiError ? error.message : t('users.permissionsSaveFailedToast'));
     } finally {
       setIsSaving(false);
     }
@@ -74,7 +76,7 @@ export function RolePermissionsDialog({ role, open, onOpenChange }: RolePermissi
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{role?.name}</DialogTitle>
-          <DialogDescription>Choose exactly what this role can see and do. A role needs at least one permission.</DialogDescription>
+          <DialogDescription>{t('users.permissionsDescription')}</DialogDescription>
         </DialogHeader>
 
         <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto pe-1">
@@ -89,13 +91,13 @@ export function RolePermissionsDialog({ role, open, onOpenChange }: RolePermissi
                     checked={allChecked ? true : someChecked ? 'indeterminate' : false}
                     onCheckedChange={(checked) => toggleGroup(group.keys, Boolean(checked))}
                   />
-                  {group.label}
+                  {t(PERMISSION_GROUP_LABEL_KEYS[group.label])}
                 </label>
                 <div className="ms-6 flex flex-col gap-1.5">
                   {group.keys.map((key) => (
                     <label key={key} className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Checkbox checked={selected.has(key)} onCheckedChange={(checked) => toggle(key, Boolean(checked))} />
-                      {permissionLabel(key)}
+                      {t(PERMISSION_LABEL_KEYS[key])}
                     </label>
                   ))}
                 </div>
@@ -106,10 +108,10 @@ export function RolePermissionsDialog({ role, open, onOpenChange }: RolePermissi
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="button" onClick={handleSave} disabled={isSaving || selected.size === 0}>
-            Save changes
+            {t('common.saveChanges')}
           </Button>
         </DialogFooter>
       </DialogContent>

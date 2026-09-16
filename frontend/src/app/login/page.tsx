@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { Zap } from 'lucide-react';
+import { Languages, Zap } from 'lucide-react';
 import { z } from 'zod';
 
 import { apiClient, ApiError } from '@/lib/apiClient';
@@ -15,19 +15,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-const loginSchema = z.object({
-  email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
-  password: z.string().min(1, 'Password is required'),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
+type LoginFormValues = { email: string; password: string };
 
 interface LoginResponse {
   user: { id: string; name: string; role: string };
 }
 
 export default function LoginPage() {
-  const { t, direction } = useLocale();
+  const { t, direction, locale, setLocale } = useLocale();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { status } = useSession();
@@ -36,6 +31,15 @@ export default function LoginPage() {
   useEffect(() => {
     if (status === 'authenticated') router.replace('/');
   }, [status, router]);
+
+  const loginSchema = useMemo(
+    () =>
+      z.object({
+        email: z.string().min(1, t('login.emailRequired')).email(t('login.emailInvalid')),
+        password: z.string().min(1, t('login.passwordRequired')),
+      }),
+    [t],
+  );
 
   const {
     register,
@@ -57,7 +61,18 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-background px-4 py-12" dir={direction}>
+    <main className="relative flex min-h-dvh items-center justify-center bg-background px-4 py-12" dir={direction}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="absolute end-4 top-4 gap-1.5 px-2"
+        onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
+        aria-label={t('shell.toggleLanguage')}
+      >
+        <Languages className="size-4" aria-hidden />
+        <span className="text-xs font-medium">{locale === 'ar' ? 'EN' : 'ع'}</span>
+      </Button>
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-2 text-center">
           <span className="flex size-10 items-center justify-center rounded-md bg-primary text-primary-foreground">

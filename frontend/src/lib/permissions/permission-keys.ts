@@ -1,3 +1,5 @@
+import type { TranslationKey } from '@/lib/i18n/dictionary';
+
 /**
  * Frontend mirror of the backend's `modules/auth/permissions.ts` (PRD Section 7.2).
  * The frontend can't import backend code (Constitution Article I.1), so this list is
@@ -89,6 +91,23 @@ export const PERMISSION_GROUPS: { label: string; keys: PermissionKey[] }[] = [
   { label: 'Audit log', keys: ['audit:read'] },
 ];
 
+export const PERMISSION_GROUP_LABEL_KEYS: Record<string, TranslationKey> = {
+  'Users & roles': 'users.permissionGroupUsersRoles',
+  Generators: 'users.permissionGroupGenerators',
+  Customers: 'users.permissionGroupCustomers',
+  Projects: 'users.permissionGroupProjects',
+  Contracts: 'users.permissionGroupContracts',
+  Operations: 'users.permissionGroupOperations',
+  Fuel: 'users.permissionGroupFuel',
+  Maintenance: 'users.permissionGroupMaintenance',
+  Extracts: 'users.permissionGroupExtracts',
+  Receipts: 'users.permissionGroupReceipts',
+  Expenses: 'users.permissionGroupExpenses',
+  Reports: 'users.permissionGroupReports',
+  Settings: 'users.permissionGroupSettings',
+  'Audit log': 'users.permissionGroupAudit',
+};
+
 const PERMISSION_LABELS: Record<PermissionKey, string> = {
   'users:manage': 'Manage users',
   'roles:manage': 'Manage roles',
@@ -132,6 +151,51 @@ const PERMISSION_LABELS: Record<PermissionKey, string> = {
   'settings:manage': 'Manage all settings',
   'settings:finance': 'Manage finance settings',
   'audit:read': 'View audit log',
+};
+
+export const PERMISSION_LABEL_KEYS: Record<PermissionKey, TranslationKey> = {
+  'users:manage': 'users.permissionManageUsers',
+  'roles:manage': 'users.permissionManageRoles',
+  'generators:read': 'users.permissionViewGenerators',
+  'generators:write': 'users.permissionEditGenerators',
+  'generators:override': 'users.permissionOverrideGenerators',
+  'generators:delete': 'users.permissionDeactivateGenerators',
+  'generators:meterCorrection': 'users.permissionCorrectMeters',
+  'status-engine:recalculate': 'users.permissionRecalculateStatus',
+  'customers:read': 'users.permissionViewCustomers',
+  'customers:write': 'users.permissionEditCustomers',
+  'customers:delete': 'users.permissionDeactivateCustomers',
+  'projects:read': 'users.permissionViewProjects',
+  'projects:write': 'users.permissionEditProjects',
+  'contracts:read': 'users.permissionViewContracts',
+  'contracts:write': 'users.permissionEditContracts',
+  'contracts:sharedAssignmentOverride': 'users.permissionApproveSharedAssignments',
+  'contracts:previewRent': 'users.permissionPreviewRent',
+  'operations:read': 'users.permissionViewOperations',
+  'operations:write': 'users.permissionRecordOperations',
+  'operations:correct': 'users.permissionCorrectOperations',
+  'fuel:read': 'users.permissionViewFuel',
+  'fuel:write': 'users.permissionRecordFuel',
+  'fuel-alerts:read': 'users.permissionViewFuelAlerts',
+  'fuel-alerts:acknowledge': 'users.permissionAcknowledgeFuelAlerts',
+  'fuel-alerts:resolve': 'users.permissionResolveFuelAlerts',
+  'maintenance:read': 'users.permissionViewMaintenance',
+  'maintenance:write': 'users.permissionEditMaintenance',
+  'maintenance:complete': 'users.permissionCompleteMaintenance',
+  'maintenance-alerts:read': 'users.permissionViewMaintenanceAlerts',
+  'maintenance-alerts:acknowledge': 'users.permissionAcknowledgeMaintenanceAlerts',
+  'extracts:read': 'users.permissionViewExtracts',
+  'extracts:create': 'users.permissionCreateExtracts',
+  'extracts:approve': 'users.permissionApproveExtracts',
+  'extracts:cancel': 'users.permissionCancelExtracts',
+  'receipts:read': 'users.permissionViewReceipts',
+  'receipts:write': 'users.permissionRecordReceipts',
+  'expenses:read': 'users.permissionViewExpenses',
+  'expenses:write': 'users.permissionRecordExpenses',
+  'reports:read': 'users.permissionViewReports',
+  'settings:manage': 'users.permissionManageSettings',
+  'settings:finance': 'users.permissionManageFinanceSettings',
+  'audit:read': 'users.permissionViewAudit',
 };
 
 export function permissionLabel(key: PermissionKey): string {

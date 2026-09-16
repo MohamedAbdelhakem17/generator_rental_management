@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 
 import { apiClient, ApiError } from '@/lib/apiClient';
 import { useDataTableQuery } from '@/hooks/useDataTableQuery';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { cn } from '@/lib/utils';
 import { STATUS_TONE_CLASSES } from '@/lib/status-tone';
 import { DataTable } from '@/components/data-table/data-table';
@@ -29,11 +30,12 @@ import type { UserRow } from './types';
 const columnHelper = createColumnHelper<UserRow>();
 
 function ActiveBadge({ active }: { active: boolean }) {
+  const { t } = useLocale();
   const tone = STATUS_TONE_CLASSES[active ? 'success' : 'neutral'];
   return (
     <span className={cn('inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium', tone.bg, tone.fg, tone.border)}>
       <span className={cn('size-1.5 shrink-0 rounded-full', tone.dot)} aria-hidden />
-      {active ? 'Active' : 'Disabled'}
+      {active ? t('users.active') : t('users.disabled')}
     </span>
   );
 }
@@ -44,6 +46,7 @@ function formatLastLogin(value: string | null): string {
 }
 
 export function UsersTab() {
+  const { t } = useLocale();
   const queryClient = useQueryClient();
   const [formUser, setFormUser] = useState<UserRow | 'new' | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
@@ -58,10 +61,10 @@ export function UsersTab() {
   async function toggleActive(user: UserRow) {
     try {
       await apiClient.patch(`/api/users/${user.id}`, { active: !user.active });
-      toast.success(user.active ? `Deactivated ${user.name}` : `Activated ${user.name}`);
+      toast.success(user.active ? t('users.deactivatedToast', { name: user.name }) : t('users.activatedToast', { name: user.name }));
       await queryClient.invalidateQueries({ queryKey: ['users'] });
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : 'Something went wrong. Try again.');
+      toast.error(error instanceof ApiError ? error.message : t('common.genericError'));
     }
   }
 
@@ -69,43 +72,43 @@ export function UsersTab() {
     if (!deleteTarget) return;
     try {
       await apiClient.delete(`/api/users/${deleteTarget.id}`);
-      toast.success(`Deleted ${deleteTarget.name}`);
+      toast.success(t('users.deletedToast', { name: deleteTarget.name }));
       await queryClient.invalidateQueries({ queryKey: ['users'] });
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Couldn't delete this user.");
+      toast.error(error instanceof ApiError ? error.message : t('users.deleteFailedToast'));
       throw error;
     }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: ColumnDef<UserRow, any>[] = [
-    columnHelper.accessor('name', { header: 'Name', cell: (info) => <span className="font-medium">{info.getValue()}</span> }),
-    columnHelper.accessor('email', { header: 'Email', enableSorting: false }),
-    columnHelper.accessor((row) => row.role.name, { id: 'role', header: 'Role', enableSorting: false }),
-    columnHelper.accessor('active', { header: 'Status', cell: (info) => <ActiveBadge active={info.getValue()} /> }),
+    columnHelper.accessor('name', { header: t('users.columnName'), cell: (info) => <span className="font-medium">{info.getValue()}</span> }),
+    columnHelper.accessor('email', { header: t('users.columnEmail'), enableSorting: false }),
+    columnHelper.accessor((row) => row.role.name, { id: 'role', header: t('users.columnRole'), enableSorting: false }),
+    columnHelper.accessor('active', { header: t('table.status'), cell: (info) => <ActiveBadge active={info.getValue()} /> }),
     columnHelper.accessor('lastLoginAt', {
-      header: 'Last sign-in',
+      header: t('users.columnLastSignIn'),
       cell: (info) => <span className="tabular-data text-muted-foreground">{formatLastLogin(info.getValue())}</span>,
     }),
     createActionsColumn<UserRow>((row) => (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="size-7" aria-label={`Actions for ${row.name}`}>
+          <Button variant="ghost" size="icon" className="size-7" aria-label={t('users.actionsFor', { name: row.name })}>
             <MoreHorizontal className="size-4" aria-hidden />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => setFormUser(row)}>
             <UserPen className="size-4" aria-hidden />
-            Edit
+            {t('users.edit')}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => void toggleActive(row)}>
             {row.active ? <PowerOff className="size-4" aria-hidden /> : <Power className="size-4" aria-hidden />}
-            {row.active ? 'Deactivate' : 'Activate'}
+            {row.active ? t('users.deactivate') : t('users.activate')}
           </DropdownMenuItem>
           <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteTarget(row)}>
             <Trash2 className="size-4" aria-hidden />
-            Delete
+            {t('users.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -115,10 +118,10 @@ export function UsersTab() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <SearchInput value={table.search} onChange={table.setSearch} placeholder="Search name or email…" className="w-64" />
+        <SearchInput value={table.search} onChange={table.setSearch} placeholder={t('users.searchPlaceholder')} className="w-64" />
         <Button size="sm" className="ms-auto" onClick={() => setFormUser('new')}>
           <Plus className="size-4" aria-hidden />
-          New user
+          {t('users.newUser')}
         </Button>
       </div>
 
@@ -134,8 +137,8 @@ export function UsersTab() {
         hasActiveFilters={table.hasActiveFilters}
         onClearFilters={table.clearFilters}
         showColumnVisibility={false}
-        emptyTitle="No users yet"
-        emptyDescription="Create the first account to get your team signed in."
+        emptyTitle={t('users.emptyTitle')}
+        emptyDescription={t('users.emptyDescription')}
       />
 
       <DataTablePagination meta={table.meta} onPageChange={table.setPage} onPageSizeChange={table.setPageSize} />
@@ -149,9 +152,9 @@ export function UsersTab() {
       <ConfirmDialog
         open={deleteTarget !== null}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title={deleteTarget ? `Delete ${deleteTarget.name}?` : ''}
-        description="This soft-deletes the account — they can no longer sign in, and an Admin can restore their history later."
-        confirmLabel="Delete"
+        title={deleteTarget ? t('users.deleteConfirmTitle', { name: deleteTarget.name }) : ''}
+        description={t('users.deleteConfirmDescription')}
+        confirmLabel={t('users.delete')}
         onConfirm={confirmDelete}
       />
     </div>

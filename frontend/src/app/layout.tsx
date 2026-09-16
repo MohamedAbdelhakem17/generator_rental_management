@@ -14,9 +14,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${plexSans.variable} ${plexSansArabic.variable} ${plexMono.variable}`} suppressHydrationWarning>
+    <html
+      lang="ar"
+      dir="rtl"
+      className={`${plexSans.variable} ${plexSansArabic.variable} ${plexMono.variable}`}
+      suppressHydrationWarning
+    >
       <body suppressHydrationWarning>
-        <LocaleProvider>
+        <LocaleProvider defaultLocale="ar">
           <QueryProvider>
             <SessionProvider>
               {children}

@@ -3,6 +3,7 @@
 import type { Table } from '@tanstack/react-table';
 import { SlidersHorizontal } from 'lucide-react';
 
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -14,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export function ColumnVisibilityMenu<T>({ table }: { table: Table<T> }) {
+  const { t } = useLocale();
   const hideableColumns = table.getAllLeafColumns().filter((column) => column.getCanHide());
   if (hideableColumns.length === 0) return null;
 
@@ -22,11 +24,11 @@ export function ColumnVisibilityMenu<T>({ table }: { table: Table<T> }) {
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm">
           <SlidersHorizontal className="size-4" aria-hidden />
-          Columns
+          {t('table.columns')}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+        <DropdownMenuLabel>{t('table.toggleColumns')}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {hideableColumns.map((column) => (
           <DropdownMenuCheckboxItem

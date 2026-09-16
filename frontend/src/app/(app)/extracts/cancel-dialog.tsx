@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ApiError } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -26,6 +27,7 @@ export interface CancelDialogProps {
 
 /** Section 19: a reason is required to cancel an extract. */
 export function CancelDialog({ open, onOpenChange, extractNumber, onCancelled }: CancelDialogProps) {
+  const { t } = useLocale();
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,10 +41,10 @@ export function CancelDialog({ open, onOpenChange, extractNumber, onCancelled }:
     setIsSubmitting(true);
     try {
       await onCancelled(reason.trim());
-      toast.success(`${extractNumber} cancelled`);
+      toast.success(t('extracts.cancelledToast', { number: extractNumber }));
       handleOpenChange(false);
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Couldn't cancel this extract.");
+      toast.error(error instanceof ApiError ? error.message : t('extracts.cancelFailedToast'));
     } finally {
       setIsSubmitting(false);
     }
@@ -52,24 +54,24 @@ export function CancelDialog({ open, onOpenChange, extractNumber, onCancelled }:
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Cancel {extractNumber}</DialogTitle>
+          <DialogTitle>{t('extracts.cancelDialogTitle', { number: extractNumber })}</DialogTitle>
           <DialogDescription>
-            An Approved+ extract can only be cancelled directly while nothing has been collected against it.
+            {t('extracts.cancelDialogDescription')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="extract-cancel-reason">Reason</Label>
+          <Label htmlFor="extract-cancel-reason">{t('extracts.reasonLabel')}</Label>
           <Textarea id="extract-cancel-reason" rows={3} value={reason} onChange={(event) => setReason(event.target.value)} />
         </div>
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>
-            Back
+            {t('common.cancel')}
           </Button>
           <Button type="button" variant="destructive" onClick={handleSubmit} disabled={isSubmitting || reason.trim().length === 0}>
             {isSubmitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-            Cancel extract
+            {t('extracts.cancelButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

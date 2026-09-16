@@ -11,6 +11,7 @@ import {
 } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { useMinimumDuration } from '@/lib/hooks/use-minimum-duration';
 import { sortDirectionFor } from '@/lib/data-table/sort-cycle';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -68,6 +69,7 @@ export function DataTable<T>({
   skeletonRows = 8,
   showColumnVisibility = true,
 }: DataTableProps<T>) {
+  const { t } = useLocale();
   const table = useReactTable({
     data,
     columns,
@@ -151,12 +153,12 @@ export function DataTable<T>({
                   {hasActiveFilters ? (
                     <EmptyState
                       className="rounded-none border-0"
-                      title="No results match your filters"
-                      description="Try adjusting or clearing your filters."
+                      title={t('table.noResultsTitle')}
+                      description={t('table.noResultsDescription')}
                       action={
                         onClearFilters ? (
                           <button type="button" onClick={onClearFilters} className="text-sm font-medium text-primary hover:underline">
-                            Clear filters
+                            {t('table.clearFilters')}
                           </button>
                         ) : undefined
                       }

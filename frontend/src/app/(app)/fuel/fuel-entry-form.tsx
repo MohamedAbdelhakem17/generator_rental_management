@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -7,6 +8,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { apiClient, ApiError } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { GeneratorSelect } from '../contracts/generator-select';
 import { ProjectSelect } from '../operations/project-select';
 import { Button } from '@/components/ui/button';
@@ -25,15 +27,13 @@ function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-const formSchema = z.object({
-  date: z.string().min(1, 'Date is required'),
-  projectId: z.string().min(1, 'Choose a project'),
-  generatorId: z.string().min(1, 'Choose a generator'),
-  liters: z.coerce.number().positive('Enter a positive amount'),
-  pricePerLiter: z.coerce.number().positive('Enter a positive price'),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = {
+  date: string;
+  projectId: string;
+  generatorId: string;
+  liters: number;
+  pricePerLiter: number;
+};
 
 function defaultValues(): FormValues {
   return { date: today(), projectId: '', generatorId: '', liters: 0, pricePerLiter: 0 };
@@ -45,7 +45,20 @@ export interface FuelEntryFormProps {
 }
 
 export function FuelEntryForm({ open, onOpenChange }: FuelEntryFormProps) {
+  const { t } = useLocale();
   const queryClient = useQueryClient();
+
+  const formSchema = useMemo(
+    () =>
+      z.object({
+        date: z.string().min(1, t('fuel.formDateRequired')),
+        projectId: z.string().min(1, t('fuel.formChooseProject')),
+        generatorId: z.string().min(1, t('fuel.formChooseGenerator')),
+        liters: z.coerce.number().positive(t('common.enterPositiveNumber')),
+        pricePerLiter: z.coerce.number().positive(t('common.enterPositiveNumber')),
+      }),
+    [t],
+  );
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -60,11 +73,11 @@ export function FuelEntryForm({ open, onOpenChange }: FuelEntryFormProps) {
   async function onSubmit(values: FormValues) {
     try {
       await apiClient.post('/api/fuel', values);
-      toast.success(`Logged ${values.liters}L fill-up`);
+      toast.success(t('fuel.loggedToast', { liters: values.liters }));
       await queryClient.invalidateQueries({ queryKey: ['fuel'] });
       handleOpenChange(false);
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : 'Something went wrong. Try again.');
+      toast.error(error instanceof ApiError ? error.message : t('common.genericError'));
     }
   }
 
@@ -76,19 +89,19 @@ export function FuelEntryForm({ open, onOpenChange }: FuelEntryFormProps) {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>New fuel entry</DialogTitle>
-          <DialogDescription>Total cost is computed automatically from liters × price per liter.</DialogDescription>
+          <DialogTitle>{t('fuel.newEntryTitle')}</DialogTitle>
+          <DialogDescription>{t('fuel.newEntryDescription')}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="fuel-date">Date</Label>
+            <Label htmlFor="fuel-date">{t('fuel.fieldDate')}</Label>
             <Input id="fuel-date" type="date" className="h-11 text-base" {...form.register('date')} />
             {form.formState.errors.date ? <p className="text-xs text-destructive">{form.formState.errors.date.message}</p> : null}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Project</Label>
+            <Label>{t('fuel.fieldProject')}</Label>
             <ProjectSelect value={form.watch('projectId')} onChange={(value) => form.setValue('projectId', value, { shouldValidate: true })} />
             {form.formState.errors.projectId ? (
               <p className="text-xs text-destructive">{form.formState.errors.projectId.message}</p>
@@ -96,7 +109,7 @@ export function FuelEntryForm({ open, onOpenChange }: FuelEntryFormProps) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Generator</Label>
+            <Label>{t('fuel.fieldGenerator')}</Label>
             <GeneratorSelect value={form.watch('generatorId')} onChange={(value) => form.setValue('generatorId', value, { shouldValidate: true })} />
             {form.formState.errors.generatorId ? (
               <p className="text-xs text-destructive">{form.formState.errors.generatorId.message}</p>
@@ -105,12 +118,12 @@ export function FuelEntryForm({ open, onOpenChange }: FuelEntryFormProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="fuel-liters">Liters</Label>
+              <Label htmlFor="fuel-liters">{t('fuel.fieldLiters')}</Label>
               <Input id="fuel-liters" type="number" inputMode="decimal" step="any" className="h-11 text-base tabular-data" {...form.register('liters')} />
               {form.formState.errors.liters ? <p className="text-xs text-destructive">{form.formState.errors.liters.message}</p> : null}
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="fuel-price">Price / liter</Label>
+              <Label htmlFor="fuel-price">{t('fuel.fieldPricePerLiter')}</Label>
               <Input id="fuel-price" type="number" inputMode="decimal" step="any" className="h-11 text-base tabular-data" {...form.register('pricePerLiter')} />
               {form.formState.errors.pricePerLiter ? (
                 <p className="text-xs text-destructive">{form.formState.errors.pricePerLiter.message}</p>
@@ -119,17 +132,15 @@ export function FuelEntryForm({ open, onOpenChange }: FuelEntryFormProps) {
           </div>
 
           {totalCost ? (
-            <p className="text-sm text-muted-foreground">
-              Total cost: <span className="tabular-data font-medium text-foreground">{totalCost}</span>
-            </p>
+            <p className="text-sm text-muted-foreground">{t('fuel.totalCostLabel', { value: totalCost })}</p>
           ) : null}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              Save entry
+              {t('fuel.saveEntryButton')}
             </Button>
           </DialogFooter>
         </form>

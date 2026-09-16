@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { apiClient, ApiError } from '@/lib/apiClient';
 import { useDataTableQuery } from '@/hooks/useDataTableQuery';
 import { useSession } from '@/lib/session/session-provider';
+import { useLocale } from '@/lib/i18n/locale-provider';
+import type { TranslationKey } from '@/lib/i18n/dictionary';
 import { cn } from '@/lib/utils';
 import { STATUS_TONE_CLASSES, type StatusTone } from '@/lib/status-tone';
 import { PageHeader } from '@/components/layout/page-header';
@@ -41,12 +43,20 @@ const STATUS_TONES: Record<MaintenanceStatus, StatusTone> = {
   Cancelled: 'neutral',
 };
 
+const STATUS_LABEL_KEYS: Record<MaintenanceStatus, TranslationKey> = {
+  Open: 'maintenance.statusOpen',
+  'In Progress': 'maintenance.statusInProgress',
+  Completed: 'maintenance.statusCompleted',
+  Cancelled: 'maintenance.statusCancelled',
+};
+
 function StatusBadge({ status }: { status: MaintenanceStatus }) {
+  const { t } = useLocale();
   const tone = STATUS_TONE_CLASSES[STATUS_TONES[status]];
   return (
     <span className={cn('inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium', tone.bg, tone.fg, tone.border)}>
       <span className={cn('size-1.5 shrink-0 rounded-full', tone.dot)} aria-hidden />
-      {status}
+      {t(STATUS_LABEL_KEYS[status])}
     </span>
   );
 }
@@ -65,6 +75,7 @@ export default function MaintenancePage() {
 }
 
 function MaintenancePageContent() {
+  const { t } = useLocale();
   const queryClient = useQueryClient();
   const { user } = useSession();
   const canWrite = user?.permissions.includes('maintenance:write') ?? false;
@@ -98,20 +109,20 @@ function MaintenancePageContent() {
   async function start(record: MaintenanceRow) {
     try {
       await apiClient.post(`/api/maintenance/${record.id}/start`);
-      toast.success(`${record.generator.code} maintenance started`);
+      toast.success(t('maintenance.startedToast', { code: record.generator.code }));
       await invalidate();
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Couldn't start this record.");
+      toast.error(error instanceof ApiError ? error.message : t('maintenance.startFailedToast'));
     }
   }
 
   async function complete(record: MaintenanceRow) {
     try {
       const response = await apiClient.post<MaintenanceRow>(`/api/maintenance/${record.id}/complete`);
-      toast.success(`${record.generator.code} completed — next due at meter ${response.nextMaintenanceMeter}`);
+      toast.success(t('maintenance.completedToast', { code: record.generator.code, meter: response.nextMaintenanceMeter ?? '' }));
       await invalidate();
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Couldn't complete this record.");
+      toast.error(error instanceof ApiError ? error.message : t('maintenance.completeFailedToast'));
     }
   }
 
@@ -119,14 +130,14 @@ function MaintenancePageContent() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: ColumnDef<MaintenanceRow, any>[] = [
-    columnHelper.accessor((row) => row.generator.code, { id: 'generator', header: 'Generator', enableSorting: false }),
-    columnHelper.accessor('type', { header: 'Type', enableSorting: false }),
-    columnHelper.accessor('status', { header: 'Status', cell: (info) => <StatusBadge status={info.getValue() as MaintenanceStatus} /> }),
-    columnHelper.accessor('date', { header: 'Date', cell: (info) => formatDate(info.getValue()) }),
-    columnHelper.accessor('meter', { header: 'Meter', cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
-    columnHelper.accessor('totalCost', { header: 'Total cost', cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
+    columnHelper.accessor((row) => row.generator.code, { id: 'generator', header: t('maintenance.columnGenerator'), enableSorting: false }),
+    columnHelper.accessor('type', { header: t('maintenance.columnType'), enableSorting: false, cell: (info) => t(`maintenance.type${info.getValue()}` as TranslationKey) }),
+    columnHelper.accessor('status', { header: t('table.status'), cell: (info) => <StatusBadge status={info.getValue() as MaintenanceStatus} /> }),
+    columnHelper.accessor('date', { header: t('maintenance.columnDate'), cell: (info) => formatDate(info.getValue()) }),
+    columnHelper.accessor('meter', { header: t('maintenance.columnMeter'), cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
+    columnHelper.accessor('totalCost', { header: t('maintenance.columnTotalCost'), cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
     columnHelper.accessor('nextMaintenanceMeter', {
-      header: 'Next due',
+      header: t('maintenance.columnNextDue'),
       enableSorting: false,
       cell: (info) => (info.getValue() === null ? <span className="text-muted-foreground">—</span> : <span className="tabular-data">{info.getValue()}</span>),
     }),
@@ -135,7 +146,7 @@ function MaintenancePageContent() {
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="size-7" aria-label={`Actions for ${row.generator.code} maintenance`}>
+            <Button variant="ghost" size="icon" className="size-7" aria-label={t('maintenance.actionsFor', { code: row.generator.code })}>
               <MoreHorizontal className="size-4" aria-hidden />
             </Button>
           </DropdownMenuTrigger>
@@ -143,25 +154,25 @@ function MaintenancePageContent() {
             {canWrite && isOpenStatus ? (
               <DropdownMenuItem onClick={() => setEditTarget(row)}>
                 <Pencil className="size-4" aria-hidden />
-                Edit costs
+                {t('maintenance.editCosts')}
               </DropdownMenuItem>
             ) : null}
             {canWrite && row.status === 'Open' ? (
               <DropdownMenuItem onClick={() => void start(row)}>
                 <PlayCircle className="size-4" aria-hidden />
-                Start
+                {t('maintenance.start')}
               </DropdownMenuItem>
             ) : null}
             {canComplete && isOpenStatus ? (
               <DropdownMenuItem onClick={() => void complete(row)}>
                 <CheckCircle2 className="size-4" aria-hidden />
-                Complete
+                {t('maintenance.complete')}
               </DropdownMenuItem>
             ) : null}
             {canComplete && isOpenStatus ? (
               <DropdownMenuItem onClick={() => setCancelTarget(row)} className="text-destructive focus:text-destructive">
                 <XCircle className="size-4" aria-hidden />
-                Cancel
+                {t('maintenance.cancel')}
               </DropdownMenuItem>
             ) : null}
           </DropdownMenuContent>
@@ -173,13 +184,13 @@ function MaintenancePageContent() {
   return (
     <>
       <PageHeader
-        title="Maintenance"
-        description="Preventive and corrective service history, cost, and next-due tracking per generator."
+        title={t('maintenance.title')}
+        description={t('maintenance.description')}
         action={
           canWrite ? (
             <Button size="sm" onClick={() => setIsOpening(true)}>
               <Plus className="size-4" aria-hidden />
-              New maintenance
+              {t('maintenance.newMaintenance')}
             </Button>
           ) : undefined
         }
@@ -188,8 +199,8 @@ function MaintenancePageContent() {
       {canViewAlerts ? (
         <Tabs defaultValue="records" className="flex flex-col gap-4">
           <TabsList>
-            <TabsTrigger value="records">Records</TabsTrigger>
-            <TabsTrigger value="alerts">Alerts</TabsTrigger>
+            <TabsTrigger value="records">{t('maintenance.tabRecords')}</TabsTrigger>
+            <TabsTrigger value="alerts">{t('maintenance.tabAlerts')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="records" className="flex flex-col gap-4">
@@ -263,30 +274,30 @@ function MaintenanceFiltersAndTable({
           value={table.filters.generatorId}
           onChange={(value) => table.setFilter('generatorId', value)}
           options={(generators?.items ?? []).map((generator) => ({ value: generator.id, label: generator.code }))}
-          placeholder="Generator"
-          allLabel="All generators"
+          placeholder={t('maintenance.generatorFilterPlaceholder')}
+          allLabel={t('maintenance.allGeneratorsLabel')}
         />
         <SelectFilter
           value={table.filters.status}
           onChange={(value) => table.setFilter('status', value)}
           options={[
-            { value: 'Open', label: 'Open' },
-            { value: 'In Progress', label: 'In Progress' },
-            { value: 'Completed', label: 'Completed' },
-            { value: 'Cancelled', label: 'Cancelled' },
+            { value: 'Open', label: t('maintenance.statusOpen') },
+            { value: 'In Progress', label: t('maintenance.statusInProgress') },
+            { value: 'Completed', label: t('maintenance.statusCompleted') },
+            { value: 'Cancelled', label: t('maintenance.statusCancelled') },
           ]}
-          placeholder="Status"
-          allLabel="All statuses"
+          placeholder={t('table.status')}
+          allLabel={t('maintenance.allStatusesLabel')}
         />
         <SelectFilter
           value={table.filters.type}
           onChange={(value) => table.setFilter('type', value)}
           options={[
-            { value: 'Preventive', label: 'Preventive' },
-            { value: 'Corrective', label: 'Corrective' },
+            { value: 'Preventive', label: t('maintenance.typePreventive') },
+            { value: 'Corrective', label: t('maintenance.typeCorrective') },
           ]}
-          placeholder="Type"
-          allLabel="All types"
+          placeholder={t('maintenance.typeFilterPlaceholder')}
+          allLabel={t('maintenance.allTypesLabel')}
         />
         <DateRangeFilter
           value={dateRange}
@@ -294,11 +305,11 @@ function MaintenanceFiltersAndTable({
             table.setFilter('dateFrom', next.from);
             table.setFilter('dateTo', next.to);
           }}
-          placeholder="Date range"
+          placeholder={t('table.dateRange')}
         />
         {table.hasActiveFilters ? (
           <Button variant="ghost" size="sm" onClick={table.clearFilters}>
-            Clear filters
+            {t('table.clearFilters')}
           </Button>
         ) : null}
       </div>
@@ -315,8 +326,8 @@ function MaintenanceFiltersAndTable({
         hasActiveFilters={table.hasActiveFilters}
         onClearFilters={table.clearFilters}
         showColumnVisibility={false}
-        emptyTitle="No maintenance records yet"
-        emptyDescription={canWrite ? 'Open the first maintenance record to start tracking service history.' : 'Records will appear here once logged.'}
+        emptyTitle={t('maintenance.emptyTitle')}
+        emptyDescription={canWrite ? t('maintenance.emptyDescriptionWrite') : t('maintenance.emptyDescriptionReadOnly')}
       />
 
       <DataTablePagination meta={table.meta} onPageChange={table.setPage} onPageSizeChange={table.setPageSize} />

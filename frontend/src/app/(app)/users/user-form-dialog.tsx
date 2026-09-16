@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { useQuery } from '@tanstack/react-query';
 
 import { apiClient, ApiError } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -29,25 +30,14 @@ import type { UserRow } from './types';
 
 const TECHNICIAN_ROLE_NAME = 'Technician';
 
-const baseSchema = z.object({
-  name: z.string().trim().min(2, 'Enter at least 2 characters'),
-  email: z.string().trim().min(1, 'Email is required').email('Enter a valid email address'),
-  password: z.string().optional(),
-  role: z.string().min(1, 'Choose a role'),
-  active: z.boolean(),
-  assignedGenerators: z.array(z.string()),
-});
-
-/** Password is required on create only — one schema shape so the form's type stays stable across modes. */
-function buildSchema(isEdit: boolean) {
-  return baseSchema.superRefine((data, ctx) => {
-    if (!isEdit && (!data.password || data.password.length < 8)) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['password'], message: 'Password must be at least 8 characters' });
-    }
-  });
-}
-
-type FormValues = z.infer<typeof baseSchema>;
+type FormValues = {
+  name: string;
+  email: string;
+  password?: string;
+  role: string;
+  active: boolean;
+  assignedGenerators: string[];
+};
 
 export interface UserFormDialogProps {
   open: boolean;
@@ -57,6 +47,7 @@ export interface UserFormDialogProps {
 }
 
 export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps) {
+  const { t } = useLocale();
   const isEdit = Boolean(user);
   const queryClient = useQueryClient();
   const { data: roles } = useRolesQuery();
@@ -65,8 +56,24 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
     queryFn: ({ signal }) => apiClient.getPaginated<GeneratorRow>('/api/generators', { limit: 100, sort: 'code' }, signal),
   });
 
+  const formSchema = useMemo(() => {
+    const baseSchema = z.object({
+      name: z.string().trim().min(2, t('users.nameMinLength')),
+      email: z.string().trim().min(1, t('users.emailRequired')).email(t('users.emailInvalid')),
+      password: z.string().optional(),
+      role: z.string().min(1, t('users.roleRequired')),
+      active: z.boolean(),
+      assignedGenerators: z.array(z.string()),
+    });
+    return baseSchema.superRefine((data, ctx) => {
+      if (!isEdit && (!data.password || data.password.length < 8)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['password'], message: t('users.passwordMinLength') });
+      }
+    });
+  }, [isEdit, t]);
+
   const form = useForm<FormValues>({
-    resolver: zodResolver(buildSchema(isEdit)),
+    resolver: zodResolver(formSchema),
     defaultValues: { name: '', email: '', password: '', role: '', active: true, assignedGenerators: [] },
   });
 
@@ -99,15 +106,15 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
           active: values.active,
           assignedGenerators: values.assignedGenerators,
         });
-        toast.success(`Updated ${values.name}`);
+        toast.success(t('users.updatedToast', { name: values.name }));
       } else {
         await apiClient.post('/api/users', values);
-        toast.success(`Created ${values.name}`);
+        toast.success(t('users.createdToast', { name: values.name }));
       }
       await queryClient.invalidateQueries({ queryKey: ['users'] });
       onOpenChange(false);
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : 'Something went wrong. Try again.');
+      toast.error(error instanceof ApiError ? error.message : t('common.genericError'));
     }
   }
 
@@ -115,15 +122,15 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Edit user' : 'New user'}</DialogTitle>
+          <DialogTitle>{isEdit ? t('users.editUserTitle') : t('users.newUserTitle')}</DialogTitle>
           <DialogDescription>
-            {isEdit ? 'Update their details, role, or access.' : 'They can sign in with this email and password right away.'}
+            {isEdit ? t('users.editUserDescription') : t('users.newUserDescription')}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="user-name">Name</Label>
+            <Label htmlFor="user-name">{t('users.fieldName')}</Label>
             <Input id="user-name" {...form.register('name')} />
             {form.formState.errors.name ? (
               <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
@@ -131,7 +138,7 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="user-email">Email</Label>
+            <Label htmlFor="user-email">{t('users.fieldEmail')}</Label>
             <Input id="user-email" type="email" {...form.register('email')} />
             {form.formState.errors.email ? (
               <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
@@ -140,7 +147,7 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
 
           {!isEdit ? (
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="user-password">Password</Label>
+              <Label htmlFor="user-password">{t('users.fieldPassword')}</Label>
               <Input id="user-password" type="password" autoComplete="new-password" {...form.register('password')} />
               {form.formState.errors.password ? (
                 <p className="text-xs text-destructive">{form.formState.errors.password.message}</p>
@@ -149,10 +156,10 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
           ) : null}
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="user-role">Role</Label>
+            <Label htmlFor="user-role">{t('users.fieldRole')}</Label>
             <Select value={form.watch('role')} onValueChange={(value) => form.setValue('role', value, { shouldValidate: true })}>
               <SelectTrigger id="user-role">
-                <SelectValue placeholder="Choose a role" />
+                <SelectValue placeholder={t('users.chooseRolePlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {roles?.items.map((role) => (
@@ -169,13 +176,11 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
 
           {isTechnician ? (
             <div className="flex flex-col gap-1.5">
-              <Label>Assigned generators</Label>
-              <p className="text-xs text-muted-foreground">
-                A Technician may only log operations/fuel/maintenance entries for generators assigned here.
-              </p>
+              <Label>{t('users.assignedGenerators')}</Label>
+              <p className="text-xs text-muted-foreground">{t('users.assignedGeneratorsHelp')}</p>
               <div className="flex max-h-40 flex-col gap-2 overflow-y-auto rounded-md border border-border p-2.5">
                 {generators?.items.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No generators registered yet.</p>
+                  <p className="text-sm text-muted-foreground">{t('users.noGenerators')}</p>
                 ) : (
                   generators?.items.map((generator) => {
                     const assigned = form.watch('assignedGenerators');
@@ -205,15 +210,15 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
               checked={form.watch('active')}
               onCheckedChange={(checked) => form.setValue('active', Boolean(checked))}
             />
-            Active — can sign in
+            {t('users.activeCanSignIn')}
           </label>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              {isEdit ? 'Save changes' : 'Create user'}
+              {isEdit ? t('common.saveChanges') : t('users.createUser')}
             </Button>
           </DialogFooter>
         </form>

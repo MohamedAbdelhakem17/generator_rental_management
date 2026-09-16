@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ApiError } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -28,6 +29,7 @@ export interface CorrectionDialogProps {
 
 /** Admin/Ops Manager only (Section 17) — creates a new record and supersedes the original. */
 export function CorrectionDialog({ open, onOpenChange, log, onCorrected }: CorrectionDialogProps) {
+  const { t } = useLocale();
   const [startMeter, setStartMeter] = useState('');
   const [endMeter, setEndMeter] = useState('');
   const [reason, setReason] = useState('');
@@ -50,7 +52,7 @@ export function CorrectionDialog({ open, onOpenChange, log, onCorrected }: Corre
 
   async function handleSubmit() {
     if (!reason.trim()) {
-      setError('A reason is required');
+      setError(t('operations.reasonRequired'));
       return;
     }
 
@@ -61,10 +63,10 @@ export function CorrectionDialog({ open, onOpenChange, log, onCorrected }: Corre
         endMeter: endMeter === '' ? undefined : Number(endMeter),
         reason: reason.trim(),
       });
-      toast.success(`${log?.generator.code} entry corrected`);
+      toast.success(t('operations.correctedToast', { code: log?.generator.code ?? '' }));
       handleOpenChange(false);
     } catch (submitError) {
-      toast.error(submitError instanceof ApiError ? submitError.message : "Couldn't correct this entry.");
+      toast.error(submitError instanceof ApiError ? submitError.message : t('operations.correctFailedToast'));
     } finally {
       setIsSubmitting(false);
     }
@@ -74,29 +76,29 @@ export function CorrectionDialog({ open, onOpenChange, log, onCorrected }: Corre
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Correct {log?.generator.code ?? 'entry'}</DialogTitle>
+          <DialogTitle>{t('operations.correctDialogTitle', { code: log?.generator.code ?? t('operations.entryFallback') })}</DialogTitle>
           <DialogDescription>
-            The original stays on record as Superseded — this creates a new, corrected entry linked to it.
+            {t('operations.correctDialogDescription')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="correction-start">Start meter</Label>
+            <Label htmlFor="correction-start">{t('operations.fieldStartMeter')}</Label>
             <Input id="correction-start" type="number" inputMode="decimal" value={startMeter} onChange={(event) => setStartMeter(event.target.value)} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="correction-end">End meter</Label>
+            <Label htmlFor="correction-end">{t('operations.fieldEndMeter')}</Label>
             <Input id="correction-end" type="number" inputMode="decimal" value={endMeter} onChange={(event) => setEndMeter(event.target.value)} />
           </div>
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="correction-reason">Reason</Label>
+          <Label htmlFor="correction-reason">{t('operations.reasonLabel')}</Label>
           <Textarea
             id="correction-reason"
             rows={3}
-            placeholder="e.g. Technician transposed the digits on-site"
+            placeholder={t('operations.reasonPlaceholder')}
             value={reason}
             onChange={(event) => {
               setReason(event.target.value);
@@ -108,11 +110,11 @@ export function CorrectionDialog({ open, onOpenChange, log, onCorrected }: Corre
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-            Save correction
+            {t('operations.saveCorrectionButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

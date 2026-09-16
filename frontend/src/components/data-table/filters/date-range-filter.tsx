@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import type { DateRange } from 'react-day-picker';
 
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -31,7 +32,9 @@ function toIso(date: Date | undefined): string | undefined {
 }
 
 /** Section 16: from <= to is enforced by disabling Apply, never by submitting an invalid range. */
-export function DateRangeFilter({ value, onChange, placeholder = 'Date range', className }: DateRangeFilterProps) {
+export function DateRangeFilter({ value, onChange, placeholder, className }: DateRangeFilterProps) {
+  const { t } = useLocale();
+  const resolvedPlaceholder = placeholder ?? t('table.dateRange');
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<DateRange | undefined>({ from: toDate(value.from), to: toDate(value.to) });
 
@@ -55,7 +58,7 @@ export function DateRangeFilter({ value, onChange, placeholder = 'Date range', c
   const label =
     value.from || value.to
       ? `${value.from ? format(toDate(value.from)!, 'MMM d, yyyy') : '…'} – ${value.to ? format(toDate(value.to)!, 'MMM d, yyyy') : '…'}`
-      : placeholder;
+      : resolvedPlaceholder;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -69,14 +72,14 @@ export function DateRangeFilter({ value, onChange, placeholder = 'Date range', c
         <Calendar mode="range" selected={draft} onSelect={setDraft} numberOfMonths={2} />
         <div className="flex items-center justify-between gap-2 border-t border-border p-2">
           <button type="button" onClick={handleClear} className="text-sm text-muted-foreground hover:text-foreground">
-            Clear
+            {t('table.clear')}
           </button>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
-              Cancel
+              {t('table.cancel')}
             </Button>
             <Button size="sm" disabled={isInvalid} onClick={handleApply}>
-              Apply
+              {t('table.apply')}
             </Button>
           </div>
         </div>

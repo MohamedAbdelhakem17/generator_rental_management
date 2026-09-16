@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ApiError } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -26,6 +27,7 @@ export interface CancelDialogProps {
 
 /** Section 19/25: a reason is required to cancel a maintenance record. */
 export function CancelDialog({ open, onOpenChange, generatorCode, onCancelled }: CancelDialogProps) {
+  const { t } = useLocale();
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,10 +41,10 @@ export function CancelDialog({ open, onOpenChange, generatorCode, onCancelled }:
     setIsSubmitting(true);
     try {
       await onCancelled(reason.trim());
-      toast.success(`${generatorCode} maintenance cancelled`);
+      toast.success(t('maintenance.cancelledToast', { code: generatorCode }));
       handleOpenChange(false);
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Couldn't cancel this record.");
+      toast.error(error instanceof ApiError ? error.message : t('maintenance.cancelFailedToast'));
     } finally {
       setIsSubmitting(false);
     }
@@ -52,22 +54,22 @@ export function CancelDialog({ open, onOpenChange, generatorCode, onCancelled }:
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Cancel {generatorCode} maintenance</DialogTitle>
-          <DialogDescription>This record is closed without computing a next maintenance due meter.</DialogDescription>
+          <DialogTitle>{t('maintenance.cancelDialogTitle', { code: generatorCode })}</DialogTitle>
+          <DialogDescription>{t('maintenance.cancelDialogDescription')}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="cancel-reason">Reason</Label>
-          <Textarea id="cancel-reason" rows={3} placeholder="e.g. Duplicate entry" value={reason} onChange={(event) => setReason(event.target.value)} />
+          <Label htmlFor="cancel-reason">{t('maintenance.reasonLabel')}</Label>
+          <Textarea id="cancel-reason" rows={3} placeholder={t('maintenance.reasonPlaceholder')} value={reason} onChange={(event) => setReason(event.target.value)} />
         </div>
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>
-            Back
+            {t('common.cancel')}
           </Button>
           <Button type="button" variant="destructive" onClick={handleSubmit} disabled={isSubmitting || reason.trim().length === 0}>
             {isSubmitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-            Cancel record
+            {t('maintenance.cancelButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

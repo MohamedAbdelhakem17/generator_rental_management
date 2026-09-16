@@ -9,7 +9,7 @@ interface LocaleContextValue {
   locale: Locale;
   direction: Direction;
   setLocale: (locale: Locale) => void;
-  t: (key: TranslationKey) => string;
+  t: (key: TranslationKey, params?: Record<string, string | number>) => string;
 }
 
 const STORAGE_KEY = 'grms.locale';
@@ -49,7 +49,16 @@ export function LocaleProvider({
     }
   }, []);
 
-  const t = useCallback((key: TranslationKey) => dictionary[locale][key], [locale]);
+  const t = useCallback(
+    (key: TranslationKey, params?: Record<string, string | number>) => {
+      const template = dictionary[locale][key];
+      if (!params) return template;
+      return template.replace(/\{(\w+)\}/g, (match, token: string) =>
+        token in params ? String(params[token]) : match,
+      );
+    },
+    [locale],
+  );
 
   const value = useMemo(
     () => ({ locale, direction: directionFor(locale), setLocale, t }),

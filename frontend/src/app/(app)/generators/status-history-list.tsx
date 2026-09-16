@@ -1,5 +1,6 @@
 import { ArrowRight, Cog, History, User } from 'lucide-react';
 
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toBadgeStatus, type StatusHistoryEntry } from './types';
@@ -16,11 +17,12 @@ function formatAt(value: string): string {
 
 /** Section 13: the Generator Profile Overview tab's "Status History" list, sourced from StatusChangeLog. */
 export function StatusHistoryList({ entries, isLoading }: { entries: StatusHistoryEntry[]; isLoading: boolean }) {
+  const { t } = useLocale();
   return (
     <div className="rounded-lg border border-border bg-surface p-4">
       <h2 className="flex items-center gap-2 text-sm font-medium text-foreground">
         <History className="size-4 text-muted-foreground" aria-hidden />
-        Status history
+        {t('generators.statusHistory')}
       </h2>
 
       {isLoading ? (
@@ -29,7 +31,7 @@ export function StatusHistoryList({ entries, isLoading }: { entries: StatusHisto
           <Skeleton className="h-10 w-full" />
         </div>
       ) : entries.length === 0 ? (
-        <p className="mt-3 text-sm text-muted-foreground">No status changes recorded yet.</p>
+        <p className="mt-3 text-sm text-muted-foreground">{t('generators.noStatusChanges')}</p>
       ) : (
         <ul className="mt-3 flex flex-col divide-y divide-border">
           {entries.map((entry, index) => (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { apiClient, ApiError } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -22,26 +23,19 @@ import { Label } from '@/components/ui/label';
 import { CustomerCombobox } from './customer-combobox';
 import type { ProjectRow } from './types';
 
+type FormValues = {
+  code: string;
+  name: string;
+  customerId: string;
+  location?: string;
+  siteManager?: string;
+  startDate: string;
+  endDate?: string;
+};
+
 function toDateInputValue(iso: string): string {
   return iso.slice(0, 10);
 }
-
-const formSchema = z
-  .object({
-    code: z.string().trim().min(1, 'Code is required').max(30),
-    name: z.string().trim().min(1, 'Name is required').max(150),
-    customerId: z.string().min(1, 'Choose a customer'),
-    location: z.string().trim().max(200).optional(),
-    siteManager: z.string().trim().max(100).optional(),
-    startDate: z.string().min(1, 'Start date is required'),
-    endDate: z.string().optional(),
-  })
-  .refine((data) => !data.endDate || data.endDate >= data.startDate, {
-    message: 'End date must be on or after the start date',
-    path: ['endDate'],
-  });
-
-type FormValues = z.infer<typeof formSchema>;
 
 const DEFAULT_VALUES: FormValues = {
   code: '',
@@ -61,9 +55,29 @@ export interface ProjectFormDialogProps {
 }
 
 export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDialogProps) {
+  const { t } = useLocale();
   const isEdit = Boolean(project);
   const queryClient = useQueryClient();
   const [customerLabel, setCustomerLabel] = useState<string | null>(null);
+
+  const formSchema = useMemo(
+    () =>
+      z
+        .object({
+          code: z.string().trim().min(1, t('projects.formCodeRequired')).max(30),
+          name: z.string().trim().min(1, t('projects.formNameRequired')).max(150),
+          customerId: z.string().min(1, t('projects.formChooseCustomer')),
+          location: z.string().trim().max(200).optional(),
+          siteManager: z.string().trim().max(100).optional(),
+          startDate: z.string().min(1, t('projects.formStartDateRequired')),
+          endDate: z.string().optional(),
+        })
+        .refine((data) => !data.endDate || data.endDate >= data.startDate, {
+          message: t('projects.formEndDateInvalid'),
+          path: ['endDate'],
+        }),
+    [t],
+  );
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -99,7 +113,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
           startDate: values.startDate,
           endDate: values.endDate || null,
         });
-        toast.success(`Updated ${values.name}`);
+        toast.success(t('projects.updatedToast', { name: values.name }));
       } else {
         await apiClient.post('/api/projects', {
           code: values.code,
@@ -110,7 +124,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
           startDate: values.startDate,
           endDate: values.endDate || undefined,
         });
-        toast.success(`Added ${values.name}`);
+        toast.success(t('projects.addedToast', { name: values.name }));
       }
       await queryClient.invalidateQueries({ queryKey: ['projects'] });
       onOpenChange(false);
@@ -122,7 +136,7 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
           }
         }
       }
-      toast.error(error instanceof ApiError ? error.message : 'Something went wrong. Try again.');
+      toast.error(error instanceof ApiError ? error.message : t('common.genericError'));
     }
   }
 
@@ -130,28 +144,28 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEdit ? `Edit ${project?.name}` : 'Add a project'}</DialogTitle>
+          <DialogTitle>{isEdit ? t('projects.editTitle', { name: project?.name ?? '' }) : t('projects.addTitle')}</DialogTitle>
           <DialogDescription>
-            {isEdit ? 'The customer is fixed once a project is created.' : "A customer's job site — contracts and generators get organized under it."}
+            {isEdit ? t('projects.editDescription') : t('projects.addDescription')}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="proj-code">Code</Label>
+              <Label htmlFor="proj-code">{t('projects.fieldCode')}</Label>
               <Input id="proj-code" disabled={isEdit} {...form.register('code')} />
               {form.formState.errors.code ? <p className="text-xs text-destructive">{form.formState.errors.code.message}</p> : null}
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="proj-name">Name</Label>
+              <Label htmlFor="proj-name">{t('projects.fieldName')}</Label>
               <Input id="proj-name" {...form.register('name')} />
               {form.formState.errors.name ? <p className="text-xs text-destructive">{form.formState.errors.name.message}</p> : null}
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Customer</Label>
+            <Label>{t('projects.fieldCustomer')}</Label>
             {isEdit ? (
               <Input disabled value={customerLabel ?? ''} />
             ) : (
@@ -170,25 +184,25 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="proj-location">Location</Label>
+              <Label htmlFor="proj-location">{t('projects.fieldLocation')}</Label>
               <Input id="proj-location" {...form.register('location')} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="proj-site-manager">Site manager</Label>
+              <Label htmlFor="proj-site-manager">{t('projects.fieldSiteManager')}</Label>
               <Input id="proj-site-manager" {...form.register('siteManager')} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="proj-start">Start date</Label>
+              <Label htmlFor="proj-start">{t('projects.fieldStartDate')}</Label>
               <Input id="proj-start" type="date" {...form.register('startDate')} />
               {form.formState.errors.startDate ? (
                 <p className="text-xs text-destructive">{form.formState.errors.startDate.message}</p>
               ) : null}
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="proj-end">End date</Label>
+              <Label htmlFor="proj-end">{t('projects.fieldEndDate')}</Label>
               <Input id="proj-end" type="date" {...form.register('endDate')} />
               {form.formState.errors.endDate ? (
                 <p className="text-xs text-destructive">{form.formState.errors.endDate.message}</p>
@@ -198,10 +212,10 @@ export function ProjectFormDialog({ open, onOpenChange, project }: ProjectFormDi
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              {isEdit ? 'Save changes' : 'Add project'}
+              {isEdit ? t('common.saveChanges') : t('projects.addButton')}
             </Button>
           </DialogFooter>
         </form>

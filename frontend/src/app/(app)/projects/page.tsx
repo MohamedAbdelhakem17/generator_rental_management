@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 
 import { apiClient, ApiError } from '@/lib/apiClient';
 import { useDataTableQuery } from '@/hooks/useDataTableQuery';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { useSession } from '@/lib/session/session-provider';
 import { cn } from '@/lib/utils';
 import { STATUS_TONE_CLASSES } from '@/lib/status-tone';
@@ -32,17 +33,13 @@ import type { ProjectRow } from './types';
 
 const columnHelper = createColumnHelper<ProjectRow>();
 
-const STATUS_OPTIONS = [
-  { value: 'Active', label: 'Active', tone: 'success' as const },
-  { value: 'Closed', label: 'Closed', tone: 'neutral' as const },
-];
-
 function StatusBadge({ status }: { status: ProjectRow['status'] }) {
+  const { t } = useLocale();
   const tone = STATUS_TONE_CLASSES[status === 'Active' ? 'success' : 'neutral'];
   return (
     <span className={cn('inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium', tone.bg, tone.fg, tone.border)}>
       <span className={cn('size-1.5 shrink-0 rounded-full', tone.dot)} aria-hidden />
-      {status}
+      {status === 'Active' ? t('projects.statusActive') : t('projects.statusClosed')}
     </span>
   );
 }
@@ -57,9 +54,15 @@ export default function ProjectsPage() {
 }
 
 function ProjectsPageContent() {
+  const { t } = useLocale();
   const queryClient = useQueryClient();
   const { user } = useSession();
   const canWrite = user?.permissions.includes('projects:write') ?? false;
+
+  const STATUS_OPTIONS = [
+    { value: 'Active', label: t('projects.statusActive'), tone: 'success' as const },
+    { value: 'Closed', label: t('projects.statusClosed'), tone: 'neutral' as const },
+  ];
 
   const [formProject, setFormProject] = useState<ProjectRow | 'new' | null>(null);
   const [closeTarget, setCloseTarget] = useState<ProjectRow | null>(null);
@@ -83,10 +86,10 @@ function ProjectsPageContent() {
     if (!closeTarget) return;
     try {
       await apiClient.delete(`/api/projects/${closeTarget.id}`);
-      toast.success(`Closed ${closeTarget.name}`);
+      toast.success(t('projects.closedToast', { name: closeTarget.name }));
       await invalidate();
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Couldn't close this project.");
+      toast.error(error instanceof ApiError ? error.message : t('projects.closeFailedToast'));
       throw error;
     }
   }
@@ -94,17 +97,17 @@ function ProjectsPageContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: ColumnDef<ProjectRow, any>[] = [
     columnHelper.accessor('code', {
-      header: 'Code',
+      header: t('projects.columnCode'),
       cell: (info) => (
         <Link href={`/projects/${info.row.original.id}`} className="font-medium text-primary hover:underline">
           {info.getValue()}
         </Link>
       ),
     }),
-    columnHelper.accessor('name', { header: 'Name' }),
+    columnHelper.accessor('name', { header: t('projects.columnName') }),
     columnHelper.accessor((row) => row.customer.companyName, {
       id: 'customer',
-      header: 'Customer',
+      header: t('projects.columnCustomer'),
       enableSorting: false,
       cell: (info) => (
         <Link href={`/customers/${info.row.original.customer.id}`} className="text-foreground hover:underline">
@@ -112,14 +115,14 @@ function ProjectsPageContent() {
         </Link>
       ),
     }),
-    columnHelper.accessor('siteManager', { header: 'Site manager', enableSorting: false, cell: (info) => info.getValue() || '—' }),
-    columnHelper.accessor('status', { header: 'Status', cell: (info) => <StatusBadge status={info.getValue()} /> }),
+    columnHelper.accessor('siteManager', { header: t('projects.columnSiteManager'), enableSorting: false, cell: (info) => info.getValue() || '—' }),
+    columnHelper.accessor('status', { header: t('table.status'), cell: (info) => <StatusBadge status={info.getValue()} /> }),
     // Generator count is deferred to the Contract module (TASK-012) — assigned generators are
     // a live derivation from Contract Items, never a stored count.
     createActionsColumn<ProjectRow>((row) => (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="size-7" aria-label={`Actions for ${row.name}`}>
+          <Button variant="ghost" size="icon" className="size-7" aria-label={t('projects.actionsFor', { name: row.name })}>
             <MoreHorizontal className="size-4" aria-hidden />
           </Button>
         </DropdownMenuTrigger>
@@ -127,13 +130,13 @@ function ProjectsPageContent() {
           {canWrite ? (
             <DropdownMenuItem onClick={() => setFormProject(row)}>
               <Pencil className="size-4" aria-hidden />
-              Edit
+              {t('projects.edit')}
             </DropdownMenuItem>
           ) : null}
           {canWrite && row.status === 'Active' ? (
             <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setCloseTarget(row)}>
               <Lock className="size-4" aria-hidden />
-              Close
+              {t('projects.close')}
             </DropdownMenuItem>
           ) : null}
         </DropdownMenuContent>
@@ -144,13 +147,13 @@ function ProjectsPageContent() {
   return (
     <>
       <PageHeader
-        title="Projects"
-        description="A customer's job sites — contracts and generators organize under these."
+        title={t('projects.title')}
+        description={t('projects.description')}
         action={
           canWrite ? (
             <Button size="sm" onClick={() => setFormProject('new')}>
               <Plus className="size-4" aria-hidden />
-              New project
+              {t('projects.newProject')}
             </Button>
           ) : undefined
         }
@@ -160,17 +163,17 @@ function ProjectsPageContent() {
         <CustomerCombobox
           value={table.filters.customerId ?? ''}
           onSelect={(customer) => table.setFilter('customerId', customer.id)}
-          placeholder="All customers"
+          placeholder={t('projects.allCustomersPlaceholder')}
         />
         <StatusFilter
           value={table.filters.status}
           onChange={(value) => table.setFilter('status', value)}
           options={STATUS_OPTIONS}
-          placeholder="Status"
+          placeholder={t('table.status')}
         />
         {table.hasActiveFilters ? (
           <Button variant="ghost" size="sm" onClick={table.clearFilters}>
-            Clear filters
+            {t('table.clearFilters')}
           </Button>
         ) : null}
       </div>
@@ -187,8 +190,8 @@ function ProjectsPageContent() {
         hasActiveFilters={table.hasActiveFilters}
         onClearFilters={table.clearFilters}
         showColumnVisibility={false}
-        emptyTitle="No projects yet"
-        emptyDescription={canWrite ? 'Add the first project to start organizing contracts and generators.' : 'Projects will appear here once they are added.'}
+        emptyTitle={t('projects.emptyTitle')}
+        emptyDescription={canWrite ? t('projects.emptyDescriptionWrite') : t('projects.emptyDescriptionReadOnly')}
       />
 
       <DataTablePagination meta={table.meta} onPageChange={table.setPage} onPageSizeChange={table.setPageSize} />
@@ -204,9 +207,9 @@ function ProjectsPageContent() {
           <ConfirmDialog
             open={closeTarget !== null}
             onOpenChange={(open) => !open && setCloseTarget(null)}
-            title={closeTarget ? `Close ${closeTarget.name}?` : ''}
-            description="It's blocked while an active contract references it, and stays visible in historical reports."
-            confirmLabel="Close project"
+            title={closeTarget ? t('projects.closeConfirmTitle', { name: closeTarget.name }) : ''}
+            description={t('projects.closeConfirmDescription')}
+            confirmLabel={t('projects.closeButton')}
             onConfirm={confirmClose}
           />
         </>

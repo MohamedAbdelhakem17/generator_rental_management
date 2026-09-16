@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { apiClient, ApiError } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { GeneratorSelect } from '../contracts/generator-select';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,20 +29,18 @@ function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-const formSchema = z.object({
-  generatorId: z.string().min(1, 'Choose a generator'),
-  type: z.enum(['Preventive', 'Corrective']),
-  date: z.string().min(1, 'Date is required'),
-  meter: z.coerce.number().min(0, 'Meter is required'),
-  partsCost: z.coerce.number().min(0).optional(),
-  oilCost: z.coerce.number().min(0).optional(),
-  laborCost: z.coerce.number().min(0).optional(),
-  transportCost: z.coerce.number().min(0).optional(),
-  maintenanceCycleOverride: z.coerce.number().positive().optional(),
-  notes: z.string().trim().max(500).optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = {
+  generatorId: string;
+  type: 'Preventive' | 'Corrective';
+  date: string;
+  meter: number;
+  partsCost?: number;
+  oilCost?: number;
+  laborCost?: number;
+  transportCost?: number;
+  maintenanceCycleOverride?: number;
+  notes?: string;
+};
 
 function defaultValues(record: MaintenanceRow | null): FormValues {
   if (record) {
@@ -80,8 +79,25 @@ export interface MaintenanceFormDialogProps {
 
 /** Section 13/15: cost fields update a live-computed total as the user types. */
 export function MaintenanceFormDialog({ open, onOpenChange, record = null }: MaintenanceFormDialogProps) {
+  const { t } = useLocale();
   const queryClient = useQueryClient();
   const isEdit = record !== null;
+  const formSchema = useMemo(
+    () =>
+      z.object({
+        generatorId: z.string().min(1, t('maintenance.formChooseGenerator')),
+        type: z.enum(['Preventive', 'Corrective']),
+        date: z.string().min(1, t('maintenance.formDateRequired')),
+        meter: z.coerce.number().min(0, t('maintenance.formMeterRequired')),
+        partsCost: z.coerce.number().min(0).optional(),
+        oilCost: z.coerce.number().min(0).optional(),
+        laborCost: z.coerce.number().min(0).optional(),
+        transportCost: z.coerce.number().min(0).optional(),
+        maintenanceCycleOverride: z.coerce.number().positive().optional(),
+        notes: z.string().trim().max(500).optional(),
+      }),
+    [t],
+  );
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -109,15 +125,15 @@ export function MaintenanceFormDialog({ open, onOpenChange, record = null }: Mai
           maintenanceCycleOverride: values.maintenanceCycleOverride ?? null,
           notes: values.notes,
         });
-        toast.success(`${record.generator.code} maintenance updated`);
+        toast.success(t('maintenance.updatedToast', { code: record.generator.code }));
       } else {
         await apiClient.post('/api/maintenance', values);
-        toast.success('Maintenance record opened');
+        toast.success(t('maintenance.openedToast'));
       }
       await queryClient.invalidateQueries({ queryKey: ['maintenance'] });
       handleOpenChange(false);
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : 'Something went wrong. Try again.');
+      toast.error(error instanceof ApiError ? error.message : t('common.genericError'));
     }
   }
 
@@ -131,19 +147,19 @@ export function MaintenanceFormDialog({ open, onOpenChange, record = null }: Mai
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? `Edit maintenance — ${record!.generator.code}` : 'Open maintenance record'}</DialogTitle>
-          <DialogDescription>Total cost is computed automatically from parts + oil + labor + transport.</DialogDescription>
+          <DialogTitle>{isEdit ? t('maintenance.editTitle', { code: record!.generator.code }) : t('maintenance.openTitle')}</DialogTitle>
+          <DialogDescription>{t('maintenance.formDescription')}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
           {isEdit ? (
             <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-              {record!.type} · meter {record!.meter} · {new Date(record!.date).toLocaleDateString()}
+              {t(`maintenance.type${record!.type}` as 'maintenance.typePreventive' | 'maintenance.typeCorrective')} · {t('maintenance.meterSummary', { meter: record!.meter })} · {new Date(record!.date).toLocaleDateString()}
             </p>
           ) : (
             <>
               <div className="flex flex-col gap-1.5">
-                <Label>Generator</Label>
+                <Label>{t('maintenance.fieldGenerator')}</Label>
                 <GeneratorSelect value={form.watch('generatorId')} onChange={(value) => form.setValue('generatorId', value, { shouldValidate: true })} />
                 {form.formState.errors.generatorId ? (
                   <p className="text-xs text-destructive">{form.formState.errors.generatorId.message}</p>
@@ -152,26 +168,26 @@ export function MaintenanceFormDialog({ open, onOpenChange, record = null }: Mai
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <Label>Type</Label>
+                  <Label>{t('maintenance.fieldType')}</Label>
                   <Select value={form.watch('type')} onValueChange={(value) => form.setValue('type', value as FormValues['type'])}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Preventive">Preventive</SelectItem>
-                      <SelectItem value="Corrective">Corrective</SelectItem>
+                      <SelectItem value="Preventive">{t('maintenance.typePreventive')}</SelectItem>
+                      <SelectItem value="Corrective">{t('maintenance.typeCorrective')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="maint-date">Date</Label>
+                  <Label htmlFor="maint-date">{t('maintenance.fieldDate')}</Label>
                   <Input id="maint-date" type="date" className="h-11 text-base" {...form.register('date')} />
                   {form.formState.errors.date ? <p className="text-xs text-destructive">{form.formState.errors.date.message}</p> : null}
                 </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="maint-meter">Meter</Label>
+                <Label htmlFor="maint-meter">{t('maintenance.fieldMeter')}</Label>
                 <Input id="maint-meter" type="number" inputMode="decimal" className="h-11 text-base tabular-data" {...form.register('meter')} />
                 {form.formState.errors.meter ? <p className="text-xs text-destructive">{form.formState.errors.meter.message}</p> : null}
               </div>
@@ -180,25 +196,25 @@ export function MaintenanceFormDialog({ open, onOpenChange, record = null }: Mai
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="maint-parts">Parts</Label>
+              <Label htmlFor="maint-parts">{t('maintenance.fieldParts')}</Label>
               <Input id="maint-parts" type="number" inputMode="decimal" step="any" className="h-11 text-base tabular-data" {...form.register('partsCost')} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="maint-oil">Oil</Label>
+              <Label htmlFor="maint-oil">{t('maintenance.fieldOil')}</Label>
               <Input id="maint-oil" type="number" inputMode="decimal" step="any" className="h-11 text-base tabular-data" {...form.register('oilCost')} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="maint-labor">Labor</Label>
+              <Label htmlFor="maint-labor">{t('maintenance.fieldLabor')}</Label>
               <Input id="maint-labor" type="number" inputMode="decimal" step="any" className="h-11 text-base tabular-data" {...form.register('laborCost')} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="maint-transport">Transport</Label>
+              <Label htmlFor="maint-transport">{t('maintenance.fieldTransport')}</Label>
               <Input id="maint-transport" type="number" inputMode="decimal" step="any" className="h-11 text-base tabular-data" {...form.register('transportCost')} />
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="maint-cycle-override">Cycle override (hours, optional)</Label>
+            <Label htmlFor="maint-cycle-override">{t('maintenance.fieldCycleOverride')}</Label>
             <Input
               id="maint-cycle-override"
               type="number"
@@ -206,24 +222,24 @@ export function MaintenanceFormDialog({ open, onOpenChange, record = null }: Mai
               className="h-11 text-base tabular-data"
               {...form.register('maintenanceCycleOverride')}
             />
-            <p className="text-xs text-muted-foreground">Overrides the generator&apos;s default maintenance cycle for this record only.</p>
+            <p className="text-xs text-muted-foreground">{t('maintenance.cycleOverrideHelp')}</p>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="maint-notes">Notes</Label>
+            <Label htmlFor="maint-notes">{t('maintenance.fieldNotes')}</Label>
             <Textarea id="maint-notes" rows={2} {...form.register('notes')} />
           </div>
 
           <p className="text-sm text-muted-foreground">
-            Total cost: <span className="tabular-data font-medium text-foreground">{totalCost}</span>
+            {t('maintenance.totalCostLabel')}: <span className="tabular-data font-medium text-foreground">{totalCost}</span>
           </p>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              {isEdit ? 'Save changes' : 'Open record'}
+              {isEdit ? t('common.saveChanges') : t('maintenance.openButton')}
             </Button>
           </DialogFooter>
         </form>

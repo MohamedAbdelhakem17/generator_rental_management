@@ -11,6 +11,8 @@ import { toast } from 'sonner';
 import { apiClient, ApiError } from '@/lib/apiClient';
 import { useDataTableQuery } from '@/hooks/useDataTableQuery';
 import { useSession } from '@/lib/session/session-provider';
+import { useLocale } from '@/lib/i18n/locale-provider';
+import type { TranslationKey } from '@/lib/i18n/dictionary';
 import { cn } from '@/lib/utils';
 import { STATUS_TONE_CLASSES, type StatusTone } from '@/lib/status-tone';
 import { PageHeader } from '@/components/layout/page-header';
@@ -41,18 +43,27 @@ const STATUS_TONES: Record<ContractStatus, StatusTone> = {
   Cancelled: 'danger',
 };
 
-const STATUS_OPTIONS = (Object.keys(STATUS_TONES) as ContractStatus[]).map((status) => ({
-  value: status,
-  label: status,
-  tone: STATUS_TONES[status],
-}));
+const STATUS_LABEL_KEYS: Record<ContractStatus, TranslationKey> = {
+  Draft: 'contracts.statusDraft',
+  Active: 'contracts.statusActive',
+  Expired: 'contracts.statusExpired',
+  Cancelled: 'contracts.statusCancelled',
+};
+
+const METHOD_LABEL_KEYS: Record<ContractRow['rentalMethod'], TranslationKey> = {
+  monthly: 'contracts.methodMonthly',
+  daily: 'contracts.methodDaily',
+  weekly: 'contracts.methodWeekly',
+  hourly: 'contracts.methodHourly',
+};
 
 function ContractStatusBadge({ status }: { status: ContractStatus }) {
+  const { t } = useLocale();
   const tone = STATUS_TONE_CLASSES[STATUS_TONES[status]];
   return (
     <span className={cn('inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium', tone.bg, tone.fg, tone.border)}>
       <span className={cn('size-1.5 shrink-0 rounded-full', tone.dot)} aria-hidden />
-      {status}
+      {t(STATUS_LABEL_KEYS[status])}
     </span>
   );
 }
@@ -71,6 +82,7 @@ export default function ContractsPage() {
 }
 
 function ContractsPageContent() {
+  const { t } = useLocale();
   const queryClient = useQueryClient();
   const { user } = useSession();
   const canWrite = user?.permissions.includes('contracts:write') ?? false;
@@ -78,6 +90,12 @@ function ContractsPageContent() {
   const [isCreating, setIsCreating] = useState(false);
   const [activateTarget, setActivateTarget] = useState<ContractRow | null>(null);
   const [cancelTarget, setCancelTarget] = useState<ContractRow | null>(null);
+
+  const STATUS_OPTIONS = (Object.keys(STATUS_TONES) as ContractStatus[]).map((status) => ({
+    value: status,
+    label: t(STATUS_LABEL_KEYS[status]),
+    tone: STATUS_TONES[status],
+  }));
 
   const table = useDataTableQuery<ContractRow>({
     queryKey: 'contracts',
@@ -98,13 +116,13 @@ function ContractsPageContent() {
     if (!activateTarget) return;
     try {
       await apiClient.post(`/api/contracts/${activateTarget.id}/activate`);
-      toast.success(`${activateTarget.number} activated`);
+      toast.success(t('contracts.activatedToast', { number: activateTarget.number }));
       await invalidate();
     } catch (error) {
       if (error instanceof ApiError && error.fieldErrors.length > 0) {
         toast.error(error.fieldErrors.map((fieldError) => fieldError.message).join(' · '));
       } else {
-        toast.error(error instanceof ApiError ? error.message : "Couldn't activate this contract.");
+        toast.error(error instanceof ApiError ? error.message : t('contracts.activateFailedToast'));
       }
       throw error;
     }
@@ -115,27 +133,31 @@ function ContractsPageContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: ColumnDef<ContractRow, any>[] = [
     columnHelper.accessor('number', {
-      header: 'Number',
+      header: t('contracts.columnNumber'),
       cell: (info) => (
         <Link href={`/contracts/${info.row.original.id}`} className="font-medium text-primary hover:underline">
           {info.getValue()}
         </Link>
       ),
     }),
-    columnHelper.accessor((row) => row.customer.companyName, { id: 'customer', header: 'Customer', enableSorting: false }),
-    columnHelper.accessor((row) => row.project.name, { id: 'project', header: 'Project', enableSorting: false }),
+    columnHelper.accessor((row) => row.customer.companyName, { id: 'customer', header: t('contracts.columnCustomer'), enableSorting: false }),
+    columnHelper.accessor((row) => row.project.name, { id: 'project', header: t('contracts.columnProject'), enableSorting: false }),
     columnHelper.accessor((row) => `${formatDate(row.startDate)} – ${formatDate(row.endDate)}`, {
       id: 'dates',
-      header: 'Dates',
+      header: t('contracts.columnDates'),
       enableSorting: false,
     }),
-    columnHelper.accessor('rentalMethod', { header: 'Method', enableSorting: false, cell: (info) => info.getValue()[0]!.toUpperCase() + info.getValue().slice(1) }),
-    columnHelper.accessor('status', { header: 'Status', cell: (info) => <ContractStatusBadge status={info.getValue()} /> }),
-    columnHelper.accessor('itemCount', { header: 'Items', cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
+    columnHelper.accessor('rentalMethod', {
+      header: t('contracts.columnMethod'),
+      enableSorting: false,
+      cell: (info) => t(METHOD_LABEL_KEYS[info.getValue() as ContractRow['rentalMethod']]),
+    }),
+    columnHelper.accessor('status', { header: t('table.status'), cell: (info) => <ContractStatusBadge status={info.getValue()} /> }),
+    columnHelper.accessor('itemCount', { header: t('contracts.columnItems'), cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
     createActionsColumn<ContractRow>((row) => (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="size-7" aria-label={`Actions for ${row.number}`}>
+          <Button variant="ghost" size="icon" className="size-7" aria-label={t('contracts.actionsFor', { number: row.number })}>
             <MoreHorizontal className="size-4" aria-hidden />
           </Button>
         </DropdownMenuTrigger>
@@ -143,13 +165,13 @@ function ContractsPageContent() {
           {canWrite && row.status === 'Draft' ? (
             <DropdownMenuItem onClick={() => setActivateTarget(row)}>
               <Play className="size-4" aria-hidden />
-              Activate
+              {t('contracts.activate')}
             </DropdownMenuItem>
           ) : null}
           {canWrite && (row.status === 'Draft' || row.status === 'Active') ? (
             <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setCancelTarget(row)}>
               <XCircle className="size-4" aria-hidden />
-              Cancel
+              {t('contracts.cancel')}
             </DropdownMenuItem>
           ) : null}
         </DropdownMenuContent>
@@ -160,13 +182,13 @@ function ContractsPageContent() {
   return (
     <>
       <PageHeader
-        title="Contracts"
-        description="The commercial backbone — what makes a generator Rented and what every extract is generated from."
+        title={t('contracts.title')}
+        description={t('contracts.description')}
         action={
           canWrite ? (
             <Button size="sm" onClick={() => setIsCreating(true)}>
               <Plus className="size-4" aria-hidden />
-              New contract
+              {t('contracts.newContract')}
             </Button>
           ) : undefined
         }
@@ -176,13 +198,13 @@ function ContractsPageContent() {
         <CustomerCombobox
           value={table.filters.customerId ?? ''}
           onSelect={(customer) => table.setFilter('customerId', customer.id)}
-          placeholder="All customers"
+          placeholder={t('contracts.allCustomersPlaceholder')}
         />
         <StatusFilter
           value={table.filters.status}
           onChange={(value) => table.setFilter('status', value)}
           options={STATUS_OPTIONS}
-          placeholder="Status"
+          placeholder={t('table.status')}
         />
         <DateRangeFilter
           value={dateRange}
@@ -190,11 +212,11 @@ function ContractsPageContent() {
             table.setFilter('startDateFrom', next.from);
             table.setFilter('startDateTo', next.to);
           }}
-          placeholder="Start date range"
+          placeholder={t('contracts.startDateRangePlaceholder')}
         />
         {table.hasActiveFilters ? (
           <Button variant="ghost" size="sm" onClick={table.clearFilters}>
-            Clear filters
+            {t('table.clearFilters')}
           </Button>
         ) : null}
       </div>
@@ -211,8 +233,8 @@ function ContractsPageContent() {
         hasActiveFilters={table.hasActiveFilters}
         onClearFilters={table.clearFilters}
         showColumnVisibility={false}
-        emptyTitle="No contracts yet"
-        emptyDescription={canWrite ? 'Create the first contract to start tracking a rental.' : 'Contracts will appear here once they are created.'}
+        emptyTitle={t('contracts.emptyTitle')}
+        emptyDescription={canWrite ? t('contracts.emptyDescriptionWrite') : t('contracts.emptyDescriptionReadOnly')}
       />
 
       <DataTablePagination meta={table.meta} onPageChange={table.setPage} onPageSizeChange={table.setPageSize} />
@@ -224,9 +246,9 @@ function ContractsPageContent() {
           <ConfirmDialog
             open={activateTarget !== null}
             onOpenChange={(open) => !open && setActivateTarget(null)}
-            title={activateTarget ? `Activate ${activateTarget.number}?` : ''}
-            description="Runs the conflict check across every item first — activation is blocked if any generator overlaps another Active contract."
-            confirmLabel="Activate"
+            title={activateTarget ? t('contracts.activateConfirmTitle', { number: activateTarget.number }) : ''}
+            description={t('contracts.activateConfirmDescription')}
+            confirmLabel={t('contracts.activate')}
             confirmVariant="default"
             onConfirm={confirmActivate}
           />

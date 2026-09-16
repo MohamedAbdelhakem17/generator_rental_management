@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, LogOut, Menu, Search, User } from 'lucide-react';
+import { Bell, Languages, LogOut, Menu, Search, User } from 'lucide-react';
 
 import { useLocale } from '@/lib/i18n/locale-provider';
 import { useSession } from '@/lib/session/session-provider';
@@ -20,7 +20,7 @@ import {
 import { Breadcrumb } from './breadcrumb';
 
 export function Header() {
-  const { t } = useLocale();
+  const { t, locale, setLocale } = useLocale();
   const { setMobileOpen } = useSidebarState();
   const { role, userName, logout } = useSession();
   const breadcrumbItems = useBreadcrumb();
@@ -57,6 +57,17 @@ export function Header() {
             className="h-8 w-56 rounded-md border border-input bg-background ps-8 pe-3 text-sm text-foreground placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
           />
         </div>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 px-2"
+          onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}
+          aria-label={t('shell.toggleLanguage')}
+        >
+          <Languages className="size-4" aria-hidden />
+          <span className="text-xs font-medium">{locale === 'ar' ? 'EN' : 'ع'}</span>
+        </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

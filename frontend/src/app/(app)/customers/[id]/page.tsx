@@ -8,6 +8,7 @@ import { ArrowLeft, FolderKanban, Pencil, Power, PowerOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { apiClient, ApiError, type PaginatedResponse } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { useSession } from '@/lib/session/session-provider';
 import { cn } from '@/lib/utils';
 import { STATUS_TONE_CLASSES } from '@/lib/status-tone';
@@ -21,29 +22,31 @@ import type { ProjectRow } from '../../projects/types';
 import { CustomerFormDialog } from '../customer-form-dialog';
 import type { CustomerRow } from '../types';
 
-const PLACEHOLDER_TABS = [
-  { value: 'contracts', label: 'Contracts', description: 'Rental contracts with this customer land here once contract management ships.' },
-  { value: 'extracts', label: 'Extracts', description: 'Billing extracts land here once extract management ships.' },
-  { value: 'receipts', label: 'Receipts', description: 'Payments received land here once receipt tracking ships.' },
-  { value: 'statement', label: 'Statement', description: 'The live account balance and history land here once the Customer Ledger Engine ships.' },
-] as const;
-
 function ActiveBadge({ active }: { active: boolean }) {
+  const { t } = useLocale();
   const tone = STATUS_TONE_CLASSES[active ? 'success' : 'neutral'];
   return (
     <span className={cn('inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium', tone.bg, tone.fg, tone.border)}>
       <span className={cn('size-1.5 shrink-0 rounded-full', tone.dot)} aria-hidden />
-      {active ? 'Active' : 'Inactive'}
+      {active ? t('customers.active') : t('customers.inactive')}
     </span>
   );
 }
 
 export default function CustomerProfilePage() {
+  const { t } = useLocale();
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useSession();
   const canWrite = user?.permissions.includes('customers:write') ?? false;
+
+  const PLACEHOLDER_TABS = [
+    { value: 'contracts', label: t('customers.tabContracts'), description: t('customers.tabContractsDescription') },
+    { value: 'extracts', label: t('customers.tabExtracts'), description: t('customers.tabExtractsDescription') },
+    { value: 'receipts', label: t('customers.tabReceipts'), description: t('customers.tabReceiptsDescription') },
+    { value: 'statement', label: t('customers.tabStatement'), description: t('customers.tabStatementDescription') },
+  ] as const;
 
   const [isEditing, setIsEditing] = useState(false);
 
@@ -66,10 +69,14 @@ export default function CustomerProfilePage() {
     if (!customer) return;
     try {
       await apiClient.patch(`/api/customers/${customer.id}`, { active: !customer.active });
-      toast.success(customer.active ? `Deactivated ${customer.companyName}` : `Activated ${customer.companyName}`);
+      toast.success(
+        customer.active
+          ? t('customers.deactivatedToast', { name: customer.companyName })
+          : t('customers.activatedToast', { name: customer.companyName }),
+      );
       await invalidate();
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : 'Something went wrong. Try again.');
+      toast.error(error instanceof ApiError ? error.message : t('common.genericError'));
     }
   }
 
@@ -83,19 +90,19 @@ export default function CustomerProfilePage() {
   }
 
   if (isError || !customer) {
-    return <ErrorState title="Couldn't load this customer" onRetry={refetch} />;
+    return <ErrorState title={t('customers.loadFailedTitle')} onRetry={refetch} />;
   }
 
   return (
     <>
       <PageHeader
         title={customer.companyName}
-        description={`Code ${customer.code}`}
+        description={t('customers.codeLabel', { code: customer.code })}
         action={
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => router.push('/customers')}>
               <ArrowLeft className="size-4" aria-hidden />
-              Back to customers
+              {t('customers.backToCustomers')}
             </Button>
             <span data-testid="customer-header-status">
               <ActiveBadge active={customer.active} />
@@ -104,11 +111,11 @@ export default function CustomerProfilePage() {
               <>
                 <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
                   <Pencil className="size-4" aria-hidden />
-                  Edit
+                  {t('customers.edit')}
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => void toggleActive()}>
                   {customer.active ? <PowerOff className="size-4" aria-hidden /> : <Power className="size-4" aria-hidden />}
-                  {customer.active ? 'Deactivate' : 'Activate'}
+                  {customer.active ? t('customers.deactivate') : t('customers.activate')}
                 </Button>
               </>
             ) : null}
@@ -118,8 +125,8 @@ export default function CustomerProfilePage() {
 
       <Tabs defaultValue="overview" className="flex flex-col gap-4">
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="projects">Projects</TabsTrigger>
+          <TabsTrigger value="overview">{t('customers.tabOverview')}</TabsTrigger>
+          <TabsTrigger value="projects">{t('customers.tabProjects')}</TabsTrigger>
           {PLACEHOLDER_TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.label}
@@ -129,12 +136,12 @@ export default function CustomerProfilePage() {
 
         <TabsContent value="overview">
           <div className="rounded-lg border border-border bg-surface p-4">
-            <h2 className="text-sm font-medium text-foreground">Details</h2>
+            <h2 className="text-sm font-medium text-foreground">{t('customers.detailsHeading')}</h2>
             <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-3">
-              <Field label="Contact person" value={customer.contactPerson || '—'} />
-              <Field label="Phone" value={customer.phone || '—'} />
-              <Field label="Tax number" value={customer.taxNumber || '—'} mono />
-              <Field label="Address" value={customer.address || '—'} />
+              <Field label={t('customers.fieldContactPerson')} value={customer.contactPerson || '—'} />
+              <Field label={t('customers.fieldPhone')} value={customer.phone || '—'} />
+              <Field label={t('customers.fieldTaxNumber')} value={customer.taxNumber || '—'} mono />
+              <Field label={t('customers.fieldAddress')} value={customer.address || '—'} />
             </dl>
           </div>
         </TabsContent>
@@ -145,8 +152,8 @@ export default function CustomerProfilePage() {
           ) : !projects || projects.items.length === 0 ? (
             <EmptyState
               icon={FolderKanban}
-              title="No projects yet"
-              description="Job sites created under this customer show up here."
+              title={t('customers.noProjectsTitle')}
+              description={t('customers.noProjectsDescription')}
             />
           ) : (
             <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-surface">
@@ -167,7 +174,7 @@ export default function CustomerProfilePage() {
 
         {PLACEHOLDER_TABS.map((tab) => (
           <TabsContent key={tab.value} value={tab.value}>
-            <EmptyState title={`No ${tab.label.toLowerCase()} data yet`} description={tab.description} />
+            <EmptyState title={t('customers.noTabDataYet', { tab: tab.label })} description={tab.description} />
           </TabsContent>
         ))}
       </Tabs>
@@ -178,11 +185,12 @@ export default function CustomerProfilePage() {
 }
 
 function ProjectStatusBadge({ status }: { status: ProjectRow['status'] }) {
+  const { t } = useLocale();
   const tone = STATUS_TONE_CLASSES[status === 'Active' ? 'success' : 'neutral'];
   return (
     <span className={cn('inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium', tone.bg, tone.fg, tone.border)}>
       <span className={cn('size-1.5 shrink-0 rounded-full', tone.dot)} aria-hidden />
-      {status}
+      {status === 'Active' ? t('customers.active') : t('customers.projectStatusClosed')}
     </span>
   );
 }

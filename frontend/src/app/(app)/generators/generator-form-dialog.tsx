@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { apiClient, ApiError } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -21,23 +22,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { GeneratorRow } from './types';
 
-const formSchema = z.object({
-  code: z
-    .string()
-    .trim()
-    .min(2, 'Enter at least 2 characters')
-    .max(20)
-    .regex(/^[a-zA-Z0-9-]+$/, 'Letters, numbers, and dashes only'),
-  kva: z.coerce.number().positive('Enter a positive number'),
-  brand: z.string().trim().min(1, 'Brand is required').max(50),
-  model: z.string().trim().min(1, 'Model is required').max(50),
-  serialNumber: z.string().trim().min(1, 'Serial number is required'),
-  location: z.string().trim().max(200).optional(),
-  normalFuelConsumption: z.coerce.number().positive('Enter a positive number'),
-  maintenanceCycleHours: z.coerce.number().positive('Enter a positive number'),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = {
+  code: string;
+  kva: number;
+  brand: string;
+  model: string;
+  serialNumber: string;
+  location?: string;
+  normalFuelConsumption: number;
+  maintenanceCycleHours: number;
+};
 
 const DEFAULT_VALUES: FormValues = {
   code: '',
@@ -58,8 +52,29 @@ export interface GeneratorFormDialogProps {
 }
 
 export function GeneratorFormDialog({ open, onOpenChange, generator }: GeneratorFormDialogProps) {
+  const { t } = useLocale();
   const isEdit = Boolean(generator);
   const queryClient = useQueryClient();
+
+  const formSchema = useMemo(
+    () =>
+      z.object({
+        code: z
+          .string()
+          .trim()
+          .min(2, t('common.minChars', { count: 2 }))
+          .max(20)
+          .regex(/^[a-zA-Z0-9-]+$/, t('generators.formCodeInvalid')),
+        kva: z.coerce.number().positive(t('common.enterPositiveNumber')),
+        brand: z.string().trim().min(1, t('generators.formBrandRequired')).max(50),
+        model: z.string().trim().min(1, t('generators.formModelRequired')).max(50),
+        serialNumber: z.string().trim().min(1, t('generators.formSerialRequired')),
+        location: z.string().trim().max(200).optional(),
+        normalFuelConsumption: z.coerce.number().positive(t('common.enterPositiveNumber')),
+        maintenanceCycleHours: z.coerce.number().positive(t('common.enterPositiveNumber')),
+      }),
+    [t],
+  );
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -95,7 +110,7 @@ export function GeneratorFormDialog({ open, onOpenChange, generator }: Generator
           normalFuelConsumption: values.normalFuelConsumption,
           maintenanceCycleHours: values.maintenanceCycleHours,
         });
-        toast.success(`Updated ${values.code}`);
+        toast.success(t('generators.updatedToast', { code: values.code }));
       } else {
         await apiClient.post('/api/generators', {
           code: values.code,
@@ -104,7 +119,7 @@ export function GeneratorFormDialog({ open, onOpenChange, generator }: Generator
           normalFuelConsumption: values.normalFuelConsumption,
           maintenanceCycleHours: values.maintenanceCycleHours,
         });
-        toast.success(`Registered ${values.code}`);
+        toast.success(t('generators.registeredToast', { code: values.code }));
       }
       await queryClient.invalidateQueries({ queryKey: ['generators'] });
       onOpenChange(false);
@@ -114,7 +129,7 @@ export function GeneratorFormDialog({ open, onOpenChange, generator }: Generator
           if (fieldError.field === 'specifications.serialNumber') form.setError('serialNumber', { message: fieldError.message });
         }
       }
-      toast.error(error instanceof ApiError ? error.message : 'Something went wrong. Try again.');
+      toast.error(error instanceof ApiError ? error.message : t('common.genericError'));
     }
   }
 
@@ -122,23 +137,21 @@ export function GeneratorFormDialog({ open, onOpenChange, generator }: Generator
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEdit ? `Edit ${generator?.code}` : 'Register a generator'}</DialogTitle>
+          <DialogTitle>{isEdit ? t('generators.editTitle', { code: generator?.code ?? '' }) : t('generators.registerTitle')}</DialogTitle>
           <DialogDescription>
-            {isEdit
-              ? 'Specifications, location, and thresholds only — the meter updates from operation logs.'
-              : 'It starts out Available with a zero meter reading.'}
+            {isEdit ? t('generators.editDescription') : t('generators.registerDescription')}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="gen-code">Code</Label>
+              <Label htmlFor="gen-code">{t('generators.fieldCode')}</Label>
               <Input id="gen-code" disabled={isEdit} {...form.register('code')} />
               {form.formState.errors.code ? <p className="text-xs text-destructive">{form.formState.errors.code.message}</p> : null}
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="gen-kva">kVA</Label>
+              <Label htmlFor="gen-kva">{t('generators.fieldKva')}</Label>
               <Input id="gen-kva" type="number" step="any" {...form.register('kva')} />
               {form.formState.errors.kva ? <p className="text-xs text-destructive">{form.formState.errors.kva.message}</p> : null}
             </div>
@@ -146,19 +159,19 @@ export function GeneratorFormDialog({ open, onOpenChange, generator }: Generator
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="gen-brand">Brand</Label>
+              <Label htmlFor="gen-brand">{t('generators.fieldBrand')}</Label>
               <Input id="gen-brand" {...form.register('brand')} />
               {form.formState.errors.brand ? <p className="text-xs text-destructive">{form.formState.errors.brand.message}</p> : null}
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="gen-model">Model</Label>
+              <Label htmlFor="gen-model">{t('generators.fieldModel')}</Label>
               <Input id="gen-model" {...form.register('model')} />
               {form.formState.errors.model ? <p className="text-xs text-destructive">{form.formState.errors.model.message}</p> : null}
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="gen-serial">Serial number</Label>
+            <Label htmlFor="gen-serial">{t('generators.fieldSerial')}</Label>
             <Input id="gen-serial" {...form.register('serialNumber')} />
             {form.formState.errors.serialNumber ? (
               <p className="text-xs text-destructive">{form.formState.errors.serialNumber.message}</p>
@@ -166,20 +179,20 @@ export function GeneratorFormDialog({ open, onOpenChange, generator }: Generator
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="gen-location">Location</Label>
-            <Input id="gen-location" placeholder="e.g. Warehouse A" {...form.register('location')} />
+            <Label htmlFor="gen-location">{t('generators.fieldLocation')}</Label>
+            <Input id="gen-location" placeholder={t('generators.fieldLocationPlaceholder')} {...form.register('location')} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="gen-fuel">Normal fuel use (L/h)</Label>
+              <Label htmlFor="gen-fuel">{t('generators.fieldFuel')}</Label>
               <Input id="gen-fuel" type="number" step="any" {...form.register('normalFuelConsumption')} />
               {form.formState.errors.normalFuelConsumption ? (
                 <p className="text-xs text-destructive">{form.formState.errors.normalFuelConsumption.message}</p>
               ) : null}
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="gen-cycle">Maintenance cycle (h)</Label>
+              <Label htmlFor="gen-cycle">{t('generators.fieldCycle')}</Label>
               <Input id="gen-cycle" type="number" step="any" {...form.register('maintenanceCycleHours')} />
               {form.formState.errors.maintenanceCycleHours ? (
                 <p className="text-xs text-destructive">{form.formState.errors.maintenanceCycleHours.message}</p>
@@ -189,10 +202,10 @@ export function GeneratorFormDialog({ open, onOpenChange, generator }: Generator
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              {isEdit ? 'Save changes' : 'Register generator'}
+              {isEdit ? t('common.saveChanges') : t('generators.saveButton')}
             </Button>
           </DialogFooter>
         </form>

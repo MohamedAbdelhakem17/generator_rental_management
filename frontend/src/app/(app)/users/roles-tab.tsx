@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createColumnHelper } from '@tanstack/react-table';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ShieldCheck } from 'lucide-react';
+import { useLocale } from '@/lib/i18n/locale-provider';
 
 import { DataTable } from '@/components/data-table/data-table';
 import { Button } from '@/components/ui/button';
@@ -14,15 +15,16 @@ import type { RoleRow } from './types';
 const columnHelper = createColumnHelper<RoleRow>();
 
 export function RolesTab() {
+  const { t } = useLocale();
   const { data, isLoading, isError, refetch } = useRolesQuery();
   const [editingRole, setEditingRole] = useState<RoleRow | null>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: ColumnDef<RoleRow, any>[] = [
-    columnHelper.accessor('name', { header: 'Role', cell: (info) => <span className="font-medium">{info.getValue()}</span> }),
+    columnHelper.accessor('name', { header: t('users.columnRole'), cell: (info) => <span className="font-medium">{info.getValue()}</span> }),
     columnHelper.accessor((row) => row.permissions.length, {
       id: 'permissionCount',
-      header: 'Permissions',
+      header: t('users.columnPermissions'),
       cell: (info) => <span className="tabular-data text-muted-foreground">{info.getValue()}</span>,
     }),
     {
@@ -32,7 +34,7 @@ export function RolesTab() {
         <div className="flex justify-end">
           <Button variant="ghost" size="sm" onClick={() => setEditingRole(row.original)}>
             <ShieldCheck className="size-4" aria-hidden />
-            Edit permissions
+            {t('users.editPermissions')}
           </Button>
         </div>
       ),
@@ -51,8 +53,8 @@ export function RolesTab() {
         isError={isError}
         onRetry={refetch}
         showColumnVisibility={false}
-        emptyTitle="No roles yet"
-        emptyDescription="Roles are seeded once — run the backend seed script."
+        emptyTitle={t('users.rolesEmptyTitle')}
+        emptyDescription={t('users.rolesEmptyDescription')}
       />
 
       <RolePermissionsDialog

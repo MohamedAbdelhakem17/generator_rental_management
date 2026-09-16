@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Search, X } from 'lucide-react';
 
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { cn } from '@/lib/utils';
 
 export interface SearchInputProps {
@@ -14,7 +15,9 @@ export interface SearchInputProps {
 }
 
 /** Debounced text filter — commits to `onChange` (and so the URL) after typing settles. */
-export function SearchInput({ value, onChange, placeholder = 'Search…', debounceMs = 300, className }: SearchInputProps) {
+export function SearchInput({ value, onChange, placeholder, debounceMs = 300, className }: SearchInputProps) {
+  const { t } = useLocale();
+  const resolvedPlaceholder = placeholder ?? t('table.search');
   const [draft, setDraft] = useState(value);
 
   // Stay in sync when the value changes externally (e.g. "Clear filters").
@@ -34,15 +37,15 @@ export function SearchInput({ value, onChange, placeholder = 'Search…', deboun
         type="search"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        placeholder={placeholder}
-        aria-label={placeholder}
+        placeholder={resolvedPlaceholder}
+        aria-label={resolvedPlaceholder}
         className="h-8 w-full rounded-md border border-input bg-surface ps-8 pe-8 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       />
       {draft ? (
         <button
           type="button"
           onClick={() => setDraft('')}
-          aria-label="Clear search"
+          aria-label={t('table.clearSearch')}
           className="absolute end-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
         >
           <X className="size-3.5" aria-hidden />

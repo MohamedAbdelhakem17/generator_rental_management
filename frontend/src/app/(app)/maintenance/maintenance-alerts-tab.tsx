@@ -8,6 +8,7 @@ import { ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { apiClient, ApiError } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { useSession } from '@/lib/session/session-provider';
 import { cn } from '@/lib/utils';
 import { STATUS_TONE_CLASSES, type StatusTone } from '@/lib/status-tone';
@@ -34,6 +35,7 @@ function Badge({ label, tone }: { label: string; tone: StatusTone }) {
 /** Section 14: a simpler table than the Records tab — no URL-synced pagination (avoids
  * colliding query-param keys with the sibling DataTable on the same route). */
 export function MaintenanceAlertsTab() {
+  const { t } = useLocale();
   const queryClient = useQueryClient();
   const { user } = useSession();
   const canAcknowledge = user?.permissions.includes('maintenance-alerts:acknowledge') ?? false;
@@ -49,33 +51,33 @@ export function MaintenanceAlertsTab() {
   async function acknowledge(alert: MaintenanceAlertRow) {
     try {
       await apiClient.post(`/api/maintenance-alerts/${alert.id}/acknowledge`);
-      toast.success(`${alert.generator.code} alert acknowledged`);
+      toast.success(t('maintenance.alertAcknowledgedToast', { code: alert.generator.code }));
       await queryClient.invalidateQueries({ queryKey: ['maintenance-alerts'] });
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Couldn't acknowledge this alert.");
+      toast.error(error instanceof ApiError ? error.message : t('maintenance.acknowledgeFailedToast'));
     }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: ColumnDef<MaintenanceAlertRow, any>[] = [
-    columnHelper.accessor((row) => row.generator.code, { id: 'generator', header: 'Generator' }),
+    columnHelper.accessor((row) => row.generator.code, { id: 'generator', header: t('maintenance.columnGenerator') }),
     columnHelper.accessor('level', {
-      header: 'Level',
+      header: t('maintenance.columnLevel'),
       cell: (info) => {
         const level = info.getValue() as MaintenanceAlertLevel;
-        return <Badge label={level} tone={LEVEL_TONES[level]} />;
+        return <Badge label={t(`maintenance.level${level}` as 'maintenance.levelUpcoming' | 'maintenance.levelOverdue')} tone={LEVEL_TONES[level]} />;
       },
     }),
     columnHelper.accessor('status', {
-      header: 'Status',
+      header: t('table.status'),
       cell: (info) => {
         const status = info.getValue() as MaintenanceAlertStatus;
-        return <Badge label={status} tone={STATUS_TONES[status]} />;
+        return <Badge label={t(`maintenance.status${status.replace(' ', '')}` as 'maintenance.statusOpen' | 'maintenance.statusAcknowledged' | 'maintenance.statusResolved')} tone={STATUS_TONES[status]} />;
       },
     }),
-    columnHelper.accessor('dueAtMeter', { header: 'Due at meter', cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
+    columnHelper.accessor('dueAtMeter', { header: t('maintenance.columnDueAtMeter'), cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
     columnHelper.accessor('currentMeterAtCreation', {
-      header: 'Meter at alert',
+      header: t('maintenance.columnMeterAtAlert'),
       cell: (info) => <span className="tabular-data">{info.getValue()}</span>,
     }),
     columnHelper.display({
@@ -86,7 +88,7 @@ export function MaintenanceAlertsTab() {
           {canAcknowledge && row.original.status === 'Open' ? (
             <Button variant="outline" size="sm" onClick={() => void acknowledge(row.original)}>
               <ShieldAlert className="size-3.5" aria-hidden />
-              Acknowledge
+              {t('maintenance.acknowledgeButton')}
             </Button>
           ) : null}
         </div>
@@ -100,12 +102,12 @@ export function MaintenanceAlertsTab() {
         value={statusFilter}
         onChange={setStatusFilter}
         options={[
-          { value: 'Open', label: 'Open' },
-          { value: 'Acknowledged', label: 'Acknowledged' },
-          { value: 'Resolved', label: 'Resolved' },
+          { value: 'Open', label: t('maintenance.statusOpen') },
+          { value: 'Acknowledged', label: t('maintenance.statusAcknowledged') },
+          { value: 'Resolved', label: t('maintenance.statusResolved') },
         ]}
-        placeholder="Status"
-        allLabel="All statuses"
+        placeholder={t('table.status')}
+        allLabel={t('maintenance.allStatusesLabel')}
       />
 
       <DataTable
@@ -116,8 +118,8 @@ export function MaintenanceAlertsTab() {
         isError={isError}
         onRetry={refetch}
         showColumnVisibility={false}
-        emptyTitle="No maintenance alerts"
-        emptyDescription="Generators approaching or past their next-due meter will show up here."
+        emptyTitle={t('maintenance.alertsEmptyTitle')}
+        emptyDescription={t('maintenance.alertsEmptyDescription')}
       />
     </div>
   );

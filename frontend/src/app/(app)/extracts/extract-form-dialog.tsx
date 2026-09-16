@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { apiClient, ApiError } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -28,28 +29,15 @@ import type { ExtractRow, PreviewTotals } from './types';
 
 const LINE_ITEM_TYPES = ['rent', 'transport', 'services'] as const;
 
-const formSchema = z
-  .object({
-    customerId: z.string().min(1, 'Choose a customer'),
-    projectId: z.string().min(1, 'Choose a project'),
-    contractIds: z.array(z.string()).min(1, 'At least one contract is required'),
-    periodStart: z.string().min(1, 'Start date is required'),
-    periodEnd: z.string().min(1, 'End date is required'),
-    lineItems: z.array(
-      z.object({
-        type: z.enum(LINE_ITEM_TYPES),
-        description: z.string().trim().min(1, 'A description is required'),
-        amount: z.coerce.number().min(0),
-      }),
-    ),
-    discounts: z.coerce.number().min(0).optional(),
-  })
-  .refine((data) => data.periodEnd >= data.periodStart, {
-    message: 'End date must be on or after the start date',
-    path: ['periodEnd'],
-  });
-
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = {
+  customerId: string;
+  projectId: string;
+  contractIds: string[];
+  periodStart: string;
+  periodEnd: string;
+  lineItems: { type: (typeof LINE_ITEM_TYPES)[number]; description: string; amount: number }[];
+  discounts?: number;
+};
 
 function defaultValues(extract: ExtractRow | null): FormValues {
   if (extract) {
@@ -75,8 +63,33 @@ export interface ExtractFormDialogProps {
 
 /** Section 13's `ExtractCreationWizard`/edit form: contract select → rent pre-fill → line items → live totals. */
 export function ExtractFormDialog({ open, onOpenChange, extract = null }: ExtractFormDialogProps) {
+  const { t } = useLocale();
   const queryClient = useQueryClient();
   const isEdit = extract !== null;
+  const formSchema = useMemo(
+    () =>
+      z
+        .object({
+          customerId: z.string().min(1, t('extracts.formChooseCustomer')),
+          projectId: z.string().min(1, t('extracts.formChooseProject')),
+          contractIds: z.array(z.string()).min(1, t('extracts.formContractRequired')),
+          periodStart: z.string().min(1, t('extracts.formStartDateRequired')),
+          periodEnd: z.string().min(1, t('extracts.formEndDateRequired')),
+          lineItems: z.array(
+            z.object({
+              type: z.enum(LINE_ITEM_TYPES),
+              description: z.string().trim().min(1, t('extracts.formDescriptionRequired')),
+              amount: z.coerce.number().min(0),
+            }),
+          ),
+          discounts: z.coerce.number().min(0).optional(),
+        })
+        .refine((data) => data.periodEnd >= data.periodStart, {
+          message: t('extracts.formEndDateInvalid'),
+          path: ['periodEnd'],
+        }),
+    [t],
+  );
   const [totals, setTotals] = useState<PreviewTotals | null>(null);
   const [isPrefilling, setIsPrefilling] = useState(false);
 
@@ -122,7 +135,7 @@ export function ExtractFormDialog({ open, onOpenChange, extract = null }: Extrac
 
   async function prefillRent() {
     if (contractIds.length === 0) {
-      toast.error('Select at least one contract first');
+      toast.error(t('extracts.selectContractFirst'));
       return;
     }
     setIsPrefilling(true);
@@ -138,15 +151,15 @@ export function ExtractFormDialog({ open, onOpenChange, extract = null }: Extrac
       const rentItems = results.flatMap((result) =>
         result.items.map((item) => ({
           type: 'rent' as const,
-          description: `Rent — generator ${item.generatorId.slice(-6)} (${item.method})`,
+          description: t('extracts.rentLineDescription', { generator: item.generatorId.slice(-6), method: item.method }),
           amount: Number(item.amount),
         })),
       );
       const nonRent = form.getValues('lineItems').filter((item) => item.type !== 'rent');
       form.setValue('lineItems', [...rentItems, ...nonRent]);
-      toast.success(`Pre-filled ${rentItems.length} rent line item(s)`);
+      toast.success(t('extracts.rentPrefilledToast', { count: rentItems.length }));
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Couldn't calculate rent for these contracts.");
+      toast.error(error instanceof ApiError ? error.message : t('extracts.rentPreviewFailedToast'));
     } finally {
       setIsPrefilling(false);
     }
@@ -164,15 +177,15 @@ export function ExtractFormDialog({ open, onOpenChange, extract = null }: Extrac
     try {
       if (isEdit && extract) {
         await apiClient.patch(`/api/extracts/${extract.id}`, payload);
-        toast.success(`${extract.number} updated`);
+        toast.success(t('extracts.updatedToast', { number: extract.number }));
       } else {
         const created = await apiClient.post<ExtractRow>('/api/extracts', payload);
-        toast.success(`${created.number} saved as Draft`);
+        toast.success(t('extracts.createdToast', { number: created.number }));
       }
       await queryClient.invalidateQueries({ queryKey: ['extracts'] });
       handleOpenChange(false);
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : 'Something went wrong. Try again.');
+      toast.error(error instanceof ApiError ? error.message : t('common.genericError'));
     }
   }
 
@@ -180,14 +193,14 @@ export function ExtractFormDialog({ open, onOpenChange, extract = null }: Extrac
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{isEdit ? `Edit ${extract!.number}` : 'New extract'}</DialogTitle>
-          <DialogDescription>Totals are computed by the Financial Calculation Engine — never re-derived here.</DialogDescription>
+          <DialogTitle>{isEdit ? t('extracts.editTitle', { number: extract!.number }) : t('extracts.newExtractTitle')}</DialogTitle>
+          <DialogDescription>{t('extracts.formDescription')}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto pe-1">
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label>Customer</Label>
+              <Label>{t('extracts.fieldCustomer')}</Label>
               <CustomerCombobox
                 value={customerId}
                 onSelect={(customer) => {
@@ -201,7 +214,7 @@ export function ExtractFormDialog({ open, onOpenChange, extract = null }: Extrac
               ) : null}
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Project</Label>
+              <Label>{t('extracts.fieldProject')}</Label>
               <ProjectSelect
                 customerId={customerId}
                 value={projectId}
@@ -217,7 +230,7 @@ export function ExtractFormDialog({ open, onOpenChange, extract = null }: Extrac
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Contracts</Label>
+            <Label>{t('extracts.fieldContracts')}</Label>
             <ContractMultiSelect
               customerId={customerId}
               projectId={projectId}
@@ -231,14 +244,14 @@ export function ExtractFormDialog({ open, onOpenChange, extract = null }: Extrac
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="extract-period-start">Period start</Label>
+              <Label htmlFor="extract-period-start">{t('extracts.fieldPeriodStart')}</Label>
               <Input id="extract-period-start" type="date" className="h-11 text-base" {...form.register('periodStart')} />
               {form.formState.errors.periodStart ? (
                 <p className="text-xs text-destructive">{form.formState.errors.periodStart.message}</p>
               ) : null}
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="extract-period-end">Period end</Label>
+              <Label htmlFor="extract-period-end">{t('extracts.fieldPeriodEnd')}</Label>
               <Input id="extract-period-end" type="date" className="h-11 text-base" {...form.register('periodEnd')} />
               {form.formState.errors.periodEnd ? (
                 <p className="text-xs text-destructive">{form.formState.errors.periodEnd.message}</p>
@@ -248,19 +261,19 @@ export function ExtractFormDialog({ open, onOpenChange, extract = null }: Extrac
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <Label>Line items</Label>
+              <Label>{t('extracts.fieldLineItems')}</Label>
               <Button type="button" variant="outline" size="sm" onClick={() => void prefillRent()} disabled={isPrefilling}>
                 <Sparkles className="size-3.5" aria-hidden />
-                Pre-fill rent from contracts
+                {t('extracts.prefillRent')}
               </Button>
             </div>
 
-            {fields.length === 0 ? <p className="text-sm text-muted-foreground">No line items yet.</p> : null}
+            {fields.length === 0 ? <p className="text-sm text-muted-foreground">{t('extracts.noLineItems')}</p> : null}
 
             {fields.map((field, index) => (
               <div key={field.id} className="flex items-end gap-2">
                 <div className="w-32">
-                  <Label>Type</Label>
+                  <Label>{t('extracts.fieldType')}</Label>
                   <Select
                     value={form.watch(`lineItems.${index}.type`)}
                     onValueChange={(value) => form.setValue(`lineItems.${index}.type`, value as FormValues['lineItems'][number]['type'])}
@@ -271,21 +284,21 @@ export function ExtractFormDialog({ open, onOpenChange, extract = null }: Extrac
                     <SelectContent>
                       {LINE_ITEM_TYPES.map((type) => (
                         <SelectItem key={type} value={type}>
-                          {type[0]!.toUpperCase() + type.slice(1)}
+                          {t(`extracts.type${type[0]!.toUpperCase()}${type.slice(1)}` as 'extracts.typeRent' | 'extracts.typeTransport' | 'extracts.typeServices')}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex-1">
-                  <Label>Description</Label>
+                  <Label>{t('extracts.fieldDescription')}</Label>
                   <Input {...form.register(`lineItems.${index}.description`)} />
                 </div>
                 <div className="w-32">
-                  <Label>Amount</Label>
+                  <Label>{t('extracts.fieldAmount')}</Label>
                   <Input type="number" step="any" className="tabular-data" {...form.register(`lineItems.${index}.amount`)} />
                 </div>
-                <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Remove line item">
+                <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label={t('extracts.removeLineItem')}>
                   <Trash2 className="size-4" aria-hidden />
                 </Button>
               </div>
@@ -293,31 +306,31 @@ export function ExtractFormDialog({ open, onOpenChange, extract = null }: Extrac
 
             <Button type="button" variant="outline" size="sm" onClick={() => append({ type: 'services', description: '', amount: 0 })}>
               <Plus className="size-4" aria-hidden />
-              Add line item
+              {t('extracts.addLineItem')}
             </Button>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="extract-discounts">Discounts</Label>
+            <Label htmlFor="extract-discounts">{t('extracts.fieldDiscounts')}</Label>
             <Input id="extract-discounts" type="number" step="any" className="h-11 w-48 text-base tabular-data" {...form.register('discounts')} />
           </div>
 
           {totals ? (
             <div className="flex flex-col gap-1 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
               <div className="flex justify-between text-muted-foreground">
-                <span>Total work</span>
+                <span>{t('extracts.totalWork')}</span>
                 <span className="tabular-data">{totals.totalWork}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Net before VAT</span>
+                <span>{t('extracts.netBeforeVat')}</span>
                 <span className="tabular-data">{totals.netBeforeVat}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>VAT ({(totals.vatRateUsed * 100).toFixed(0)}%)</span>
+                <span>{t('extracts.vatLabel', { rate: (totals.vatRateUsed * 100).toFixed(0) })}</span>
                 <span className="tabular-data">{totals.vat}</span>
               </div>
               <div className="flex justify-between font-medium text-foreground">
-                <span>Final total</span>
+                <span>{t('extracts.finalTotal')}</span>
                 <span className="tabular-data">{totals.finalTotal}</span>
               </div>
             </div>
@@ -325,10 +338,10 @@ export function ExtractFormDialog({ open, onOpenChange, extract = null }: Extrac
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              {isEdit ? 'Save changes' : 'Save as Draft'}
+              {isEdit ? t('common.saveChanges') : t('extracts.saveDraft')}
             </Button>
           </DialogFooter>
         </form>

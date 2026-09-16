@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 
 import { apiClient, ApiError } from '@/lib/apiClient';
 import { useSession } from '@/lib/session/session-provider';
+import { useLocale } from '@/lib/i18n/locale-provider';
+import type { TranslationKey } from '@/lib/i18n/dictionary';
 import { cn } from '@/lib/utils';
 import { STATUS_TONE_CLASSES, type StatusTone } from '@/lib/status-tone';
 import { PageHeader } from '@/components/layout/page-header';
@@ -30,7 +32,17 @@ const STATUS_TONES: Record<ExtractStatus, StatusTone> = {
   Cancelled: 'danger',
 };
 
+const STATUS_LABEL_KEYS: Record<ExtractStatus, TranslationKey> = {
+  Draft: 'extracts.statusDraft',
+  'Under Review': 'extracts.statusUnderReview',
+  Approved: 'extracts.statusApproved',
+  'Partially Collected': 'extracts.statusPartiallyCollected',
+  Collected: 'extracts.statusCollected',
+  Cancelled: 'extracts.statusCancelled',
+};
+
 function StatusBadge({ status }: { status: ExtractStatus }) {
+  const { t } = useLocale();
   const tone = STATUS_TONE_CLASSES[STATUS_TONES[status]];
   return (
     <span
@@ -38,7 +50,7 @@ function StatusBadge({ status }: { status: ExtractStatus }) {
       className={cn('inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium', tone.bg, tone.fg, tone.border)}
     >
       <span className={cn('size-1.5 shrink-0 rounded-full', tone.dot)} aria-hidden />
-      {status}
+      {t(STATUS_LABEL_KEYS[status])}
     </span>
   );
 }
@@ -48,6 +60,7 @@ function formatDate(iso: string): string {
 }
 
 export default function ExtractDetailPage() {
+  const { t } = useLocale();
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -73,10 +86,10 @@ export default function ExtractDetailPage() {
     if (!extract) return;
     try {
       await apiClient.post(`/api/extracts/${extract.id}/submit-review`);
-      toast.success(`${extract.number} submitted for review`);
+      toast.success(t('extracts.submittedToast', { number: extract.number }));
       await invalidate();
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Couldn't submit this extract for review.");
+      toast.error(error instanceof ApiError ? error.message : t('extracts.submitFailedToast'));
     }
   }
 
@@ -84,10 +97,10 @@ export default function ExtractDetailPage() {
     if (!extract) return;
     try {
       await apiClient.post(`/api/extracts/${extract.id}/approve`);
-      toast.success(`${extract.number} approved`);
+      toast.success(t('extracts.approvedToast', { number: extract.number }));
       await invalidate();
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Couldn't approve this extract.");
+      toast.error(error instanceof ApiError ? error.message : t('extracts.approveFailedToast'));
       throw error;
     }
   }
@@ -102,7 +115,7 @@ export default function ExtractDetailPage() {
   }
 
   if (isError || !extract) {
-    return <ErrorState title="Couldn't load this extract" onRetry={refetch} />;
+    return <ErrorState title={t('extracts.loadFailedTitle')} onRetry={refetch} />;
   }
 
   const isLocked = extract.status !== 'Draft' && extract.status !== 'Under Review';
@@ -117,31 +130,31 @@ export default function ExtractDetailPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => router.push('/extracts')}>
               <ArrowLeft className="size-4" aria-hidden />
-              Back to extracts
+              {t('extracts.backToExtracts')}
             </Button>
             <StatusBadge status={extract.status} />
             {canWrite && !isLocked ? (
               <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
                 <Pencil className="size-4" aria-hidden />
-                Edit
+                {t('extracts.edit')}
               </Button>
             ) : null}
             {canWrite && extract.status === 'Draft' ? (
               <Button size="sm" onClick={() => void submitForReview()}>
                 <Send className="size-4" aria-hidden />
-                Submit for review
+                {t('extracts.submitForReview')}
               </Button>
             ) : null}
             {canApprove && extract.status === 'Under Review' ? (
               <Button size="sm" onClick={() => setIsApproving(true)}>
                 <CheckCircle2 className="size-4" aria-hidden />
-                Approve
+                {t('extracts.approve')}
               </Button>
             ) : null}
             {canCancelNow ? (
               <Button variant="destructive" size="sm" onClick={() => setIsCancelling(true)}>
                 <XCircle className="size-4" aria-hidden />
-                Cancel
+                {t('extracts.cancel')}
               </Button>
             ) : null}
           </div>
@@ -150,16 +163,16 @@ export default function ExtractDetailPage() {
 
       {isLocked && extract.status !== 'Cancelled' ? (
         <p className="rounded-md border border-status-rented-border bg-status-rented-bg px-3 py-2 text-sm text-status-rented-fg">
-          Approved — locked. Financial fields can no longer be edited directly; cancel and reissue a new Draft instead.
+          {t('extracts.lockedNotice')}
         </p>
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-4">
-          <h2 className="text-sm font-medium text-foreground">Overview</h2>
+          <h2 className="text-sm font-medium text-foreground">{t('extracts.overview')}</h2>
           <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
             <Field
-              label="Customer"
+              label={t('extracts.fieldCustomer')}
               value={
                 <Link href={`/customers/${extract.customer.id}`} className="text-primary hover:underline">
                   {extract.customerNameSnapshot || extract.customer.companyName}
@@ -167,47 +180,47 @@ export default function ExtractDetailPage() {
               }
             />
             <Field
-              label="Project"
+              label={t('extracts.fieldProject')}
               value={
                 <Link href={`/projects/${extract.project.id}`} className="text-primary hover:underline">
                   {extract.project.name}
                 </Link>
               }
             />
-            <Field label="Period" value={`${formatDate(extract.period.start)} – ${formatDate(extract.period.end)}`} />
-            <Field label="Contracts" value={`${extract.contractIds.length}`} />
-            {extract.status === 'Cancelled' ? <Field label="Cancel reason" value={extract.cancelReason} /> : null}
+            <Field label={t('extracts.fieldPeriod')} value={`${formatDate(extract.period.start)} – ${formatDate(extract.period.end)}`} />
+            <Field label={t('extracts.fieldContracts')} value={`${extract.contractIds.length}`} />
+            {extract.status === 'Cancelled' ? <Field label={t('extracts.cancelReason')} value={extract.cancelReason} /> : null}
           </dl>
         </div>
 
         <div className="rounded-lg border border-border bg-surface p-4">
-          <h2 className="text-sm font-medium text-foreground">Totals</h2>
+          <h2 className="text-sm font-medium text-foreground">{t('extracts.totals')}</h2>
           <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-            <Field label="Discounts" value={extract.discounts} mono />
+            <Field label={t('extracts.fieldDiscounts')} value={extract.discounts} mono />
             <Field
-              label="VAT rate"
-              value={extract.vatRateSnapshot !== null ? `${(extract.vatRateSnapshot * 100).toFixed(0)}% (locked)` : 'Live estimate'}
+              label={t('extracts.vatRate')}
+              value={extract.vatRateSnapshot !== null ? t('extracts.lockedRate', { rate: (extract.vatRateSnapshot * 100).toFixed(0) }) : t('extracts.liveEstimate')}
             />
-            <Field label="Net before VAT" value={extract.totalBeforeVat ?? '—'} mono />
-            <Field label="VAT" value={extract.vat ?? '—'} mono />
-            <Field label="Final total" value={extract.finalTotal ?? '—'} mono />
-            <Field label="Collected" value={extract.collectedAmount} mono />
+            <Field label={t('extracts.netBeforeVat')} value={extract.totalBeforeVat ?? '—'} mono />
+            <Field label={t('extracts.vat')} value={extract.vat ?? '—'} mono />
+            <Field label={t('extracts.finalTotal')} value={extract.finalTotal ?? '—'} mono />
+            <Field label={t('extracts.collected')} value={extract.collectedAmount} mono />
           </dl>
         </div>
       </div>
 
       <div className="rounded-lg border border-border bg-surface">
-        <h2 className="px-4 pt-4 text-sm font-medium text-foreground">Line items</h2>
+        <h2 className="px-4 pt-4 text-sm font-medium text-foreground">{t('extracts.fieldLineItems')}</h2>
         {extract.lineItems.length === 0 ? (
           <div className="p-4">
-            <EmptyState title="No line items yet" description="Edit this Draft to add rent, transport, or services line items." />
+            <EmptyState title={t('extracts.noLineItems')} description={t('extracts.noLineItemsDescription')} />
           </div>
         ) : (
           <ul className="mt-2 flex flex-col divide-y divide-border">
             {extract.lineItems.map((item) => (
               <li key={item.id} className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
                 <div>
-                  <span className="font-medium capitalize">{item.type}</span> — {item.description}
+                  <span className="font-medium capitalize">{t(`extracts.type${item.type[0]!.toUpperCase()}${item.type.slice(1)}` as 'extracts.typeRent' | 'extracts.typeTransport' | 'extracts.typeServices')}</span> — {item.description}
                 </div>
                 <span className="tabular-data">{item.amount}</span>
               </li>
@@ -221,9 +234,9 @@ export default function ExtractDetailPage() {
       <ConfirmDialog
         open={isApproving}
         onOpenChange={setIsApproving}
-        title={`Approve ${extract.number}?`}
-        description="Snapshots the current VAT rate and locks all financial fields — cancel and reissue a new Draft to make further changes."
-        confirmLabel="Approve"
+        title={t('extracts.approveConfirmTitle', { number: extract.number })}
+        description={t('extracts.approveConfirmDescription')}
+        confirmLabel={t('extracts.approve')}
         confirmVariant="default"
         onConfirm={confirmApprove}
       />

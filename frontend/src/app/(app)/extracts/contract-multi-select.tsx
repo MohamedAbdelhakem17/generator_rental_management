@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { apiClient } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { ContractRow } from '../contracts/types';
@@ -17,6 +18,7 @@ export interface ContractMultiSelectProps {
 
 /** Section 6: contracts are scoped to the selected customer+project and must be Active to bill against. */
 export function ContractMultiSelect({ customerId, projectId, value, onChange, disabled }: ContractMultiSelectProps) {
+  const { t } = useLocale();
   const { data, isFetching } = useQuery({
     queryKey: ['contracts', 'select', customerId, projectId],
     queryFn: ({ signal }) =>
@@ -29,13 +31,13 @@ export function ContractMultiSelect({ customerId, projectId, value, onChange, di
   }
 
   if (!customerId || !projectId) {
-    return <p className="text-sm text-muted-foreground">Choose a customer and project first.</p>;
+    return <p className="text-sm text-muted-foreground">{t('extracts.chooseCustomerProjectFirst')}</p>;
   }
   if (isFetching) {
-    return <p className="text-sm text-muted-foreground">Loading contracts…</p>;
+    return <p className="text-sm text-muted-foreground">{t('extracts.loadingContracts')}</p>;
   }
   if (!data || data.items.length === 0) {
-    return <p className="text-sm text-muted-foreground">No active contracts for this customer/project.</p>;
+    return <p className="text-sm text-muted-foreground">{t('extracts.noActiveContracts')}</p>;
   }
 
   return (

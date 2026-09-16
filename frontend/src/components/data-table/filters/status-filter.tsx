@@ -1,5 +1,6 @@
 'use client';
 
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { cn } from '@/lib/utils';
 import { STATUS_TONE_CLASSES, type StatusTone } from '@/lib/status-tone';
 import { SelectFilter } from './select-filter';
@@ -20,12 +21,13 @@ export interface StatusFilterProps {
 }
 
 /** A StatusBadge-colored SelectFilter — any module maps its own status enum to a tone. */
-export function StatusFilter({ value, onChange, options, placeholder = 'Status', allLabel, className }: StatusFilterProps) {
+export function StatusFilter({ value, onChange, options, placeholder, allLabel, className }: StatusFilterProps) {
+  const { t } = useLocale();
   return (
     <SelectFilter
       value={value}
       onChange={onChange}
-      placeholder={placeholder}
+      placeholder={placeholder ?? t('table.status')}
       allLabel={allLabel}
       className={className}
       options={options.map((option) => ({

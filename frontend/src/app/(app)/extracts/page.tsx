@@ -3,6 +3,8 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { createColumnHelper } from '@tanstack/react-table';
+import { useLocale } from '@/lib/i18n/locale-provider';
+import type { TranslationKey } from '@/lib/i18n/dictionary';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 
@@ -32,18 +34,22 @@ const STATUS_TONES: Record<ExtractStatus, StatusTone> = {
   Cancelled: 'danger',
 };
 
-const STATUS_OPTIONS = (Object.keys(STATUS_TONES) as ExtractStatus[]).map((status) => ({
-  value: status,
-  label: status,
-  tone: STATUS_TONES[status],
-}));
+const STATUS_LABEL_KEYS: Record<ExtractStatus, TranslationKey> = {
+  Draft: 'extracts.statusDraft',
+  'Under Review': 'extracts.statusUnderReview',
+  Approved: 'extracts.statusApproved',
+  'Partially Collected': 'extracts.statusPartiallyCollected',
+  Collected: 'extracts.statusCollected',
+  Cancelled: 'extracts.statusCancelled',
+};
 
 function ExtractStatusBadge({ status }: { status: ExtractStatus }) {
+  const { t } = useLocale();
   const tone = STATUS_TONE_CLASSES[STATUS_TONES[status]];
   return (
     <span className={cn('inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium', tone.bg, tone.fg, tone.border)}>
       <span className={cn('size-1.5 shrink-0 rounded-full', tone.dot)} aria-hidden />
-      {status}
+      {t(STATUS_LABEL_KEYS[status])}
     </span>
   );
 }
@@ -62,6 +68,7 @@ export default function ExtractsPage() {
 }
 
 function ExtractsPageContent() {
+  const { t } = useLocale();
   const { user } = useSession();
   const canWrite = user?.permissions.includes('extracts:create') ?? false;
 
@@ -79,33 +86,38 @@ function ExtractsPageContent() {
   });
 
   const dateRange: DateRangeValue = { from: table.filters.dateFrom, to: table.filters.dateTo };
+  const statusOptions = (Object.keys(STATUS_TONES) as ExtractStatus[]).map((status) => ({
+    value: status,
+    label: t(STATUS_LABEL_KEYS[status]),
+    tone: STATUS_TONES[status],
+  }));
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: ColumnDef<ExtractRow, any>[] = [
     columnHelper.accessor('number', {
-      header: 'Number',
+      header: t('extracts.columnNumber'),
       cell: (info) => (
         <Link href={`/extracts/${info.row.original.id}`} className="font-medium text-primary hover:underline">
           {info.getValue()}
         </Link>
       ),
     }),
-    columnHelper.accessor((row) => row.customer.companyName, { id: 'customer', header: 'Customer', enableSorting: false }),
-    columnHelper.accessor((row) => row.project.name, { id: 'project', header: 'Project', enableSorting: false }),
+    columnHelper.accessor((row) => row.customer.companyName, { id: 'customer', header: t('extracts.columnCustomer'), enableSorting: false }),
+    columnHelper.accessor((row) => row.project.name, { id: 'project', header: t('extracts.columnProject'), enableSorting: false }),
     columnHelper.accessor((row) => `${formatDate(row.period.start)} – ${formatDate(row.period.end)}`, {
       id: 'period',
-      header: 'Period',
+      header: t('extracts.columnPeriod'),
       enableSorting: false,
     }),
     columnHelper.accessor('finalTotal', {
-      header: 'Total',
+      header: t('extracts.columnTotal'),
       enableSorting: false,
       cell: (info) => (info.getValue() === null ? <span className="text-muted-foreground">—</span> : <span className="tabular-data">{info.getValue()}</span>),
     }),
-    columnHelper.accessor('status', { header: 'Status', cell: (info) => <ExtractStatusBadge status={info.getValue() as ExtractStatus} /> }),
+    columnHelper.accessor('status', { header: t('table.status'), cell: (info) => <ExtractStatusBadge status={info.getValue() as ExtractStatus} /> }),
     columnHelper.display({
       id: 'collected',
-      header: 'Collected / Remaining',
+      header: t('extracts.columnCollectedRemaining'),
       cell: ({ row }) => {
         const { collectedAmount, finalTotal } = row.original;
         if (finalTotal === null) return <span className="text-muted-foreground">—</span>;
@@ -122,13 +134,13 @@ function ExtractsPageContent() {
   return (
     <>
       <PageHeader
-        title="Extracts"
-        description="Customer-facing billing documents, from Draft through Approval and collection."
+        title={t('extracts.title')}
+        description={t('extracts.description')}
         action={
           canWrite ? (
             <Button size="sm" onClick={() => setIsCreating(true)}>
               <Plus className="size-4" aria-hidden />
-              New extract
+              {t('extracts.newExtract')}
             </Button>
           ) : undefined
         }
@@ -139,8 +151,8 @@ function ExtractsPageContent() {
         <StatusFilter
           value={table.filters.status}
           onChange={(value) => table.setFilter('status', value)}
-          options={STATUS_OPTIONS}
-          allLabel="All statuses"
+          options={statusOptions}
+          allLabel={t('extracts.allStatusesLabel')}
         />
         <DateRangeFilter
           value={dateRange}
@@ -148,11 +160,11 @@ function ExtractsPageContent() {
             table.setFilter('dateFrom', next.from);
             table.setFilter('dateTo', next.to);
           }}
-          placeholder="Period"
+          placeholder={t('extracts.periodPlaceholder')}
         />
         {table.hasActiveFilters ? (
           <Button variant="ghost" size="sm" onClick={table.clearFilters}>
-            Clear filters
+            {t('table.clearFilters')}
           </Button>
         ) : null}
       </div>
@@ -169,8 +181,8 @@ function ExtractsPageContent() {
         hasActiveFilters={table.hasActiveFilters}
         onClearFilters={table.clearFilters}
         showColumnVisibility={false}
-        emptyTitle="No extracts yet"
-        emptyDescription={canWrite ? 'Create the first extract to start billing a customer.' : 'Extracts will appear here once created.'}
+        emptyTitle={t('extracts.emptyTitle')}
+        emptyDescription={canWrite ? t('extracts.emptyDescriptionWrite') : t('extracts.emptyDescriptionReadOnly')}
       />
 
       <DataTablePagination meta={table.meta} onPageChange={table.setPage} onPageSizeChange={table.setPageSize} />

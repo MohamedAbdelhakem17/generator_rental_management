@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { apiClient, ApiError } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -22,16 +23,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { CustomerRow } from './types';
 
-const formSchema = z.object({
-  code: z.string().trim().min(1, 'Code is required').max(30),
-  companyName: z.string().trim().min(1, 'Company name is required').max(150),
-  contactPerson: z.string().trim().max(100).optional(),
-  phone: z.string().trim().max(30).optional(),
-  taxNumber: z.string().trim().max(30).optional(),
-  address: z.string().trim().max(300).optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = {
+  code: string;
+  companyName: string;
+  contactPerson?: string;
+  phone?: string;
+  taxNumber?: string;
+  address?: string;
+};
 
 const DEFAULT_VALUES: FormValues = {
   code: '',
@@ -50,8 +49,22 @@ export interface CustomerFormDialogProps {
 }
 
 export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFormDialogProps) {
+  const { t } = useLocale();
   const isEdit = Boolean(customer);
   const queryClient = useQueryClient();
+
+  const formSchema = useMemo(
+    () =>
+      z.object({
+        code: z.string().trim().min(1, t('customers.formCodeRequired')).max(30),
+        companyName: z.string().trim().min(1, t('customers.formCompanyNameRequired')).max(150),
+        contactPerson: z.string().trim().max(100).optional(),
+        phone: z.string().trim().max(30).optional(),
+        taxNumber: z.string().trim().max(30).optional(),
+        address: z.string().trim().max(300).optional(),
+      }),
+    [t],
+  );
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -84,10 +97,10 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
           taxNumber: values.taxNumber,
           address: values.address,
         });
-        toast.success(`Updated ${values.companyName}`);
+        toast.success(t('customers.updatedToast', { name: values.companyName }));
       } else {
         await apiClient.post('/api/customers', values);
-        toast.success(`Added ${values.companyName}`);
+        toast.success(t('customers.addedToast', { name: values.companyName }));
       }
       await queryClient.invalidateQueries({ queryKey: ['customers'] });
       onOpenChange(false);
@@ -99,7 +112,7 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
           }
         }
       }
-      toast.error(error instanceof ApiError ? error.message : 'Something went wrong. Try again.');
+      toast.error(error instanceof ApiError ? error.message : t('common.genericError'));
     }
   }
 
@@ -107,21 +120,21 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEdit ? `Edit ${customer?.companyName}` : 'Add a customer'}</DialogTitle>
+          <DialogTitle>{isEdit ? t('customers.editTitle', { name: customer?.companyName ?? '' }) : t('customers.addTitle')}</DialogTitle>
           <DialogDescription>
-            {isEdit ? 'Contact and billing details only — the code is fixed once created.' : 'The billing counterparty for projects and contracts.'}
+            {isEdit ? t('customers.editDescription') : t('customers.addDescription')}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="cust-code">Code</Label>
+              <Label htmlFor="cust-code">{t('customers.fieldCode')}</Label>
               <Input id="cust-code" disabled={isEdit} {...form.register('code')} />
               {form.formState.errors.code ? <p className="text-xs text-destructive">{form.formState.errors.code.message}</p> : null}
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="cust-company">Company name</Label>
+              <Label htmlFor="cust-company">{t('customers.fieldCompanyName')}</Label>
               <Input id="cust-company" {...form.register('companyName')} />
               {form.formState.errors.companyName ? (
                 <p className="text-xs text-destructive">{form.formState.errors.companyName.message}</p>
@@ -131,32 +144,32 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="cust-contact">Contact person</Label>
+              <Label htmlFor="cust-contact">{t('customers.fieldContactPerson')}</Label>
               <Input id="cust-contact" {...form.register('contactPerson')} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="cust-phone">Phone</Label>
+              <Label htmlFor="cust-phone">{t('customers.fieldPhone')}</Label>
               <Input id="cust-phone" {...form.register('phone')} />
               {form.formState.errors.phone ? <p className="text-xs text-destructive">{form.formState.errors.phone.message}</p> : null}
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cust-tax">Tax number</Label>
-            <Input id="cust-tax" placeholder="Required before a contract can be activated" {...form.register('taxNumber')} />
+            <Label htmlFor="cust-tax">{t('customers.fieldTaxNumber')}</Label>
+            <Input id="cust-tax" placeholder={t('customers.fieldTaxNumberPlaceholder')} {...form.register('taxNumber')} />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cust-address">Address</Label>
+            <Label htmlFor="cust-address">{t('customers.fieldAddress')}</Label>
             <Textarea id="cust-address" rows={2} {...form.register('address')} />
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              {isEdit ? 'Save changes' : 'Add customer'}
+              {isEdit ? t('common.saveChanges') : t('customers.addButton')}
             </Button>
           </DialogFooter>
         </form>

@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 
 import { apiClient, ApiError } from '@/lib/apiClient';
 import { useSession } from '@/lib/session/session-provider';
+import { useLocale } from '@/lib/i18n/locale-provider';
+import type { TranslationKey } from '@/lib/i18n/dictionary';
 import { cn } from '@/lib/utils';
 import { STATUS_TONE_CLASSES, type StatusTone } from '@/lib/status-tone';
 import { PageHeader } from '@/components/layout/page-header';
@@ -29,7 +31,22 @@ const STATUS_TONES: Record<ContractStatus, StatusTone> = {
   Cancelled: 'danger',
 };
 
+const STATUS_LABEL_KEYS: Record<ContractStatus, TranslationKey> = {
+  Draft: 'contracts.statusDraft',
+  Active: 'contracts.statusActive',
+  Expired: 'contracts.statusExpired',
+  Cancelled: 'contracts.statusCancelled',
+};
+
+const METHOD_LABEL_KEYS: Record<ContractDetail['rentalMethod'], TranslationKey> = {
+  monthly: 'contracts.methodMonthly',
+  daily: 'contracts.methodDaily',
+  weekly: 'contracts.methodWeekly',
+  hourly: 'contracts.methodHourly',
+};
+
 function StatusBadge({ status }: { status: ContractStatus }) {
+  const { t } = useLocale();
   const tone = STATUS_TONE_CLASSES[STATUS_TONES[status]];
   return (
     <span
@@ -37,7 +54,7 @@ function StatusBadge({ status }: { status: ContractStatus }) {
       className={cn('inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium', tone.bg, tone.fg, tone.border)}
     >
       <span className={cn('size-1.5 shrink-0 rounded-full', tone.dot)} aria-hidden />
-      {status}
+      {t(STATUS_LABEL_KEYS[status])}
     </span>
   );
 }
@@ -61,6 +78,7 @@ function parseItemErrors(fieldErrors: { field?: string; message: string }[]): Ma
 }
 
 export default function ContractDetailPage() {
+  const { t } = useLocale();
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -87,14 +105,14 @@ export default function ContractDetailPage() {
     setItemErrors(new Map());
     try {
       await apiClient.post(`/api/contracts/${contract.id}/activate`);
-      toast.success(`${contract.number} activated`);
+      toast.success(t('contracts.activatedToast', { number: contract.number }));
       await invalidate();
     } catch (error) {
       if (error instanceof ApiError && error.fieldErrors.length > 0) {
         setItemErrors(parseItemErrors(error.fieldErrors));
         toast.error(error.message);
       } else {
-        toast.error(error instanceof ApiError ? error.message : "Couldn't activate this contract.");
+        toast.error(error instanceof ApiError ? error.message : t('contracts.activateFailedToast'));
       }
       throw error;
     }
@@ -110,7 +128,7 @@ export default function ContractDetailPage() {
   }
 
   if (isError || !contract) {
-    return <ErrorState title="Couldn't load this contract" onRetry={refetch} />;
+    return <ErrorState title={t('contracts.loadFailedTitle')} onRetry={refetch} />;
   }
 
   return (
@@ -122,19 +140,19 @@ export default function ContractDetailPage() {
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => router.push('/contracts')}>
               <ArrowLeft className="size-4" aria-hidden />
-              Back to contracts
+              {t('contracts.backToContracts')}
             </Button>
             <StatusBadge status={contract.status} />
             {canWrite && contract.status === 'Draft' ? (
               <Button variant="default" size="sm" onClick={() => setIsActivating(true)}>
                 <Play className="size-4" aria-hidden />
-                Activate
+                {t('contracts.activate')}
               </Button>
             ) : null}
             {canWrite && (contract.status === 'Draft' || contract.status === 'Active') ? (
               <Button variant="destructive" size="sm" onClick={() => setIsCancelling(true)}>
                 <XCircle className="size-4" aria-hidden />
-                Cancel
+                {t('contracts.cancel')}
               </Button>
             ) : null}
           </div>
@@ -143,18 +161,18 @@ export default function ContractDetailPage() {
 
       <Tabs defaultValue="overview" className="flex flex-col gap-4">
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="items">Items</TabsTrigger>
-          <TabsTrigger value="extracts">Extracts</TabsTrigger>
+          <TabsTrigger value="overview">{t('contracts.tabOverview')}</TabsTrigger>
+          <TabsTrigger value="items">{t('contracts.tabItems')}</TabsTrigger>
+          <TabsTrigger value="extracts">{t('contracts.tabExtracts')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-lg border border-border bg-surface p-4">
-              <h2 className="text-sm font-medium text-foreground">Terms</h2>
+              <h2 className="text-sm font-medium text-foreground">{t('contracts.termsHeading')}</h2>
               <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <Field
-                  label="Customer"
+                  label={t('contracts.fieldCustomer')}
                   value={
                     <Link href={`/customers/${contract.customer.id}`} className="text-primary hover:underline">
                       {contract.customer.companyName}
@@ -162,26 +180,26 @@ export default function ContractDetailPage() {
                   }
                 />
                 <Field
-                  label="Project"
+                  label={t('contracts.fieldProject')}
                   value={
                     <Link href={`/projects/${contract.project.id}`} className="text-primary hover:underline">
                       {contract.project.name}
                     </Link>
                   }
                 />
-                <Field label="Start date" value={formatDate(contract.startDate)} />
-                <Field label="End date" value={formatDate(contract.endDate)} />
-                <Field label="Rental method" value={contract.rentalMethod[0]!.toUpperCase() + contract.rentalMethod.slice(1)} />
-                {contract.status === 'Cancelled' ? <Field label="Cancel reason" value={contract.cancelReason} /> : null}
+                <Field label={t('contracts.fieldStartDate')} value={formatDate(contract.startDate)} />
+                <Field label={t('contracts.fieldEndDate')} value={formatDate(contract.endDate)} />
+                <Field label={t('contracts.fieldRentalMethod')} value={t(METHOD_LABEL_KEYS[contract.rentalMethod])} />
+                {contract.status === 'Cancelled' ? <Field label={t('contracts.fieldCancelReason')} value={contract.cancelReason} /> : null}
               </dl>
             </div>
 
             <div className="rounded-lg border border-border bg-surface p-4">
-              <h2 className="text-sm font-medium text-foreground">Insurance</h2>
+              <h2 className="text-sm font-medium text-foreground">{t('contracts.insuranceHeading')}</h2>
               <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                <Field label="Provider" value={contract.insurance.provider || '—'} />
-                <Field label="Policy number" value={contract.insurance.policyNumber || '—'} />
-                <Field label="Amount" value={contract.insurance.amount} mono />
+                <Field label={t('contracts.fieldProvider')} value={contract.insurance.provider || '—'} />
+                <Field label={t('contracts.fieldPolicyNumber')} value={contract.insurance.policyNumber || '—'} />
+                <Field label={t('contracts.fieldAmount')} value={contract.insurance.amount} mono />
               </dl>
             </div>
           </div>
@@ -189,7 +207,7 @@ export default function ContractDetailPage() {
 
         <TabsContent value="items">
           {contract.items.length === 0 ? (
-            <EmptyState title="No items yet" description="A Draft contract can be edited to add generators before activating." />
+            <EmptyState title={t('contracts.noItemsTitle')} description={t('contracts.noItemsDescription')} />
           ) : (
             <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-surface">
               {contract.items.map((item, index) => (
@@ -199,14 +217,14 @@ export default function ContractDetailPage() {
                       {item.generatorCode}
                     </Link>
                     <div className="flex items-center gap-4 text-muted-foreground">
-                      <span>{item.billingMethod[0]!.toUpperCase() + item.billingMethod.slice(1)}</span>
+                      <span>{t(METHOD_LABEL_KEYS[item.billingMethod])}</span>
                       <span className="tabular-data">{item.unitPrice}</span>
                     </div>
                   </div>
                   {item.isSharedAssignmentException ? (
                     <p className="flex items-center gap-1.5 rounded-md bg-status-rented-bg px-2 py-1 text-xs text-status-rented-fg">
                       <ShieldCheck className="size-3.5 shrink-0" aria-hidden />
-                      Shared Assignment approved — {item.sharedAssignmentJustification}
+                      {t('contracts.sharedAssignmentApproved', { justification: item.sharedAssignmentJustification })}
                     </p>
                   ) : null}
                   {itemErrors.get(index) ? (
@@ -218,7 +236,7 @@ export default function ContractDetailPage() {
                           className="shrink-0 font-medium underline underline-offset-2 hover:no-underline"
                           onClick={() => setOverrideTarget({ itemId: item.id, generatorCode: item.generatorCode })}
                         >
-                          Apply Shared Assignment override
+                          {t('contracts.applyOverride')}
                         </button>
                       ) : null}
                     </div>
@@ -231,11 +249,11 @@ export default function ContractDetailPage() {
 
         <TabsContent value="extracts">
           <EmptyState
-            title="View this customer's extracts"
-            description="Extracts aren't filterable by contract yet — see every billing document for this customer instead."
+            title={t('contracts.viewExtractsTitle')}
+            description={t('contracts.viewExtractsDescription')}
             action={
               <Link href={`/extracts?customerId=${contract.customer.id}`} className="text-sm font-medium text-primary hover:underline">
-                Go to Extracts
+                {t('contracts.goToExtracts')}
               </Link>
             }
           />
@@ -245,9 +263,9 @@ export default function ContractDetailPage() {
       <ConfirmDialog
         open={isActivating}
         onOpenChange={setIsActivating}
-        title={`Activate ${contract.number}?`}
-        description="Runs the conflict check across every item first — activation is blocked if any generator overlaps another Active contract."
-        confirmLabel="Activate"
+        title={t('contracts.activateConfirmTitle', { number: contract.number })}
+        description={t('contracts.activateConfirmDescription')}
+        confirmLabel={t('contracts.activate')}
         confirmVariant="default"
         onConfirm={confirmActivate}
       />

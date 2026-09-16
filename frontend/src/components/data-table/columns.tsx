@@ -1,26 +1,38 @@
 import type { ColumnDef } from '@tanstack/react-table';
+import type { Table, Row } from '@tanstack/react-table';
 
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { Checkbox } from '@/components/ui/checkbox';
+
+function SelectAllHeader<T>({ table }: { table: Table<T> }) {
+  const { t } = useLocale();
+  return (
+    <Checkbox
+      checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
+      onCheckedChange={(checked) => table.toggleAllPageRowsSelected(Boolean(checked))}
+      aria-label={t('table.selectAllRows')}
+    />
+  );
+}
+
+function SelectRowCell<T>({ row }: { row: Row<T> }) {
+  const { t } = useLocale();
+  return (
+    <Checkbox
+      checked={row.getIsSelected()}
+      onCheckedChange={(checked) => row.toggleSelected(Boolean(checked))}
+      aria-label={t('table.selectRow')}
+      onClick={(e) => e.stopPropagation()}
+    />
+  );
+}
 
 /** Bulk-select scaffold (TASK-005 Scope): a checkbox column any feature table can opt into. */
 export function createSelectionColumn<T>(): ColumnDef<T, unknown> {
   return {
     id: 'select',
-    header: ({ table }) => (
-      <Checkbox
-        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
-        onCheckedChange={(checked) => table.toggleAllPageRowsSelected(Boolean(checked))}
-        aria-label="Select all rows on this page"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(checked) => row.toggleSelected(Boolean(checked))}
-        aria-label="Select row"
-        onClick={(e) => e.stopPropagation()}
-      />
-    ),
+    header: ({ table }) => <SelectAllHeader table={table} />,
+    cell: ({ row }) => <SelectRowCell row={row} />,
     enableSorting: false,
     enableHiding: false,
     size: 36,

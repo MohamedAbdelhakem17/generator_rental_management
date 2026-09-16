@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
 
 import { apiClient } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,10 +24,12 @@ export interface CustomerComboboxProps {
  * No Command/cmdk primitive exists in this app yet (Constitution: no new UI library) — this
  * is a Popover + debounced search built on the same primitives every other filter uses.
  */
-export function CustomerCombobox({ value, onSelect, disabled, placeholder = 'Choose a customer…' }: CustomerComboboxProps) {
+export function CustomerCombobox({ value, onSelect, disabled, placeholder }: CustomerComboboxProps) {
+  const { t } = useLocale();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const effectivePlaceholder = placeholder ?? t('projects.chooseCustomerPlaceholder');
 
   // Reset the shown label when the value is cleared externally (e.g. a "Clear filters"
   // action) — this component doesn't resolve an id back to a label on its own.
@@ -56,7 +59,7 @@ export function CustomerCombobox({ value, onSelect, disabled, placeholder = 'Cho
           disabled={disabled}
           className="w-full justify-between font-normal"
         >
-          <span className={cn('truncate', !selectedLabel && 'text-muted-foreground')}>{selectedLabel ?? placeholder}</span>
+          <span className={cn('truncate', !selectedLabel && 'text-muted-foreground')}>{selectedLabel ?? effectivePlaceholder}</span>
           <ChevronsUpDown className="size-4 shrink-0 opacity-50" aria-hidden />
         </Button>
       </PopoverTrigger>
@@ -66,7 +69,7 @@ export function CustomerCombobox({ value, onSelect, disabled, placeholder = 'Cho
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search customers…"
+            placeholder={t('projects.searchCustomersPlaceholder')}
             className="h-9 rounded-none border-0 border-b border-border focus-visible:ring-0"
           />
           <div className="max-h-60 overflow-y-auto p-1">
@@ -96,7 +99,7 @@ export function CustomerCombobox({ value, onSelect, disabled, placeholder = 'Cho
                 </button>
               ))
             ) : (
-              <p className="px-2 py-4 text-center text-sm text-muted-foreground">No customers found.</p>
+              <p className="px-2 py-4 text-center text-sm text-muted-foreground">{t('projects.noCustomersFound')}</p>
             )}
           </div>
         </div>

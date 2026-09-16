@@ -30,38 +30,16 @@ function Section({ title, description, children }: { title: string; description?
 }
 
 export default function ShellFoundationPage() {
-  const { locale, setLocale } = useLocale();
+  const { t } = useLocale();
   const { role, userName } = useSession();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleted, setDeleted] = useState(false);
 
   return (
     <>
-      <PageHeader
-        title="Shell foundation"
-        description={`Signed in as ${userName}, ${ROLE_LABELS[role]}. AppShell, RTL, and the shared primitives every later module builds on.`}
-        action={
-          <div className="flex overflow-hidden rounded-md border border-input">
-            <button
-              onClick={() => setLocale('en')}
-              className={`px-2.5 py-1.5 text-xs font-medium ${locale === 'en' ? 'bg-primary text-primary-foreground' : 'bg-surface text-muted-foreground hover:bg-muted'}`}
-            >
-              EN
-            </button>
-            <button
-              onClick={() => setLocale('ar')}
-              className={`px-2.5 py-1.5 text-xs font-medium ${locale === 'ar' ? 'bg-primary text-primary-foreground' : 'bg-surface text-muted-foreground hover:bg-muted'}`}
-            >
-              AR
-            </button>
-          </div>
-        }
-      />
+      <PageHeader title={t('dashboard.title')} description={t('dashboard.description', { name: userName, role: ROLE_LABELS[role] })} />
 
-      <Section
-        title="Generator status"
-        description="Status Engine states (PRD 6.1) — the same four colors are used everywhere a generator's status appears."
-      >
+      <Section title={t('dashboard.generatorStatus')} description={t('dashboard.generatorStatusDescription')}>
         <div className="flex flex-wrap gap-2">
           {STATUSES.map((status) => (
             <StatusBadge key={status} status={status} />
@@ -69,73 +47,73 @@ export default function ShellFoundationPage() {
         </div>
       </Section>
 
-      <Section title="Empty state">
+      <Section title={t('dashboard.emptyState')}>
         <EmptyState
           icon={PackageX}
-          title="No generators assigned"
-          description="Generators assigned to this project will appear here once a contract is active."
+          title={t('dashboard.noGeneratorsTitle')}
+          description={t('dashboard.noGeneratorsDescription')}
           action={
             <Button size="sm">
               <Plus className="size-4" aria-hidden />
-              Assign generator
+              {t('dashboard.assignGenerator')}
             </Button>
           }
         />
       </Section>
 
-      <Section title="Error state">
+      <Section title={t('dashboard.errorState')}>
         {deleted ? (
           <p className="rounded-md border border-dashed border-border px-4 py-3 text-sm text-muted-foreground">
-            Retried — request would run again here.
+            {t('dashboard.retried')}
           </p>
         ) : (
           <ErrorState
-            title="Couldn't load generators"
-            description="The generators list failed to load. Check your connection and try again."
+            title={t('dashboard.loadFailedTitle')}
+            description={t('dashboard.loadFailedDescription')}
             onRetry={() => setDeleted(true)}
           />
         )}
       </Section>
 
-      <Section title="Confirm dialog" description="Destructive actions never use a native confirm() — always this dialog.">
+      <Section title={t('dashboard.confirmDialog')} description={t('dashboard.confirmDialogDescription')}>
         <Button variant="destructive" size="sm" onClick={() => setConfirmOpen(true)}>
           <Trash2 className="size-4" aria-hidden />
-          Delete generator GEN-014
+          {t('dashboard.deleteGenerator')}
         </Button>
         <ConfirmDialog
           open={confirmOpen}
           onOpenChange={setConfirmOpen}
-          title="Delete generator GEN-014?"
-          description="This soft-deletes the generator. Its operational and financial history is preserved and it can be restored later."
-          confirmLabel="Delete"
+          title={t('dashboard.deleteGeneratorConfirmTitle')}
+          description={t('dashboard.deleteGeneratorConfirmDescription')}
+          confirmLabel={t('dashboard.delete')}
           onConfirm={() => new Promise((resolve) => setTimeout(resolve, 600))}
         />
       </Section>
 
-      <Section title="Loading skeletons">
+      <Section title={t('dashboard.loadingSkeletons')}>
         <div className="grid w-full gap-4 md:grid-cols-2">
           <div className="flex flex-col gap-2">
-            <p className="text-xs font-medium text-muted-foreground">Text</p>
+            <p className="text-xs font-medium text-muted-foreground">{t('dashboard.text')}</p>
             <SkeletonText />
           </div>
           <div className="flex flex-col gap-2">
-            <p className="text-xs font-medium text-muted-foreground">Card</p>
+            <p className="text-xs font-medium text-muted-foreground">{t('dashboard.card')}</p>
             <SkeletonCard />
           </div>
           <div className="flex flex-col gap-2">
-            <p className="text-xs font-medium text-muted-foreground">List</p>
+            <p className="text-xs font-medium text-muted-foreground">{t('dashboard.list')}</p>
             <SkeletonList />
           </div>
           <div className="flex flex-col gap-2">
-            <p className="text-xs font-medium text-muted-foreground">Table</p>
+            <p className="text-xs font-medium text-muted-foreground">{t('dashboard.table')}</p>
             <SkeletonTable rows={3} />
           </div>
         </div>
       </Section>
 
-      <Section title="DataTable foundation" description="TASK-005 preview — apiClient, DataTable, filters, and useDataTableQuery over mock data.">
+      <Section title={t('dashboard.dataTableFoundation')} description={t('dashboard.dataTableFoundationDescription')}>
         <Link href="/dev/data-table" className="text-sm font-medium text-primary hover:underline">
-          Open the DataTable preview
+          {t('dashboard.openDataTablePreview')}
         </Link>
       </Section>
     </>

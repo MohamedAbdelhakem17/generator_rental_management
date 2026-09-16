@@ -8,6 +8,7 @@ import { CheckCircle2, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { apiClient, ApiError } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { useSession } from '@/lib/session/session-provider';
 import { cn } from '@/lib/utils';
 import { STATUS_TONE_CLASSES, type StatusTone } from '@/lib/status-tone';
@@ -39,6 +40,13 @@ function formatDateTime(iso: string): string {
 /** Section 14: a simpler table than the Fill-ups tab — no URL-synced pagination (avoids
  * colliding query-param keys with the sibling DataTable on the same route). */
 export function FuelAlertsTab() {
+  const { t } = useLocale();
+  const SEVERITY_LABELS: Record<FuelAlertSeverity, string> = { Warning: t('fuel.severityWarning'), Critical: t('fuel.severityCritical') };
+  const STATUS_LABELS: Record<FuelAlertStatus, string> = {
+    Open: t('fuel.statusOpen'),
+    Acknowledged: t('fuel.statusAcknowledged'),
+    Resolved: t('fuel.statusResolved'),
+  };
   const queryClient = useQueryClient();
   const { user } = useSession();
   const canAcknowledge = user?.permissions.includes('fuel-alerts:acknowledge') ?? false;
@@ -60,33 +68,33 @@ export function FuelAlertsTab() {
   async function acknowledge(alert: FuelAlertRow) {
     try {
       await apiClient.post(`/api/fuel-alerts/${alert.id}/acknowledge`);
-      toast.success(`${alert.generator.code} alert acknowledged`);
+      toast.success(t('fuel.alertAcknowledgedToast', { code: alert.generator.code }));
       await invalidate();
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Couldn't acknowledge this alert.");
+      toast.error(error instanceof ApiError ? error.message : t('fuel.acknowledgeFailedToast'));
     }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: ColumnDef<FuelAlertRow, any>[] = [
-    columnHelper.accessor((row) => row.generator.code, { id: 'generator', header: 'Generator' }),
+    columnHelper.accessor((row) => row.generator.code, { id: 'generator', header: t('fuel.columnGenerator') }),
     columnHelper.accessor('severity', {
-      header: 'Severity',
+      header: t('fuel.columnSeverity'),
       cell: (info) => {
         const severity = info.getValue() as FuelAlertSeverity;
-        return <Badge label={severity} tone={SEVERITY_TONES[severity]} />;
+        return <Badge label={SEVERITY_LABELS[severity]} tone={SEVERITY_TONES[severity]} />;
       },
     }),
     columnHelper.accessor('status', {
-      header: 'Status',
+      header: t('table.status'),
       cell: (info) => {
         const status = info.getValue() as FuelAlertStatus;
-        return <Badge label={status} tone={STATUS_TONES[status]} />;
+        return <Badge label={STATUS_LABELS[status]} tone={STATUS_TONES[status]} />;
       },
     }),
-    columnHelper.accessor('firstOccurrenceAt', { header: 'First occurrence', cell: (info) => formatDateTime(info.getValue()) }),
-    columnHelper.accessor('lastOccurrenceAt', { header: 'Last occurrence', cell: (info) => formatDateTime(info.getValue()) }),
-    columnHelper.accessor('occurrenceCount', { header: 'Occurrences', cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
+    columnHelper.accessor('firstOccurrenceAt', { header: t('fuel.columnFirstOccurrence'), cell: (info) => formatDateTime(info.getValue()) }),
+    columnHelper.accessor('lastOccurrenceAt', { header: t('fuel.columnLastOccurrence'), cell: (info) => formatDateTime(info.getValue()) }),
+    columnHelper.accessor('occurrenceCount', { header: t('fuel.columnOccurrences'), cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
     columnHelper.display({
       id: 'actions',
       header: '',
@@ -95,13 +103,13 @@ export function FuelAlertsTab() {
           {canAcknowledge && row.original.status === 'Open' ? (
             <Button variant="outline" size="sm" onClick={() => void acknowledge(row.original)}>
               <ShieldAlert className="size-3.5" aria-hidden />
-              Acknowledge
+              {t('fuel.acknowledgeButton')}
             </Button>
           ) : null}
           {canResolve && row.original.status !== 'Resolved' ? (
             <Button variant="outline" size="sm" onClick={() => setResolveTarget(row.original)}>
               <CheckCircle2 className="size-3.5" aria-hidden />
-              Resolve
+              {t('fuel.resolveButton')}
             </Button>
           ) : null}
         </div>
@@ -115,12 +123,12 @@ export function FuelAlertsTab() {
         value={statusFilter}
         onChange={setStatusFilter}
         options={[
-          { value: 'Open', label: 'Open' },
-          { value: 'Acknowledged', label: 'Acknowledged' },
-          { value: 'Resolved', label: 'Resolved' },
+          { value: 'Open', label: t('fuel.statusOpen') },
+          { value: 'Acknowledged', label: t('fuel.statusAcknowledged') },
+          { value: 'Resolved', label: t('fuel.statusResolved') },
         ]}
-        placeholder="Status"
-        allLabel="All statuses"
+        placeholder={t('table.status')}
+        allLabel={t('fuel.allStatusesLabel')}
       />
 
       <DataTable
@@ -131,8 +139,8 @@ export function FuelAlertsTab() {
         isError={isError}
         onRetry={refetch}
         showColumnVisibility={false}
-        emptyTitle="No fuel alerts"
-        emptyDescription="Abnormal consumption readings will show up here."
+        emptyTitle={t('fuel.alertsEmptyTitle')}
+        emptyDescription={t('fuel.alertsEmptyDescription')}
       />
 
       {canResolve ? (

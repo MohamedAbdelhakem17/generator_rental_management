@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ApiError } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -26,6 +27,7 @@ export interface StopGeneratorDialogProps {
 
 /** Section 15: Stop requires a reason textarea — Resume (no reason) reuses the generic ConfirmDialog instead. */
 export function StopGeneratorDialog({ open, onOpenChange, generatorCode, onStopped }: StopGeneratorDialogProps) {
+  const { t } = useLocale();
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,17 +43,17 @@ export function StopGeneratorDialog({ open, onOpenChange, generatorCode, onStopp
 
   async function handleSubmit() {
     if (!reason.trim()) {
-      setError('A reason is required');
+      setError(t('generators.stopReasonRequired'));
       return;
     }
 
     setIsSubmitting(true);
     try {
       await onStopped(reason.trim());
-      toast.success(`${generatorCode} marked Stopped`);
+      toast.success(t('generators.stoppedToast', { code: generatorCode }));
       handleOpenChange(false);
     } catch (submitError) {
-      toast.error(submitError instanceof ApiError ? submitError.message : "Couldn't stop this generator.");
+      toast.error(submitError instanceof ApiError ? submitError.message : t('generators.stopFailedToast'));
     } finally {
       setIsSubmitting(false);
     }
@@ -61,18 +63,16 @@ export function StopGeneratorDialog({ open, onOpenChange, generatorCode, onStopp
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Stop {generatorCode}</DialogTitle>
-          <DialogDescription>
-            This overrides the status to Stopped everywhere, even if it&apos;s under an active contract.
-          </DialogDescription>
+          <DialogTitle>{t('generators.stopTitle', { code: generatorCode })}</DialogTitle>
+          <DialogDescription>{t('generators.stopDescription')}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="stop-reason">Reason</Label>
+          <Label htmlFor="stop-reason">{t('generators.reason')}</Label>
           <Textarea
             id="stop-reason"
             rows={3}
-            placeholder="e.g. Engine fault reported on site"
+            placeholder={t('generators.reasonPlaceholder')}
             value={reason}
             onChange={(event) => {
               setReason(event.target.value);
@@ -84,11 +84,11 @@ export function StopGeneratorDialog({ open, onOpenChange, generatorCode, onStopp
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="button" variant="destructive" onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-            Stop generator
+            {t('generators.stopButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

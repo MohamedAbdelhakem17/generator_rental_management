@@ -4,21 +4,23 @@ import { Suspense } from 'react';
 
 import { PageHeader } from '@/components/layout/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { UsersTab } from './users-tab';
 import { RolesTab } from './roles-tab';
 
 export default function UsersAndRolesPage() {
+  const { t } = useLocale();
   return (
     <>
       <PageHeader
-        title="Users & roles"
-        description="Manage who can sign in and what each role can do. Every permission here is enforced by the API, not just this screen."
+        title={t('users.title')}
+        description={t('users.description')}
       />
 
       <Tabs defaultValue="users">
         <TabsList>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="roles">Roles</TabsTrigger>
+          <TabsTrigger value="users">{t('users.tabUsers')}</TabsTrigger>
+          <TabsTrigger value="roles">{t('users.tabRoles')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users">

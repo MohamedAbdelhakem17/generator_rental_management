@@ -6,6 +6,8 @@ import type { ColumnDef, RowSelectionState, VisibilityState } from '@tanstack/re
 import { MoreHorizontal, Pencil, ShieldAlert, Trash2 } from 'lucide-react';
 
 import { useDataTableQuery } from '@/hooks/useDataTableQuery';
+import { useLocale } from '@/lib/i18n/locale-provider';
+import type { TranslationKey } from '@/lib/i18n/dictionary';
 import { PageHeader } from '@/components/layout/page-header';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTablePagination } from '@/components/data-table/pagination';
@@ -26,58 +28,62 @@ import { fetchMockGenerators, type MockGenerator } from './mock-generators';
 const columnHelper = createColumnHelper<MockGenerator>();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const columns: ColumnDef<MockGenerator, any>[] = [
+function createColumns(t: (key: TranslationKey, params?: Record<string, string | number>) => string): ColumnDef<MockGenerator, any>[] {
+  return [
   createSelectionColumn<MockGenerator>(),
   columnHelper.accessor('code', {
-    header: 'Code',
+    header: t('devTable.columnCode'),
     cell: (info) => <span className="tabular-data font-medium">{info.getValue()}</span>,
   }),
   columnHelper.accessor('kva', {
-    header: 'kVA',
+    header: t('devTable.columnKva'),
     cell: (info) => <span className="tabular-data">{info.getValue()}</span>,
   }),
   columnHelper.accessor('status', {
-    header: 'Status',
+    header: t('table.status'),
     cell: (info) => <StatusBadge status={info.getValue()} />,
   }),
   columnHelper.accessor('location', {
-    header: 'Location',
+    header: t('devTable.columnLocation'),
     enableSorting: false,
   }),
   columnHelper.accessor('currentMeter', {
-    header: 'Meter (h)',
+    header: t('devTable.columnMeter'),
     cell: (info) => <span className="tabular-data">{info.getValue().toLocaleString()}</span>,
   }),
   columnHelper.accessor('installedAt', {
-    header: 'Installed',
+    header: t('devTable.columnInstalled'),
   }),
   createActionsColumn<MockGenerator>((row) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="size-7" aria-label={`Actions for ${row.code}`}>
+        <Button variant="ghost" size="icon" className="size-7" aria-label={t('devTable.actionsFor', { code: row.code })}>
           <MoreHorizontal className="size-4" aria-hidden />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem>
           <Pencil className="size-4" aria-hidden />
-          Edit
+          {t('devTable.edit')}
         </DropdownMenuItem>
         <DropdownMenuItem className="text-destructive focus:text-destructive">
           <Trash2 className="size-4" aria-hidden />
-          Delete
+          {t('devTable.delete')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )),
-];
+  ];
+}
 
-const STATUS_OPTIONS = [
-  { value: 'available', label: 'Available', tone: 'success' as const },
-  { value: 'rented', label: 'Rented', tone: 'info' as const },
-  { value: 'under_maintenance', label: 'Under Maintenance', tone: 'warning' as const },
-  { value: 'stopped', label: 'Stopped', tone: 'danger' as const },
-];
+function createStatusOptions(t: (key: TranslationKey) => string) {
+  return [
+    { value: 'available', label: t('status.available'), tone: 'success' as const },
+    { value: 'rented', label: t('status.rented'), tone: 'info' as const },
+    { value: 'under_maintenance', label: t('status.underMaintenance'), tone: 'warning' as const },
+    { value: 'stopped', label: t('status.stopped'), tone: 'danger' as const },
+  ];
+}
 
 export default function DataTableFoundationPage() {
   // useDataTableQuery reads useSearchParams(), which requires a Suspense boundary to
@@ -90,6 +96,7 @@ export default function DataTableFoundationPage() {
 }
 
 function DataTableFoundationContent() {
+  const { t } = useLocale();
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [errorMode, setErrorMode] = useState(false);
@@ -111,6 +118,8 @@ function DataTableFoundationContent() {
   });
 
   const dateRangeValue = { from: table.filters.from, to: table.filters.to };
+  const columns = createColumns(t);
+  const statusOptions = createStatusOptions(t);
 
   function toggleErrorMode() {
     const next = !errorModeRef.current;
@@ -122,23 +131,23 @@ function DataTableFoundationContent() {
   return (
     <>
       <PageHeader
-        title="DataTable foundation"
-        description="TASK-005 preview — apiClient + DataTable + useDataTableQuery over mock data (the real /api/generators list lands in TASK-008)."
+        title={t('devTable.title')}
+        description={t('devTable.description')}
         action={
           <Button variant={errorMode ? 'destructive' : 'outline'} size="sm" onClick={toggleErrorMode}>
             <ShieldAlert className="size-4" aria-hidden />
-            {errorMode ? 'Stop simulating error' : 'Simulate error'}
+            {errorMode ? t('devTable.stopSimulatingError') : t('devTable.simulateError')}
           </Button>
         }
       />
 
       <div className="flex flex-wrap items-center gap-2">
-        <SearchInput value={table.search} onChange={table.setSearch} placeholder="Search code or location…" className="w-64" />
+        <SearchInput value={table.search} onChange={table.setSearch} placeholder={t('devTable.searchPlaceholder')} className="w-64" />
         <StatusFilter
           value={table.filters.status}
           onChange={(value) => table.setFilter('status', value)}
-          options={STATUS_OPTIONS}
-          placeholder="Status"
+          options={statusOptions}
+          placeholder={t('table.status')}
         />
         <DateRangeFilter
           value={dateRangeValue}
@@ -146,15 +155,15 @@ function DataTableFoundationContent() {
             table.setFilter('from', range.from);
             table.setFilter('to', range.to);
           }}
-          placeholder="Installed date"
+          placeholder={t('devTable.installedDatePlaceholder')}
         />
         {table.hasActiveFilters ? (
           <Button variant="ghost" size="sm" onClick={table.clearFilters}>
-            Clear filters
+            {t('table.clearFilters')}
           </Button>
         ) : null}
         {Object.keys(rowSelection).length > 0 ? (
-          <span className="ms-auto text-sm text-muted-foreground">{Object.keys(rowSelection).length} selected</span>
+          <span className="ms-auto text-sm text-muted-foreground">{t('devTable.selectedCount', { count: Object.keys(rowSelection).length })}</span>
         ) : null}
       </div>
 
@@ -173,8 +182,8 @@ function DataTableFoundationContent() {
         onColumnVisibilityChange={setColumnVisibility}
         hasActiveFilters={table.hasActiveFilters}
         onClearFilters={table.clearFilters}
-        emptyTitle="No generators yet"
-        emptyDescription="Generators will appear here once the fleet is registered."
+        emptyTitle={t('generators.emptyTitle')}
+        emptyDescription={t('generators.emptyDescriptionReadOnly')}
       />
 
       <DataTablePagination meta={table.meta} onPageChange={table.setPage} onPageSizeChange={table.setPageSize} />

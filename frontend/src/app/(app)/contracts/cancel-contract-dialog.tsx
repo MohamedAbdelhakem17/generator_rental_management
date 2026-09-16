@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ApiError } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -26,6 +27,7 @@ export interface CancelContractDialogProps {
 
 /** Section 12/16: cancel requires a mandatory reason — mirrors StopGeneratorDialog's pattern. */
 export function CancelContractDialog({ open, onOpenChange, contractNumber, onCancelled }: CancelContractDialogProps) {
+  const { t } = useLocale();
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,17 +43,17 @@ export function CancelContractDialog({ open, onOpenChange, contractNumber, onCan
 
   async function handleSubmit() {
     if (!reason.trim()) {
-      setError('A reason is required');
+      setError(t('contracts.cancelReasonRequired'));
       return;
     }
 
     setIsSubmitting(true);
     try {
       await onCancelled(reason.trim());
-      toast.success(`${contractNumber} cancelled`);
+      toast.success(t('contracts.cancelledToast', { number: contractNumber }));
       handleOpenChange(false);
     } catch (submitError) {
-      toast.error(submitError instanceof ApiError ? submitError.message : "Couldn't cancel this contract.");
+      toast.error(submitError instanceof ApiError ? submitError.message : t('contracts.cancelFailedToast'));
     } finally {
       setIsSubmitting(false);
     }
@@ -61,18 +63,16 @@ export function CancelContractDialog({ open, onOpenChange, contractNumber, onCan
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Cancel {contractNumber}</DialogTitle>
-          <DialogDescription>
-            This is terminal — a cancelled contract can never be reactivated. If it was Active, every generator on it is recalculated.
-          </DialogDescription>
+          <DialogTitle>{t('contracts.cancelDialogTitle', { number: contractNumber })}</DialogTitle>
+          <DialogDescription>{t('contracts.cancelDialogDescription')}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="cancel-reason">Reason</Label>
+          <Label htmlFor="cancel-reason">{t('contracts.reasonLabel')}</Label>
           <Textarea
             id="cancel-reason"
             rows={3}
-            placeholder="e.g. Customer requested early termination"
+            placeholder={t('contracts.cancelReasonPlaceholder')}
             value={reason}
             onChange={(event) => {
               setReason(event.target.value);
@@ -84,11 +84,11 @@ export function CancelContractDialog({ open, onOpenChange, contractNumber, onCan
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>
-            Keep contract
+            {t('contracts.keepContract')}
           </Button>
           <Button type="button" variant="destructive" onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-            Cancel contract
+            {t('contracts.cancelButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

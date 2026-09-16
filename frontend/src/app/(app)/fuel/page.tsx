@@ -10,6 +10,7 @@ import { AlertTriangle, HelpCircle, Plus } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
 import { useDataTableQuery } from '@/hooks/useDataTableQuery';
 import { useSession } from '@/lib/session/session-provider';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { cn } from '@/lib/utils';
 import { STATUS_TONE_CLASSES, type StatusTone } from '@/lib/status-tone';
 import { PageHeader } from '@/components/layout/page-header';
@@ -31,35 +32,40 @@ const columnHelper = createColumnHelper<FuelLogRow>();
 /** Presentational only — mirrors Business Rule 6.5's documented default bands (15%/30% over
  * normal) so the row reads consistently with what the Fuel Alert Engine (TASK-017) will flag,
  * without this table re-deriving or persisting any alert decision itself. */
-function varianceTone(rate: number, normal: number): { label: string; tone: StatusTone } {
-  if (normal <= 0) return { label: '—', tone: 'neutral' };
+function varianceTone(rate: number, normal: number): { value: number | null; tone: StatusTone } {
+  if (normal <= 0) return { value: null, tone: 'neutral' };
   const overPercent = ((rate - normal) / normal) * 100;
-  if (overPercent > 30) return { label: `+${overPercent.toFixed(0)}%`, tone: 'danger' };
-  if (overPercent > 15) return { label: `+${overPercent.toFixed(0)}%`, tone: 'warning' };
-  return { label: overPercent > 0 ? `+${overPercent.toFixed(0)}%` : `${overPercent.toFixed(0)}%`, tone: 'success' };
+  if (overPercent > 30) return { value: overPercent, tone: 'danger' };
+  if (overPercent > 15) return { value: overPercent, tone: 'warning' };
+  return { value: overPercent, tone: 'success' };
 }
 
 function VarianceBadge({ rate, normal }: { rate: number | null; normal: number }) {
+  const { t } = useLocale();
   if (rate === null) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
           <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
             <HelpCircle className="size-3.5" aria-hidden />
-            N/A
+            {t('fuel.notAvailable')}
           </span>
         </TooltipTrigger>
-        <TooltipContent>No operating hours recorded in this fill-up&apos;s reference window.</TooltipContent>
+        <TooltipContent>{t('fuel.varianceNaTooltip')}</TooltipContent>
       </Tooltip>
     );
   }
 
-  const { label, tone } = varianceTone(rate, normal);
+  const { value, tone } = varianceTone(rate, normal);
   const classes = STATUS_TONE_CLASSES[tone];
   return (
     <span className={cn('inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium', classes.bg, classes.fg, classes.border)}>
       <span className={cn('size-1.5 shrink-0 rounded-full', classes.dot)} aria-hidden />
-      {label}
+      {value === null
+        ? t('fuel.varianceUnavailable')
+        : value > 0
+          ? t('fuel.varianceAbove', { value: value.toFixed(0) })
+          : t('fuel.varianceValue', { value: value.toFixed(0) })}
     </span>
   );
 }
@@ -78,6 +84,7 @@ export default function FuelPage() {
 }
 
 function FuelPageContent() {
+  const { t } = useLocale();
   const { user } = useSession();
   const canWrite = user?.permissions.includes('fuel:write') ?? false;
   const canViewAlerts = user?.permissions.includes('fuel-alerts:read') ?? false;
@@ -104,26 +111,31 @@ function FuelPageContent() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: ColumnDef<FuelLogRow, any>[] = [
-    columnHelper.accessor('date', { header: 'Date', cell: (info) => formatDate(info.getValue()) }),
-    columnHelper.accessor((row) => row.generator.code, { id: 'generator', header: 'Generator', enableSorting: false }),
-    columnHelper.accessor('liters', { header: 'Liters', cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
-    columnHelper.accessor('pricePerLiter', { header: 'Price / L', enableSorting: false, cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
-    columnHelper.accessor('totalCost', { header: 'Total cost', cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
+    columnHelper.accessor('date', { header: t('fuel.columnDate'), cell: (info) => formatDate(info.getValue()) }),
+    columnHelper.accessor((row) => row.generator.code, { id: 'generator', header: t('fuel.columnGenerator'), enableSorting: false }),
+    columnHelper.accessor('liters', { header: t('fuel.columnLiters'), cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
+    columnHelper.accessor('pricePerLiter', { header: t('fuel.columnPricePerLiter'), enableSorting: false, cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
+    columnHelper.accessor('totalCost', { header: t('fuel.columnTotalCost'), cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
     columnHelper.accessor('consumptionRate', {
-      header: 'Consumption',
+      header: t('fuel.columnConsumption'),
       enableSorting: false,
-      cell: (info) => (info.getValue() === null ? <span className="tabular-data text-muted-foreground">N/A</span> : <span className="tabular-data">{info.getValue()} L/h</span>),
+      cell: (info) =>
+        info.getValue() === null ? (
+          <span className="tabular-data text-muted-foreground">{t('fuel.notAvailable')}</span>
+        ) : (
+          <span className="tabular-data">{t('fuel.rateValue', { value: info.getValue()! })}</span>
+        ),
     }),
     columnHelper.display({
       id: 'variance',
       header: () => (
         <span className="inline-flex items-center gap-1">
-          Variance
+          {t('fuel.columnVariance')}
           <Tooltip>
             <TooltipTrigger asChild>
               <AlertTriangle className="size-3.5 text-muted-foreground" aria-hidden />
             </TooltipTrigger>
-            <TooltipContent>How far the consumption rate is above the generator&apos;s normal rate.</TooltipContent>
+            <TooltipContent>{t('fuel.varianceHeaderTooltip')}</TooltipContent>
           </Tooltip>
         </span>
       ),
@@ -134,13 +146,13 @@ function FuelPageContent() {
   return (
     <>
       <PageHeader
-        title="Fuel"
-        description="Fill-ups, cost, and consumption rate — the largest variable operating cost."
+        title={t('fuel.title')}
+        description={t('fuel.description')}
         action={
           canWrite ? (
             <Button size="sm" onClick={() => setIsEntering(true)}>
               <Plus className="size-4" aria-hidden />
-              New entry
+              {t('fuel.newEntry')}
             </Button>
           ) : undefined
         }
@@ -149,8 +161,8 @@ function FuelPageContent() {
       {canViewAlerts ? (
         <Tabs defaultValue="fillups" className="flex flex-col gap-4">
           <TabsList>
-            <TabsTrigger value="fillups">Fill-ups</TabsTrigger>
-            <TabsTrigger value="alerts">Alerts</TabsTrigger>
+            <TabsTrigger value="fillups">{t('fuel.tabFillups')}</TabsTrigger>
+            <TabsTrigger value="alerts">{t('fuel.tabAlerts')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="fillups" className="flex flex-col gap-4">
@@ -200,6 +212,7 @@ function FuelFiltersAndTable({
   columns: ColumnDef<FuelLogRow, any>[];
   canWrite: boolean;
 }) {
+  const { t } = useLocale();
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
@@ -207,15 +220,15 @@ function FuelFiltersAndTable({
           value={table.filters.generatorId}
           onChange={(value) => table.setFilter('generatorId', value)}
           options={(generators?.items ?? []).map((generator) => ({ value: generator.id, label: generator.code }))}
-          placeholder="Generator"
-          allLabel="All generators"
+          placeholder={t('fuel.generatorFilterPlaceholder')}
+          allLabel={t('fuel.allGeneratorsLabel')}
         />
         <SelectFilter
           value={table.filters.projectId}
           onChange={(value) => table.setFilter('projectId', value)}
           options={(projects?.items ?? []).map((project) => ({ value: project.id, label: project.name }))}
-          placeholder="Project"
-          allLabel="All projects"
+          placeholder={t('fuel.projectFilterPlaceholder')}
+          allLabel={t('fuel.allProjectsLabel')}
         />
         <DateRangeFilter
           value={dateRange}
@@ -223,11 +236,11 @@ function FuelFiltersAndTable({
             table.setFilter('dateFrom', next.from);
             table.setFilter('dateTo', next.to);
           }}
-          placeholder="Date range"
+          placeholder={t('table.dateRange')}
         />
         {table.hasActiveFilters ? (
           <Button variant="ghost" size="sm" onClick={table.clearFilters}>
-            Clear filters
+            {t('table.clearFilters')}
           </Button>
         ) : null}
       </div>
@@ -244,8 +257,8 @@ function FuelFiltersAndTable({
         hasActiveFilters={table.hasActiveFilters}
         onClearFilters={table.clearFilters}
         showColumnVisibility={false}
-        emptyTitle="No fuel logs yet"
-        emptyDescription={canWrite ? 'Log the first fill-up to start tracking fuel cost.' : 'Entries will appear here once logged.'}
+        emptyTitle={t('fuel.emptyTitle')}
+        emptyDescription={canWrite ? t('fuel.emptyDescriptionWrite') : t('fuel.emptyDescriptionReadOnly')}
       />
 
       <DataTablePagination meta={table.meta} onPageChange={table.setPage} onPageSizeChange={table.setPageSize} />

@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ApiError } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -28,6 +29,7 @@ export interface ResolveAlertDialogProps {
 
 /** Section 15/16/FR-004: the Confirm button only enables once the note meets the minimum length. */
 export function ResolveAlertDialog({ open, onOpenChange, generatorCode, onResolved }: ResolveAlertDialogProps) {
+  const { t } = useLocale();
   const [resolutionNote, setResolutionNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,10 +43,10 @@ export function ResolveAlertDialog({ open, onOpenChange, generatorCode, onResolv
     setIsSubmitting(true);
     try {
       await onResolved(resolutionNote.trim());
-      toast.success(`${generatorCode} alert resolved`);
+      toast.success(t('fuel.alertResolvedToast', { code: generatorCode }));
       handleOpenChange(false);
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Couldn't resolve this alert.");
+      toast.error(error instanceof ApiError ? error.message : t('fuel.resolveFailedToast'));
     } finally {
       setIsSubmitting(false);
     }
@@ -54,16 +56,16 @@ export function ResolveAlertDialog({ open, onOpenChange, generatorCode, onResolv
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Resolve {generatorCode} fuel alert</DialogTitle>
-          <DialogDescription>Explain what was found and how it was addressed — this stays on record.</DialogDescription>
+          <DialogTitle>{t('fuel.resolveDialogTitle', { code: generatorCode })}</DialogTitle>
+          <DialogDescription>{t('fuel.resolveDialogDescription')}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="resolve-note">Resolution note</Label>
+          <Label htmlFor="resolve-note">{t('fuel.resolutionNoteLabel')}</Label>
           <Textarea
             id="resolve-note"
             rows={3}
-            placeholder="e.g. Found and repaired a fuel line leak"
+            placeholder={t('fuel.resolutionNotePlaceholder')}
             value={resolutionNote}
             onChange={(event) => setResolutionNote(event.target.value)}
           />
@@ -71,11 +73,11 @@ export function ResolveAlertDialog({ open, onOpenChange, generatorCode, onResolv
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="button" onClick={handleSubmit} disabled={isSubmitting || resolutionNote.trim().length < MIN_NOTE_LENGTH}>
             {isSubmitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-            Resolve
+            {t('fuel.resolveButton')}
           </Button>
         </DialogFooter>
       </DialogContent>
