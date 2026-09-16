@@ -12,6 +12,7 @@ import { contractRouter } from './modules/contracts/contract.routes.js';
 import { creditNoteRouter } from './modules/credit-notes/credit-note.routes.js';
 import { ledgerRouter } from './modules/customer-ledger-engine/routes.js';
 import { customerRouter } from './modules/customers/customer.routes.js';
+import { dashboardRouter } from './modules/dashboard/routes.js';
 import { expenseRouter } from './modules/expenses/expense.routes.js';
 import { extractRouter } from './modules/extracts/extract.routes.js';
 import { fuelAlertRouter } from './modules/fuel-alert-engine/fuel-alert.routes.js';
@@ -64,6 +65,7 @@ export function createApp(): Express {
   app.use('/api', receiptRouter);
   app.use('/api', expenseRouter);
   app.use('/api', profitabilityRouter);
+  app.use('/api', dashboardRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
