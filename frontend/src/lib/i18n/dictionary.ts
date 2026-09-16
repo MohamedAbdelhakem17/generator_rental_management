@@ -76,20 +76,24 @@ export const dictionary = {
     'table.selectAllRows': 'Select all rows on this page',
     'table.selectRow': 'Select row',
     'dashboard.title': 'Dashboard',
-    'dashboard.description': 'Signed in as {name}, {role}. AppShell, RTL, and the shared primitives every later module builds on.',
+    'dashboard.description':
+      'Signed in as {name}, {role}. AppShell, RTL, and the shared primitives every later module builds on.',
     'dashboard.generatorStatus': 'Generator status',
     'dashboard.generatorStatusDescription':
       "Status Engine states (PRD 6.1) — the same four colors are used everywhere a generator's status appears.",
     'dashboard.emptyState': 'Empty state',
     'dashboard.noGeneratorsTitle': 'No generators assigned',
-    'dashboard.noGeneratorsDescription': 'Generators assigned to this project will appear here once a contract is active.',
+    'dashboard.noGeneratorsDescription':
+      'Generators assigned to this project will appear here once a contract is active.',
     'dashboard.assignGenerator': 'Assign generator',
     'dashboard.errorState': 'Error state',
     'dashboard.retried': 'Retried — request would run again here.',
     'dashboard.loadFailedTitle': "Couldn't load generators",
-    'dashboard.loadFailedDescription': 'The generators list failed to load. Check your connection and try again.',
+    'dashboard.loadFailedDescription':
+      'The generators list failed to load. Check your connection and try again.',
     'dashboard.confirmDialog': 'Confirm dialog',
-    'dashboard.confirmDialogDescription': 'Destructive actions never use a native confirm() — always this dialog.',
+    'dashboard.confirmDialogDescription':
+      'Destructive actions never use a native confirm() — always this dialog.',
     'dashboard.deleteGenerator': 'Delete generator GEN-014',
     'dashboard.deleteGeneratorConfirmTitle': 'Delete generator GEN-014?',
     'dashboard.deleteGeneratorConfirmDescription':
@@ -101,7 +105,8 @@ export const dictionary = {
     'dashboard.list': 'List',
     'dashboard.table': 'Table',
     'dashboard.dataTableFoundation': 'DataTable foundation',
-    'dashboard.dataTableFoundationDescription': 'TASK-005 preview — apiClient, DataTable, filters, and useDataTableQuery over mock data.',
+    'dashboard.dataTableFoundationDescription':
+      'TASK-005 preview — apiClient, DataTable, filters, and useDataTableQuery over mock data.',
     'dashboard.openDataTablePreview': 'Open the DataTable preview',
     'generators.title': 'Generators',
     'generators.description': "The fleet's master records — specs, meter, and status.",
@@ -126,7 +131,8 @@ export const dictionary = {
     'generators.deactivatedToast': 'Deactivated {code}',
     'generators.deactivateFailedToast': "Couldn't deactivate this generator.",
     'generators.resumeConfirmTitle': 'Resume {code}?',
-    'generators.resumeConfirmDescription': 'Its status goes back to being derived from contracts and maintenance.',
+    'generators.resumeConfirmDescription':
+      'Its status goes back to being derived from contracts and maintenance.',
     'generators.deactivateConfirmTitle': 'Deactivate {code}?',
     'generators.deactivateConfirmDescription':
       "This soft-deletes the record — it's blocked while an active contract or open maintenance references it, and stays visible in historical reports.",
@@ -141,7 +147,8 @@ export const dictionary = {
     'generators.formSerialRequired': 'Serial number is required',
     'generators.editTitle': 'Edit {code}',
     'generators.registerTitle': 'Register a generator',
-    'generators.editDescription': 'Specifications, location, and thresholds only — the meter updates from operation logs.',
+    'generators.editDescription':
+      'Specifications, location, and thresholds only — the meter updates from operation logs.',
     'generators.registerDescription': 'It starts out Available with a zero meter reading.',
     'generators.fieldCode': 'Code',
     'generators.fieldKva': 'kVA',
@@ -159,7 +166,8 @@ export const dictionary = {
     'generators.stoppedToast': '{code} marked Stopped',
     'generators.stopFailedToast': "Couldn't stop this generator.",
     'generators.stopTitle': 'Stop {code}',
-    'generators.stopDescription': "This overrides the status to Stopped everywhere, even if it's under an active contract.",
+    'generators.stopDescription':
+      "This overrides the status to Stopped everywhere, even if it's under an active contract.",
     'generators.reason': 'Reason',
     'generators.reasonPlaceholder': 'e.g. Engine fault reported on site',
     'generators.stopButton': 'Stop generator',
@@ -178,12 +186,16 @@ export const dictionary = {
     'generators.tabMaintenance': 'Maintenance',
     'generators.tabContracts': 'Contracts',
     'generators.tabProfitability': 'Profitability',
-    'generators.tabMaintenanceDescription': 'Service history and the next due date land here once maintenance tracking ships.',
-    'generators.tabContractsDescription': 'Rental contracts this unit has been assigned to land here once contract management ships.',
-    'generators.tabProfitabilityDescription': 'Revenue and cost per hour for this unit land here once the profitability engine ships.',
+    'generators.tabMaintenanceDescription':
+      'Service history and the next due date land here once maintenance tracking ships.',
+    'generators.tabContractsDescription':
+      'Rental contracts this unit has been assigned to land here once contract management ships.',
+    'generators.tabProfitabilityDescription':
+      'Revenue and cost per hour for this unit land here once the profitability engine ships.',
     'generators.noTabDataYet': 'No {tab} data yet',
     'generators.noOperationLogsTitle': 'No operation logs yet',
-    'generators.noOperationLogsDescription': "Daily meter readings for this generator show up here once they're logged.",
+    'generators.noOperationLogsDescription':
+      "Daily meter readings for this generator show up here once they're logged.",
     'generators.superseded': 'Superseded',
     'generators.loadGeneratorFailedTitle': "Couldn't load this generator",
     'customers.title': 'Customers',
@@ -216,7 +228,8 @@ export const dictionary = {
     'customers.addTitle': 'Add a customer',
     'customers.editTitle': 'Edit {name}',
     'customers.addDescription': 'The billing counterparty for projects and contracts.',
-    'customers.editDescription': 'Contact and billing details only — the code is fixed once created.',
+    'customers.editDescription':
+      'Contact and billing details only — the code is fixed once created.',
     'customers.fieldCode': 'Code',
     'customers.fieldCompanyName': 'Company name',
     'customers.fieldContactPerson': 'Contact person',
@@ -233,20 +246,23 @@ export const dictionary = {
     'customers.tabOverview': 'Overview',
     'customers.tabProjects': 'Projects',
     'customers.tabContracts': 'Contracts',
-    'customers.tabContractsDescription': 'Rental contracts with this customer land here once contract management ships.',
+    'customers.tabContractsDescription':
+      'Rental contracts with this customer land here once contract management ships.',
     'customers.tabExtracts': 'Extracts',
     'customers.tabExtractsDescription': 'Billing extracts land here once extract management ships.',
     'customers.tabReceipts': 'Receipts',
     'customers.tabReceiptsDescription': 'Payments received land here once receipt tracking ships.',
     'customers.tabStatement': 'Statement',
-    'customers.tabStatementDescription': 'The live account balance and history land here once the Customer Ledger Engine ships.',
+    'customers.tabStatementDescription':
+      'The live account balance and history land here once the Customer Ledger Engine ships.',
     'customers.noTabDataYet': 'No {tab} data yet',
     'customers.detailsHeading': 'Details',
     'customers.noProjectsTitle': 'No projects yet',
     'customers.noProjectsDescription': 'Job sites created under this customer show up here.',
     'customers.projectStatusClosed': 'Closed',
     'projects.title': 'Projects',
-    'projects.description': "A customer's job sites — contracts and generators organize under these.",
+    'projects.description':
+      "A customer's job sites — contracts and generators organize under these.",
     'projects.newProject': 'New project',
     'projects.allCustomersPlaceholder': 'All customers',
     'projects.statusActive': 'Active',
@@ -261,7 +277,8 @@ export const dictionary = {
     'projects.closedToast': 'Closed {name}',
     'projects.closeFailedToast': "Couldn't close this project.",
     'projects.emptyTitle': 'No projects yet',
-    'projects.emptyDescriptionWrite': 'Add the first project to start organizing contracts and generators.',
+    'projects.emptyDescriptionWrite':
+      'Add the first project to start organizing contracts and generators.',
     'projects.emptyDescriptionReadOnly': 'Projects will appear here once they are added.',
     'projects.closeConfirmTitle': 'Close {name}?',
     'projects.closeConfirmDescription':
@@ -283,7 +300,8 @@ export const dictionary = {
     'projects.noGeneratorsDescription':
       "This is a live view of generators under this project's active contracts — it fills in once contract management ships.",
     'projects.noContractsTitle': 'No contracts yet',
-    'projects.noContractsDescription': 'Rental contracts under this project land here once contract management ships.',
+    'projects.noContractsDescription':
+      'Rental contracts under this project land here once contract management ships.',
     'projects.noRevenueTitle': 'No revenue data yet',
     'projects.noRevenueDescription':
       "A revenue summary from this project's extracts lands here once extract management ships.",
@@ -296,7 +314,8 @@ export const dictionary = {
     'projects.editTitle': 'Edit {name}',
     'projects.addTitle': 'Add a project',
     'projects.editDescription': 'The customer is fixed once a project is created.',
-    'projects.addDescription': "A customer's job site — contracts and generators get organized under it.",
+    'projects.addDescription':
+      "A customer's job site — contracts and generators get organized under it.",
     'projects.fieldCode': 'Code',
     'projects.fieldName': 'Name',
     'projects.updatedToast': 'Updated {name}',
@@ -352,7 +371,8 @@ export const dictionary = {
     'contracts.fieldPolicyNumber': 'Policy number',
     'contracts.fieldAmount': 'Amount',
     'contracts.noItemsTitle': 'No items yet',
-    'contracts.noItemsDescription': 'A Draft contract can be edited to add generators before activating.',
+    'contracts.noItemsDescription':
+      'A Draft contract can be edited to add generators before activating.',
     'contracts.sharedAssignmentApproved': 'Shared Assignment approved — {justification}',
     'contracts.applyOverride': 'Apply Shared Assignment override',
     'contracts.viewExtractsTitle': "View this customer's extracts",
@@ -396,15 +416,18 @@ export const dictionary = {
     'contracts.wizardTitle': 'New contract — {step}',
     'contracts.wizardStepDescription':
       "Step {current} of {total}. It's created as a Draft — activation runs the conflict check.",
-    'contracts.rentalMethodHelp': 'The default billing method for items — each item can override it.',
+    'contracts.rentalMethodHelp':
+      'The default billing method for items — each item can override it.',
     'contracts.fieldInsuranceProvider': 'Insurance provider',
-    'contracts.noGeneratorsAddedYet': 'No generators added yet. A Draft can be saved with zero items.',
+    'contracts.noGeneratorsAddedYet':
+      'No generators added yet. A Draft can be saved with zero items.',
     'contracts.fieldGenerator': 'Generator',
     'contracts.fieldMethod': 'Method',
     'contracts.fieldUnitPrice': 'Unit price',
     'contracts.removeItem': 'Remove item',
     'contracts.alsoAssignedWarning': 'Also assigned to {status} contract {number} in this period.',
-    'contracts.conflictWarningNote': 'You can still save — activation will be blocked unless resolved.',
+    'contracts.conflictWarningNote':
+      'You can still save — activation will be blocked unless resolved.',
     'contracts.dismissWarning': 'Dismiss warning',
     'contracts.addGenerator': 'Add generator',
     'contracts.back': 'Back',
@@ -412,7 +435,8 @@ export const dictionary = {
     'contracts.createDraft': 'Create Draft',
     'contracts.createdToast': 'Contract created as Draft',
     'operations.title': 'Operations',
-    'operations.description': 'Daily meter readings — the ground truth for billable hours and utilization.',
+    'operations.description':
+      'Daily meter readings — the ground truth for billable hours and utilization.',
     'operations.newEntry': 'New entry',
     'operations.columnDate': 'Date',
     'operations.columnGenerator': 'Generator',
@@ -429,7 +453,8 @@ export const dictionary = {
     'operations.projectFilterPlaceholder': 'Project',
     'operations.allProjectsLabel': 'All projects',
     'operations.emptyTitle': 'No operation logs yet',
-    'operations.emptyDescriptionWrite': 'Log the first meter reading to start tracking operating hours.',
+    'operations.emptyDescriptionWrite':
+      'Log the first meter reading to start tracking operating hours.',
     'operations.emptyDescriptionReadOnly': 'Entries will appear here once logged.',
     'operations.formDateRequired': 'Date is required',
     'operations.formChooseProject': 'Choose a project',
@@ -440,14 +465,16 @@ export const dictionary = {
     'operations.entryFallback': 'entry',
     'operations.loggedToast': 'Logged {label} — {hours}h',
     'operations.newEntryTitle': 'New operation entry',
-    'operations.newEntryDescription': 'Stays open after each save so you can log the next generator right away.',
+    'operations.newEntryDescription':
+      'Stays open after each save so you can log the next generator right away.',
     'operations.fieldDate': 'Date',
     'operations.fieldProject': 'Project',
     'operations.fieldGenerator': 'Generator',
     'operations.fieldStartMeter': 'Start meter',
     'operations.startMeterHelp': "Pre-filled from the generator's current reading.",
     'operations.fieldEndMeter': 'End meter',
-    'operations.endMeterHelp': 'If this is lower than the start meter, ask a manager for a correction instead of resubmitting.',
+    'operations.endMeterHelp':
+      'If this is lower than the start meter, ask a manager for a correction instead of resubmitting.',
     'operations.fieldDowntimeHours': 'Downtime (hours)',
     'operations.fieldNotes': 'Notes',
     'operations.done': 'Done',
@@ -463,7 +490,8 @@ export const dictionary = {
     'operations.saveCorrectionButton': 'Save correction',
     'operations.chooseProjectPlaceholder': 'Choose a project…',
     'fuel.title': 'Fuel',
-    'fuel.description': 'Fill-ups, cost, and consumption rate — the largest variable operating cost.',
+    'fuel.description':
+      'Fill-ups, cost, and consumption rate — the largest variable operating cost.',
     'fuel.newEntry': 'New entry',
     'fuel.tabFillups': 'Fill-ups',
     'fuel.tabAlerts': 'Alerts',
@@ -474,7 +502,8 @@ export const dictionary = {
     'fuel.columnTotalCost': 'Total cost',
     'fuel.columnConsumption': 'Consumption',
     'fuel.columnVariance': 'Variance',
-    'fuel.varianceHeaderTooltip': "How far the consumption rate is above the generator's normal rate.",
+    'fuel.varianceHeaderTooltip':
+      "How far the consumption rate is above the generator's normal rate.",
     'fuel.varianceNaTooltip': "No operating hours recorded in this fill-up's reference window.",
     'fuel.notAvailable': 'N/A',
     'fuel.rateValue': '{value} L/h',
@@ -503,12 +532,14 @@ export const dictionary = {
     'fuel.alertsEmptyDescription': 'Abnormal consumption readings will show up here.',
     'fuel.chartTitle': 'Consumption rate',
     'fuel.normalRateLabel': 'Normal: {value} L/h',
-    'fuel.chartEmptyDescription': 'Consumption rate over time shows up here once fill-ups are logged.',
+    'fuel.chartEmptyDescription':
+      'Consumption rate over time shows up here once fill-ups are logged.',
     'fuel.formDateRequired': 'Date is required',
     'fuel.formChooseProject': 'Choose a project',
     'fuel.formChooseGenerator': 'Choose a generator',
     'fuel.newEntryTitle': 'New fuel entry',
-    'fuel.newEntryDescription': 'Total cost is computed automatically from liters × price per liter.',
+    'fuel.newEntryDescription':
+      'Total cost is computed automatically from liters × price per liter.',
     'fuel.fieldDate': 'Date',
     'fuel.fieldProject': 'Project',
     'fuel.fieldGenerator': 'Generator',
@@ -518,7 +549,8 @@ export const dictionary = {
     'fuel.saveEntryButton': 'Save entry',
     'fuel.loggedToast': 'Logged {liters}L fill-up',
     'fuel.resolveDialogTitle': 'Resolve {code} fuel alert',
-    'fuel.resolveDialogDescription': 'Explain what was found and how it was addressed — this stays on record.',
+    'fuel.resolveDialogDescription':
+      'Explain what was found and how it was addressed — this stays on record.',
     'fuel.resolutionNoteLabel': 'Resolution note',
     'fuel.resolutionNotePlaceholder': 'e.g. Found and repaired a fuel line leak',
     'fuel.alertResolvedToast': '{code} alert resolved',
@@ -527,7 +559,8 @@ export const dictionary = {
     'fuel.varianceAbove': '+{value}%',
     'fuel.varianceValue': '{value}%',
     'maintenance.title': 'Maintenance',
-    'maintenance.description': 'Preventive and corrective service history, cost, and next-due tracking per generator.',
+    'maintenance.description':
+      'Preventive and corrective service history, cost, and next-due tracking per generator.',
     'maintenance.newMaintenance': 'New maintenance',
     'maintenance.tabRecords': 'Records',
     'maintenance.tabAlerts': 'Alerts',
@@ -562,7 +595,8 @@ export const dictionary = {
     'maintenance.typeFilterPlaceholder': 'Type',
     'maintenance.allTypesLabel': 'All types',
     'maintenance.emptyTitle': 'No maintenance records yet',
-    'maintenance.emptyDescriptionWrite': 'Open the first maintenance record to start tracking service history.',
+    'maintenance.emptyDescriptionWrite':
+      'Open the first maintenance record to start tracking service history.',
     'maintenance.emptyDescriptionReadOnly': 'Records will appear here once logged.',
     'maintenance.formChooseGenerator': 'Choose a generator',
     'maintenance.formDateRequired': 'Date is required',
@@ -571,7 +605,8 @@ export const dictionary = {
     'maintenance.openedToast': 'Maintenance record opened',
     'maintenance.editTitle': 'Edit maintenance — {code}',
     'maintenance.openTitle': 'Open maintenance record',
-    'maintenance.formDescription': 'Total cost is computed automatically from parts + oil + labor + transport.',
+    'maintenance.formDescription':
+      'Total cost is computed automatically from parts + oil + labor + transport.',
     'maintenance.meterSummary': 'meter {meter}',
     'maintenance.fieldGenerator': 'Generator',
     'maintenance.fieldType': 'Type',
@@ -582,7 +617,8 @@ export const dictionary = {
     'maintenance.fieldLabor': 'Labor',
     'maintenance.fieldTransport': 'Transport',
     'maintenance.fieldCycleOverride': 'Cycle override (hours, optional)',
-    'maintenance.cycleOverrideHelp': "Overrides the generator's default maintenance cycle for this record only.",
+    'maintenance.cycleOverrideHelp':
+      "Overrides the generator's default maintenance cycle for this record only.",
     'maintenance.fieldNotes': 'Notes',
     'maintenance.totalCostLabel': 'Total cost',
     'maintenance.openButton': 'Open record',
@@ -593,16 +629,19 @@ export const dictionary = {
     'maintenance.alertAcknowledgedToast': '{code} alert acknowledged',
     'maintenance.acknowledgeFailedToast': "Couldn't acknowledge this alert.",
     'maintenance.alertsEmptyTitle': 'No maintenance alerts',
-    'maintenance.alertsEmptyDescription': 'Generators approaching or past their next-due meter will show up here.',
+    'maintenance.alertsEmptyDescription':
+      'Generators approaching or past their next-due meter will show up here.',
     'maintenance.cancelledToast': '{code} maintenance cancelled',
     'maintenance.cancelFailedToast': "Couldn't cancel this record.",
     'maintenance.cancelDialogTitle': 'Cancel {code} maintenance',
-    'maintenance.cancelDialogDescription': 'This record is closed without computing a next maintenance due meter.',
+    'maintenance.cancelDialogDescription':
+      'This record is closed without computing a next maintenance due meter.',
     'maintenance.reasonLabel': 'Reason',
     'maintenance.reasonPlaceholder': 'e.g. Duplicate entry',
     'maintenance.cancelButton': 'Cancel record',
     'users.title': 'Users & roles',
-    'users.description': 'Manage who can sign in and what each role can do. Every permission here is enforced by the API, not just this screen.',
+    'users.description':
+      'Manage who can sign in and what each role can do. Every permission here is enforced by the API, not just this screen.',
     'users.tabUsers': 'Users',
     'users.tabRoles': 'Roles',
     'users.active': 'Active',
@@ -625,7 +664,8 @@ export const dictionary = {
     'users.emptyTitle': 'No users yet',
     'users.emptyDescription': 'Create the first account to get your team signed in.',
     'users.deleteConfirmTitle': 'Delete {name}?',
-    'users.deleteConfirmDescription': 'This soft-deletes the account — they can no longer sign in, and an Admin can restore their history later.',
+    'users.deleteConfirmDescription':
+      'This soft-deletes the account — they can no longer sign in, and an Admin can restore their history later.',
     'users.columnPermissions': 'Permissions',
     'users.editPermissions': 'Edit permissions',
     'users.rolesEmptyTitle': 'No roles yet',
@@ -647,13 +687,15 @@ export const dictionary = {
     'users.fieldRole': 'Role',
     'users.chooseRolePlaceholder': 'Choose a role',
     'users.assignedGenerators': 'Assigned generators',
-    'users.assignedGeneratorsHelp': 'A Technician may only log operations/fuel/maintenance entries for generators assigned here.',
+    'users.assignedGeneratorsHelp':
+      'A Technician may only log operations/fuel/maintenance entries for generators assigned here.',
     'users.noGenerators': 'No generators registered yet.',
     'users.activeCanSignIn': 'Active — can sign in',
     'users.createUser': 'Create user',
     'users.permissionsUpdatedToast': 'Updated {name}',
     'users.permissionsSaveFailedToast': "Couldn't save these permissions.",
-    'users.permissionsDescription': 'Choose exactly what this role can see and do. A role needs at least one permission.',
+    'users.permissionsDescription':
+      'Choose exactly what this role can see and do. A role needs at least one permission.',
     'users.permissionGroupUsersRoles': 'Users & roles',
     'users.permissionGroupGenerators': 'Generators',
     'users.permissionGroupCustomers': 'Customers',
@@ -711,7 +753,8 @@ export const dictionary = {
     'users.permissionManageFinanceSettings': 'Manage finance settings',
     'users.permissionViewAudit': 'View audit log',
     'extracts.title': 'Extracts',
-    'extracts.description': 'Customer-facing billing documents, from Draft through Approval and collection.',
+    'extracts.description':
+      'Customer-facing billing documents, from Draft through Approval and collection.',
     'extracts.newExtract': 'New extract',
     'extracts.columnNumber': 'Number',
     'extracts.columnCustomer': 'Customer',
@@ -745,7 +788,8 @@ export const dictionary = {
     'extracts.createdToast': '{number} saved as Draft',
     'extracts.editTitle': 'Edit {number}',
     'extracts.newExtractTitle': 'New extract',
-    'extracts.formDescription': 'Totals are computed by the Financial Calculation Engine — never re-derived here.',
+    'extracts.formDescription':
+      'Totals are computed by the Financial Calculation Engine — never re-derived here.',
     'extracts.fieldCustomer': 'Customer',
     'extracts.fieldProject': 'Project',
     'extracts.fieldContracts': 'Contracts',
@@ -774,7 +818,8 @@ export const dictionary = {
     'extracts.cancelledToast': '{number} cancelled',
     'extracts.cancelFailedToast': "Couldn't cancel this extract.",
     'extracts.cancelDialogTitle': 'Cancel {number}',
-    'extracts.cancelDialogDescription': 'An Approved+ extract can only be cancelled directly while nothing has been collected against it.',
+    'extracts.cancelDialogDescription':
+      'An Approved+ extract can only be cancelled directly while nothing has been collected against it.',
     'extracts.reasonLabel': 'Reason',
     'extracts.cancelButton': 'Cancel extract',
     'extracts.submittedToast': '{number} submitted for review',
@@ -787,7 +832,8 @@ export const dictionary = {
     'extracts.submitForReview': 'Submit for review',
     'extracts.approve': 'Approve',
     'extracts.cancel': 'Cancel',
-    'extracts.lockedNotice': 'Approved — locked. Financial fields can no longer be edited directly; cancel and reissue a new Draft instead.',
+    'extracts.lockedNotice':
+      'Approved — locked. Financial fields can no longer be edited directly; cancel and reissue a new Draft instead.',
     'extracts.overview': 'Overview',
     'extracts.fieldPeriod': 'Period',
     'extracts.cancelReason': 'Cancel reason',
@@ -797,11 +843,14 @@ export const dictionary = {
     'extracts.liveEstimate': 'Live estimate',
     'extracts.vat': 'VAT',
     'extracts.collected': 'Collected',
-    'extracts.noLineItemsDescription': 'Edit this Draft to add rent, transport, or services line items.',
+    'extracts.noLineItemsDescription':
+      'Edit this Draft to add rent, transport, or services line items.',
     'extracts.approveConfirmTitle': 'Approve {number}?',
-    'extracts.approveConfirmDescription': 'Snapshots the current VAT rate and locks all financial fields — cancel and reissue a new Draft to make further changes.',
+    'extracts.approveConfirmDescription':
+      'Snapshots the current VAT rate and locks all financial fields — cancel and reissue a new Draft to make further changes.',
     'devTable.title': 'DataTable foundation',
-    'devTable.description': 'TASK-005 preview — apiClient + DataTable + useDataTableQuery over mock data.',
+    'devTable.description':
+      'TASK-005 preview — apiClient + DataTable + useDataTableQuery over mock data.',
     'devTable.columnCode': 'Code',
     'devTable.columnKva': 'kVA',
     'devTable.columnLocation': 'Location',
@@ -842,7 +891,8 @@ export const dictionary = {
     'shell.home': 'الرئيسية',
     'shell.toggleLanguage': 'تبديل اللغة',
     'shell.noAccessTitle': 'لا توجد وحدات متاحة',
-    'shell.noAccessBody': 'حسابك غير مرتبط بأي وحدة بعد. يرجى التواصل مع مسؤول النظام لمنح دورك صلاحية الوصول.',
+    'shell.noAccessBody':
+      'حسابك غير مرتبط بأي وحدة بعد. يرجى التواصل مع مسؤول النظام لمنح دورك صلاحية الوصول.',
     'shell.reload': 'إعادة التحميل',
     'shell.crashTitle': 'حدث خطأ ما',
     'shell.crashBody': 'واجهت الصفحة خطأً غير متوقع. عادةً ما تحل إعادة التحميل المشكلة.',
@@ -890,20 +940,23 @@ export const dictionary = {
     'table.selectAllRows': 'تحديد كل الصفوف في هذه الصفحة',
     'table.selectRow': 'تحديد الصف',
     'dashboard.title': 'لوحة التحكم',
-    'dashboard.description': 'مسجّل الدخول باسم {name}، {role}. إطار التطبيق، الاتجاه من اليمين لليسار، والعناصر المشتركة التي تُبنى عليها كل الوحدات لاحقًا.',
+    'dashboard.description':
+      'مسجّل الدخول باسم {name}، {role}. إطار التطبيق، الاتجاه من اليمين لليسار، والعناصر المشتركة التي تُبنى عليها كل الوحدات لاحقًا.',
     'dashboard.generatorStatus': 'حالة المولد',
     'dashboard.generatorStatusDescription':
       'حالات محرك الحالة (البند 6.1 من المواصفات) — تُستخدم نفس الألوان الأربعة في كل مكان تظهر فيه حالة المولد.',
     'dashboard.emptyState': 'حالة عدم وجود بيانات',
     'dashboard.noGeneratorsTitle': 'لا توجد مولدات معيّنة',
-    'dashboard.noGeneratorsDescription': 'ستظهر هنا المولدات المعيّنة لهذا المشروع بمجرد تفعيل عقد.',
+    'dashboard.noGeneratorsDescription':
+      'ستظهر هنا المولدات المعيّنة لهذا المشروع بمجرد تفعيل عقد.',
     'dashboard.assignGenerator': 'تعيين مولد',
     'dashboard.errorState': 'حالة الخطأ',
     'dashboard.retried': 'تمت إعادة المحاولة — سيتم تنفيذ الطلب مرة أخرى هنا.',
     'dashboard.loadFailedTitle': 'تعذّر تحميل المولدات',
     'dashboard.loadFailedDescription': 'فشل تحميل قائمة المولدات. تحقق من اتصالك وحاول مرة أخرى.',
     'dashboard.confirmDialog': 'مربع حوار التأكيد',
-    'dashboard.confirmDialogDescription': 'الإجراءات المدمِّرة لا تستخدم أبدًا confirm() الأصلية — يُستخدم دائمًا مربع الحوار هذا.',
+    'dashboard.confirmDialogDescription':
+      'الإجراءات المدمِّرة لا تستخدم أبدًا confirm() الأصلية — يُستخدم دائمًا مربع الحوار هذا.',
     'dashboard.deleteGenerator': 'حذف المولد GEN-014',
     'dashboard.deleteGeneratorConfirmTitle': 'حذف المولد GEN-014؟',
     'dashboard.deleteGeneratorConfirmDescription':
@@ -915,7 +968,8 @@ export const dictionary = {
     'dashboard.list': 'قائمة',
     'dashboard.table': 'جدول',
     'dashboard.dataTableFoundation': 'أساس جدول البيانات',
-    'dashboard.dataTableFoundationDescription': 'معاينة TASK-005 — apiClient وDataTable والفلاتر وuseDataTableQuery على بيانات وهمية.',
+    'dashboard.dataTableFoundationDescription':
+      'معاينة TASK-005 — apiClient وDataTable والفلاتر وuseDataTableQuery على بيانات وهمية.',
     'dashboard.openDataTablePreview': 'فتح معاينة جدول البيانات',
     'generators.title': 'المولدات',
     'generators.description': 'السجلات الرئيسية للأسطول — المواصفات والعدّاد والحالة.',
@@ -955,7 +1009,8 @@ export const dictionary = {
     'generators.formSerialRequired': 'الرقم التسلسلي مطلوب',
     'generators.editTitle': 'تعديل {code}',
     'generators.registerTitle': 'تسجيل مولد',
-    'generators.editDescription': 'المواصفات والموقع والحدود فقط — يتحدّث العدّاد من سجلات التشغيل.',
+    'generators.editDescription':
+      'المواصفات والموقع والحدود فقط — يتحدّث العدّاد من سجلات التشغيل.',
     'generators.registerDescription': 'يبدأ بحالة متاح وقراءة عدّاد صفر.',
     'generators.fieldCode': 'الرمز',
     'generators.fieldKva': 'كيلوفولت أمبير',
@@ -992,12 +1047,16 @@ export const dictionary = {
     'generators.tabMaintenance': 'الصيانة',
     'generators.tabContracts': 'العقود',
     'generators.tabProfitability': 'الربحية',
-    'generators.tabMaintenanceDescription': 'سيظهر هنا سجل الصيانة وتاريخ الاستحقاق التالي بمجرد تفعيل تتبع الصيانة.',
-    'generators.tabContractsDescription': 'ستظهر هنا عقود الإيجار التي عُيّنت لها هذه الوحدة بمجرد تفعيل إدارة العقود.',
-    'generators.tabProfitabilityDescription': 'ستظهر هنا الإيرادات والتكلفة لكل ساعة لهذه الوحدة بمجرد تفعيل محرك الربحية.',
+    'generators.tabMaintenanceDescription':
+      'سيظهر هنا سجل الصيانة وتاريخ الاستحقاق التالي بمجرد تفعيل تتبع الصيانة.',
+    'generators.tabContractsDescription':
+      'ستظهر هنا عقود الإيجار التي عُيّنت لها هذه الوحدة بمجرد تفعيل إدارة العقود.',
+    'generators.tabProfitabilityDescription':
+      'ستظهر هنا الإيرادات والتكلفة لكل ساعة لهذه الوحدة بمجرد تفعيل محرك الربحية.',
     'generators.noTabDataYet': 'لا توجد بيانات {tab} بعد',
     'generators.noOperationLogsTitle': 'لا توجد سجلات تشغيل بعد',
-    'generators.noOperationLogsDescription': 'ستظهر قراءات العدّاد اليومية لهذا المولد هنا بمجرد تسجيلها.',
+    'generators.noOperationLogsDescription':
+      'ستظهر قراءات العدّاد اليومية لهذا المولد هنا بمجرد تسجيلها.',
     'generators.superseded': 'مستبدَل',
     'generators.loadGeneratorFailedTitle': 'تعذّر تحميل هذا المولد',
     'customers.title': 'العملاء',
@@ -1047,13 +1106,15 @@ export const dictionary = {
     'customers.tabOverview': 'نظرة عامة',
     'customers.tabProjects': 'المشاريع',
     'customers.tabContracts': 'العقود',
-    'customers.tabContractsDescription': 'ستظهر هنا عقود الإيجار مع هذا العميل بمجرد تفعيل إدارة العقود.',
+    'customers.tabContractsDescription':
+      'ستظهر هنا عقود الإيجار مع هذا العميل بمجرد تفعيل إدارة العقود.',
     'customers.tabExtracts': 'المستخلصات',
     'customers.tabExtractsDescription': 'ستظهر هنا مستخلصات الفوترة بمجرد تفعيل إدارة المستخلصات.',
     'customers.tabReceipts': 'الإيصالات',
     'customers.tabReceiptsDescription': 'ستظهر هنا الدفعات المستلمة بمجرد تفعيل تتبع الإيصالات.',
     'customers.tabStatement': 'كشف الحساب',
-    'customers.tabStatementDescription': 'سيظهر هنا رصيد الحساب الحي وسجله بمجرد تفعيل محرك دفتر أستاذ العملاء.',
+    'customers.tabStatementDescription':
+      'سيظهر هنا رصيد الحساب الحي وسجله بمجرد تفعيل محرك دفتر أستاذ العملاء.',
     'customers.noTabDataYet': 'لا توجد بيانات {tab} بعد',
     'customers.detailsHeading': 'التفاصيل',
     'customers.noProjectsTitle': 'لا توجد مشاريع بعد',
@@ -1097,7 +1158,8 @@ export const dictionary = {
     'projects.noGeneratorsDescription':
       'هذه نظرة حية على المولدات ضمن عقود هذا المشروع النشطة — ستُملأ بمجرد تفعيل إدارة العقود.',
     'projects.noContractsTitle': 'لا توجد عقود بعد',
-    'projects.noContractsDescription': 'ستظهر هنا عقود الإيجار الخاصة بهذا المشروع بمجرد تفعيل إدارة العقود.',
+    'projects.noContractsDescription':
+      'ستظهر هنا عقود الإيجار الخاصة بهذا المشروع بمجرد تفعيل إدارة العقود.',
     'projects.noRevenueTitle': 'لا توجد بيانات إيرادات بعد',
     'projects.noRevenueDescription':
       'سيظهر هنا ملخص الإيرادات من مستخلصات هذا المشروع بمجرد تفعيل إدارة المستخلصات.',
@@ -1120,7 +1182,8 @@ export const dictionary = {
     'projects.searchCustomersPlaceholder': 'ابحث عن عملاء…',
     'projects.noCustomersFound': 'لم يتم العثور على عملاء.',
     'contracts.title': 'العقود',
-    'contracts.description': 'العمود الفقري التجاري — ما يجعل المولد "مؤجَّرًا" وما يُبنى عليه كل مستخلص.',
+    'contracts.description':
+      'العمود الفقري التجاري — ما يجعل المولد "مؤجَّرًا" وما يُبنى عليه كل مستخلص.',
     'contracts.newContract': 'عقد جديد',
     'contracts.allCustomersPlaceholder': 'كل العملاء',
     'contracts.startDateRangePlaceholder': 'النطاق الزمني لتاريخ البدء',
@@ -1190,7 +1253,8 @@ export const dictionary = {
     'contracts.overrideDialogDescription':
       'يسجّل استثناءً معتمدًا لحظر التعارض لهذا البند فقط. يظل التداخل قائمًا — هذا قرار صريح وموثّق للسماح به.',
     'contracts.justificationLabel': 'المبرر',
-    'contracts.justificationPlaceholder': 'مثال: تمت الموافقة على تداخل قصير لتسليم الموقع بين الفريقين',
+    'contracts.justificationPlaceholder':
+      'مثال: تمت الموافقة على تداخل قصير لتسليم الموقع بين الفريقين',
     'contracts.applyOverrideButton': 'تطبيق الاستثناء',
     'contracts.chooseGeneratorPlaceholder': 'اختر مولدًا…',
     'contracts.loadingProjects': 'جارٍ تحميل المشاريع…',
@@ -1225,7 +1289,8 @@ export const dictionary = {
     'contracts.createDraft': 'إنشاء المسودة',
     'contracts.createdToast': 'تم إنشاء العقد كمسودة',
     'operations.title': 'التشغيل',
-    'operations.description': 'قراءات العدّاد اليومية — المصدر الأساسي لحساب الساعات القابلة للفوترة ومعدل الاستغلال.',
+    'operations.description':
+      'قراءات العدّاد اليومية — المصدر الأساسي لحساب الساعات القابلة للفوترة ومعدل الاستغلال.',
     'operations.newEntry': 'إدخال جديد',
     'operations.columnDate': 'التاريخ',
     'operations.columnGenerator': 'المولد',
@@ -1253,14 +1318,16 @@ export const dictionary = {
     'operations.entryFallback': 'الإدخال',
     'operations.loggedToast': 'تم تسجيل {label} — {hours} ساعة',
     'operations.newEntryTitle': 'إدخال تشغيل جديد',
-    'operations.newEntryDescription': 'يبقى الحوار مفتوحًا بعد كل حفظ لتتمكن من تسجيل المولد التالي مباشرة.',
+    'operations.newEntryDescription':
+      'يبقى الحوار مفتوحًا بعد كل حفظ لتتمكن من تسجيل المولد التالي مباشرة.',
     'operations.fieldDate': 'التاريخ',
     'operations.fieldProject': 'المشروع',
     'operations.fieldGenerator': 'المولد',
     'operations.fieldStartMeter': 'قراءة بداية العدّاد',
     'operations.startMeterHelp': 'مُعبّأة مسبقًا من القراءة الحالية للمولد.',
     'operations.fieldEndMeter': 'قراءة نهاية العدّاد',
-    'operations.endMeterHelp': 'إذا كانت هذه القراءة أقل من قراءة البداية، اطلب من مدير تصحيحها بدلًا من إعادة الإرسال.',
+    'operations.endMeterHelp':
+      'إذا كانت هذه القراءة أقل من قراءة البداية، اطلب من مدير تصحيحها بدلًا من إعادة الإرسال.',
     'operations.fieldDowntimeHours': 'ساعات التوقف',
     'operations.fieldNotes': 'ملاحظات',
     'operations.done': 'تم',
@@ -1340,7 +1407,8 @@ export const dictionary = {
     'fuel.varianceAbove': '+{value}٪',
     'fuel.varianceValue': '{value}٪',
     'maintenance.title': 'الصيانة',
-    'maintenance.description': 'سجل الصيانة الوقائية والتصحيحية والتكلفة ومتابعة الاستحقاق التالي لكل مولد.',
+    'maintenance.description':
+      'سجل الصيانة الوقائية والتصحيحية والتكلفة ومتابعة الاستحقاق التالي لكل مولد.',
     'maintenance.newMaintenance': 'صيانة جديدة',
     'maintenance.tabRecords': 'السجلات',
     'maintenance.tabAlerts': 'التنبيهات',
@@ -1384,7 +1452,8 @@ export const dictionary = {
     'maintenance.openedToast': 'تم فتح سجل الصيانة',
     'maintenance.editTitle': 'تعديل صيانة {code}',
     'maintenance.openTitle': 'فتح سجل صيانة',
-    'maintenance.formDescription': 'تُحسب التكلفة الإجمالية تلقائيًا من القطع والزيت والعمالة والنقل.',
+    'maintenance.formDescription':
+      'تُحسب التكلفة الإجمالية تلقائيًا من القطع والزيت والعمالة والنقل.',
     'maintenance.meterSummary': 'قراءة العدّاد {meter}',
     'maintenance.fieldGenerator': 'المولد',
     'maintenance.fieldType': 'النوع',
@@ -1406,7 +1475,8 @@ export const dictionary = {
     'maintenance.alertAcknowledgedToast': 'تم الإقرار بتنبيه {code}',
     'maintenance.acknowledgeFailedToast': 'تعذّر الإقرار بهذا التنبيه.',
     'maintenance.alertsEmptyTitle': 'لا توجد تنبيهات صيانة',
-    'maintenance.alertsEmptyDescription': 'ستظهر هنا المولدات التي اقتربت من قراءة الاستحقاق التالي أو تجاوزتها.',
+    'maintenance.alertsEmptyDescription':
+      'ستظهر هنا المولدات التي اقتربت من قراءة الاستحقاق التالي أو تجاوزتها.',
     'maintenance.cancelledToast': 'تم إلغاء صيانة {code}',
     'maintenance.cancelFailedToast': 'تعذّر إلغاء هذا السجل.',
     'maintenance.cancelDialogTitle': 'إلغاء صيانة {code}',
@@ -1415,7 +1485,8 @@ export const dictionary = {
     'maintenance.reasonPlaceholder': 'مثال: إدخال مكرر',
     'maintenance.cancelButton': 'إلغاء السجل',
     'users.title': 'المستخدمون والأدوار',
-    'users.description': 'إدارة من يمكنه تسجيل الدخول وما يمكن لكل دور فعله. تُفرض كل صلاحية هنا عبر واجهة API وليس هذه الشاشة فقط.',
+    'users.description':
+      'إدارة من يمكنه تسجيل الدخول وما يمكن لكل دور فعله. تُفرض كل صلاحية هنا عبر واجهة API وليس هذه الشاشة فقط.',
     'users.tabUsers': 'المستخدمون',
     'users.tabRoles': 'الأدوار',
     'users.active': 'نشط',
@@ -1438,7 +1509,8 @@ export const dictionary = {
     'users.emptyTitle': 'لا يوجد مستخدمون بعد',
     'users.emptyDescription': 'أنشئ الحساب الأول لبدء تسجيل فريقك الدخول.',
     'users.deleteConfirmTitle': 'حذف {name}؟',
-    'users.deleteConfirmDescription': 'يؤدي هذا إلى حذف الحساب حذفًا ناعمًا — لن يتمكن من تسجيل الدخول، ويمكن للمسؤول استعادة سجله لاحقًا.',
+    'users.deleteConfirmDescription':
+      'يؤدي هذا إلى حذف الحساب حذفًا ناعمًا — لن يتمكن من تسجيل الدخول، ويمكن للمسؤول استعادة سجله لاحقًا.',
     'users.columnPermissions': 'الصلاحيات',
     'users.editPermissions': 'تعديل الصلاحيات',
     'users.rolesEmptyTitle': 'لا توجد أدوار بعد',
@@ -1460,13 +1532,15 @@ export const dictionary = {
     'users.fieldRole': 'الدور',
     'users.chooseRolePlaceholder': 'اختر دورًا',
     'users.assignedGenerators': 'المولدات المعيّنة',
-    'users.assignedGeneratorsHelp': 'يمكن للفني تسجيل التشغيل والوقود والصيانة للمولدات المعيّنة هنا فقط.',
+    'users.assignedGeneratorsHelp':
+      'يمكن للفني تسجيل التشغيل والوقود والصيانة للمولدات المعيّنة هنا فقط.',
     'users.noGenerators': 'لا توجد مولدات مسجّلة بعد.',
     'users.activeCanSignIn': 'نشط — يمكنه تسجيل الدخول',
     'users.createUser': 'إنشاء مستخدم',
     'users.permissionsUpdatedToast': 'تم تحديث {name}',
     'users.permissionsSaveFailedToast': 'تعذّر حفظ هذه الصلاحيات.',
-    'users.permissionsDescription': 'اختر بدقة ما يمكن لهذا الدور رؤيته وفعله. يجب أن يمتلك الدور صلاحية واحدة على الأقل.',
+    'users.permissionsDescription':
+      'اختر بدقة ما يمكن لهذا الدور رؤيته وفعله. يجب أن يمتلك الدور صلاحية واحدة على الأقل.',
     'users.permissionGroupUsersRoles': 'المستخدمون والأدوار',
     'users.permissionGroupGenerators': 'المولدات',
     'users.permissionGroupCustomers': 'العملاء',
@@ -1558,7 +1632,8 @@ export const dictionary = {
     'extracts.createdToast': 'تم حفظ {number} كمسودة',
     'extracts.editTitle': 'تعديل {number}',
     'extracts.newExtractTitle': 'مستخلص جديد',
-    'extracts.formDescription': 'تُحسب الإجماليات عبر محرك الحسابات المالية — ولا يعاد اشتقاقها هنا.',
+    'extracts.formDescription':
+      'تُحسب الإجماليات عبر محرك الحسابات المالية — ولا يعاد اشتقاقها هنا.',
     'extracts.fieldCustomer': 'العميل',
     'extracts.fieldProject': 'المشروع',
     'extracts.fieldContracts': 'العقود',
@@ -1587,7 +1662,8 @@ export const dictionary = {
     'extracts.cancelledToast': 'تم إلغاء {number}',
     'extracts.cancelFailedToast': 'تعذّر إلغاء هذا المستخلص.',
     'extracts.cancelDialogTitle': 'إلغاء {number}',
-    'extracts.cancelDialogDescription': 'لا يمكن إلغاء المستخلص المعتمد أو بعده مباشرة إلا إذا لم يتم تحصيل أي مبلغ منه.',
+    'extracts.cancelDialogDescription':
+      'لا يمكن إلغاء المستخلص المعتمد أو بعده مباشرة إلا إذا لم يتم تحصيل أي مبلغ منه.',
     'extracts.reasonLabel': 'السبب',
     'extracts.cancelButton': 'إلغاء المستخلص',
     'extracts.submittedToast': 'تم إرسال {number} للمراجعة',
@@ -1600,7 +1676,8 @@ export const dictionary = {
     'extracts.submitForReview': 'إرسال للمراجعة',
     'extracts.approve': 'اعتماد',
     'extracts.cancel': 'إلغاء',
-    'extracts.lockedNotice': 'معتمد — مقفل. لا يمكن تعديل الحقول المالية مباشرة؛ ألغِ المستخلص وأصدر مسودة جديدة بدلًا من ذلك.',
+    'extracts.lockedNotice':
+      'معتمد — مقفل. لا يمكن تعديل الحقول المالية مباشرة؛ ألغِ المستخلص وأصدر مسودة جديدة بدلًا من ذلك.',
     'extracts.overview': 'نظرة عامة',
     'extracts.fieldPeriod': 'الفترة',
     'extracts.cancelReason': 'سبب الإلغاء',
@@ -1612,9 +1689,11 @@ export const dictionary = {
     'extracts.collected': 'المحصّل',
     'extracts.noLineItemsDescription': 'عدّل هذه المسودة لإضافة بنود الإيجار أو النقل أو الخدمات.',
     'extracts.approveConfirmTitle': 'اعتماد {number}؟',
-    'extracts.approveConfirmDescription': 'يتم حفظ نسبة الضريبة الحالية وقفل كل الحقول المالية — ألغِ المستخلص وأصدر مسودة جديدة لإجراء تغييرات أخرى.',
+    'extracts.approveConfirmDescription':
+      'يتم حفظ نسبة الضريبة الحالية وقفل كل الحقول المالية — ألغِ المستخلص وأصدر مسودة جديدة لإجراء تغييرات أخرى.',
     'devTable.title': 'أساس جدول البيانات',
-    'devTable.description': 'معاينة TASK-005 — apiClient وDataTable وuseDataTableQuery على بيانات وهمية.',
+    'devTable.description':
+      'معاينة TASK-005 — apiClient وDataTable وuseDataTableQuery على بيانات وهمية.',
     'devTable.columnCode': 'الرمز',
     'devTable.columnKva': 'كيلوفولت أمبير',
     'devTable.columnLocation': 'الموقع',

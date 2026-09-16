@@ -1,33 +1,36 @@
 'use client';
 
-import { Suspense, useState } from 'react';
-import { createColumnHelper } from '@tanstack/react-table';
-import type { ColumnDef } from '@tanstack/react-table';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
+import { createColumnHelper } from '@tanstack/react-table';
 import { CheckCircle2, MoreHorizontal, Pencil, PlayCircle, Plus, XCircle } from 'lucide-react';
+import { Suspense, useState } from 'react';
 import { toast } from 'sonner';
 
-import { apiClient, ApiError } from '@/lib/apiClient';
-import { useDataTableQuery } from '@/hooks/useDataTableQuery';
-import { useSession } from '@/lib/session/session-provider';
-import { useLocale } from '@/lib/i18n/locale-provider';
-import type { TranslationKey } from '@/lib/i18n/dictionary';
-import { cn } from '@/lib/utils';
-import { STATUS_TONE_CLASSES, type StatusTone } from '@/lib/status-tone';
-import { PageHeader } from '@/components/layout/page-header';
-import { DataTable } from '@/components/data-table/data-table';
-import { DataTablePagination } from '@/components/data-table/pagination';
 import { createActionsColumn } from '@/components/data-table/columns';
+import { DataTable } from '@/components/data-table/data-table';
+import {
+  DateRangeFilter,
+  type DateRangeValue,
+} from '@/components/data-table/filters/date-range-filter';
 import { SelectFilter } from '@/components/data-table/filters/select-filter';
-import { DateRangeFilter, type DateRangeValue } from '@/components/data-table/filters/date-range-filter';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DataTablePagination } from '@/components/data-table/pagination';
+import { PageHeader } from '@/components/layout/page-header';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useDataTableQuery } from '@/hooks/useDataTableQuery';
+import { apiClient, ApiError } from '@/lib/apiClient';
+import type { TranslationKey } from '@/lib/i18n/dictionary';
+import { useLocale } from '@/lib/i18n/locale-provider';
+import { useSession } from '@/lib/session/session-provider';
+import { STATUS_TONE_CLASSES, type StatusTone } from '@/lib/status-tone';
+import { cn } from '@/lib/utils';
 import type { GeneratorRow } from '../generators/types';
 import { CancelDialog } from './cancel-dialog';
 import { MaintenanceAlertsTab } from './maintenance-alerts-tab';
@@ -54,7 +57,14 @@ function StatusBadge({ status }: { status: MaintenanceStatus }) {
   const { t } = useLocale();
   const tone = STATUS_TONE_CLASSES[STATUS_TONES[status]];
   return (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium', tone.bg, tone.fg, tone.border)}>
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium',
+        tone.bg,
+        tone.fg,
+        tone.border,
+      )}
+    >
       <span className={cn('size-1.5 shrink-0 rounded-full', tone.dot)} aria-hidden />
       {t(STATUS_LABEL_KEYS[status])}
     </span>
@@ -62,7 +72,11 @@ function StatusBadge({ status }: { status: MaintenanceStatus }) {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 export default function MaintenancePage() {
@@ -88,7 +102,8 @@ function MaintenancePageContent() {
 
   const { data: generators } = useQuery({
     queryKey: ['generators', 'select'],
-    queryFn: ({ signal }) => apiClient.getPaginated<GeneratorRow>('/api/generators', { limit: 100, sort: 'code' }, signal),
+    queryFn: ({ signal }) =>
+      apiClient.getPaginated<GeneratorRow>('/api/generators', { limit: 100, sort: 'code' }, signal),
   });
 
   const table = useDataTableQuery<MaintenanceRow>({
@@ -118,8 +133,15 @@ function MaintenancePageContent() {
 
   async function complete(record: MaintenanceRow) {
     try {
-      const response = await apiClient.post<MaintenanceRow>(`/api/maintenance/${record.id}/complete`);
-      toast.success(t('maintenance.completedToast', { code: record.generator.code, meter: response.nextMaintenanceMeter ?? '' }));
+      const response = await apiClient.post<MaintenanceRow>(
+        `/api/maintenance/${record.id}/complete`,
+      );
+      toast.success(
+        t('maintenance.completedToast', {
+          code: record.generator.code,
+          meter: response.nextMaintenanceMeter ?? '',
+        }),
+      );
       await invalidate();
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : t('maintenance.completeFailedToast'));
@@ -130,23 +152,53 @@ function MaintenancePageContent() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: ColumnDef<MaintenanceRow, any>[] = [
-    columnHelper.accessor((row) => row.generator.code, { id: 'generator', header: t('maintenance.columnGenerator'), enableSorting: false }),
-    columnHelper.accessor('type', { header: t('maintenance.columnType'), enableSorting: false, cell: (info) => t(`maintenance.type${info.getValue()}` as TranslationKey) }),
-    columnHelper.accessor('status', { header: t('table.status'), cell: (info) => <StatusBadge status={info.getValue() as MaintenanceStatus} /> }),
-    columnHelper.accessor('date', { header: t('maintenance.columnDate'), cell: (info) => formatDate(info.getValue()) }),
-    columnHelper.accessor('meter', { header: t('maintenance.columnMeter'), cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
-    columnHelper.accessor('totalCost', { header: t('maintenance.columnTotalCost'), cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
+    columnHelper.accessor((row) => row.generator.code, {
+      id: 'generator',
+      header: t('maintenance.columnGenerator'),
+      enableSorting: false,
+    }),
+    columnHelper.accessor('type', {
+      header: t('maintenance.columnType'),
+      enableSorting: false,
+      cell: (info) => t(`maintenance.type${info.getValue()}` as TranslationKey),
+    }),
+    columnHelper.accessor('status', {
+      header: t('table.status'),
+      cell: (info) => <StatusBadge status={info.getValue() as MaintenanceStatus} />,
+    }),
+    columnHelper.accessor('date', {
+      header: t('maintenance.columnDate'),
+      cell: (info) => formatDate(info.getValue()),
+    }),
+    columnHelper.accessor('meter', {
+      header: t('maintenance.columnMeter'),
+      cell: (info) => <span className="tabular-data">{info.getValue()}</span>,
+    }),
+    columnHelper.accessor('totalCost', {
+      header: t('maintenance.columnTotalCost'),
+      cell: (info) => <span className="tabular-data">{info.getValue()}</span>,
+    }),
     columnHelper.accessor('nextMaintenanceMeter', {
       header: t('maintenance.columnNextDue'),
       enableSorting: false,
-      cell: (info) => (info.getValue() === null ? <span className="text-muted-foreground">—</span> : <span className="tabular-data">{info.getValue()}</span>),
+      cell: (info) =>
+        info.getValue() === null ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          <span className="tabular-data">{info.getValue()}</span>
+        ),
     }),
     createActionsColumn<MaintenanceRow>((row) => {
       const isOpenStatus = row.status === 'Open' || row.status === 'In Progress';
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="size-7" aria-label={t('maintenance.actionsFor', { code: row.generator.code })}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7"
+              aria-label={t('maintenance.actionsFor', { code: row.generator.code })}
+            >
               <MoreHorizontal className="size-4" aria-hidden />
             </Button>
           </DropdownMenuTrigger>
@@ -170,7 +222,10 @@ function MaintenancePageContent() {
               </DropdownMenuItem>
             ) : null}
             {canComplete && isOpenStatus ? (
-              <DropdownMenuItem onClick={() => setCancelTarget(row)} className="text-destructive focus:text-destructive">
+              <DropdownMenuItem
+                onClick={() => setCancelTarget(row)}
+                className="text-destructive focus:text-destructive"
+              >
                 <XCircle className="size-4" aria-hidden />
                 {t('maintenance.cancel')}
               </DropdownMenuItem>
@@ -273,7 +328,10 @@ function MaintenanceFiltersAndTable({
         <SelectFilter
           value={table.filters.generatorId}
           onChange={(value) => table.setFilter('generatorId', value)}
-          options={(generators?.items ?? []).map((generator) => ({ value: generator.id, label: generator.code }))}
+          options={(generators?.items ?? []).map((generator) => ({
+            value: generator.id,
+            label: generator.code,
+          }))}
           placeholder={t('maintenance.generatorFilterPlaceholder')}
           allLabel={t('maintenance.allGeneratorsLabel')}
         />
@@ -327,10 +385,18 @@ function MaintenanceFiltersAndTable({
         onClearFilters={table.clearFilters}
         showColumnVisibility={false}
         emptyTitle={t('maintenance.emptyTitle')}
-        emptyDescription={canWrite ? t('maintenance.emptyDescriptionWrite') : t('maintenance.emptyDescriptionReadOnly')}
+        emptyDescription={
+          canWrite
+            ? t('maintenance.emptyDescriptionWrite')
+            : t('maintenance.emptyDescriptionReadOnly')
+        }
       />
 
-      <DataTablePagination meta={table.meta} onPageChange={table.setPage} onPageSizeChange={table.setPageSize} />
+      <DataTablePagination
+        meta={table.meta}
+        onPageChange={table.setPage}
+        onPageSizeChange={table.setPageSize}
+      />
     </>
   );
 }

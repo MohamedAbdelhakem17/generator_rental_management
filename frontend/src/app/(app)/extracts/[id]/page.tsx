@@ -1,24 +1,24 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, CheckCircle2, Pencil, Send, XCircle } from 'lucide-react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { apiClient, ApiError } from '@/lib/apiClient';
-import { useSession } from '@/lib/session/session-provider';
-import { useLocale } from '@/lib/i18n/locale-provider';
-import type { TranslationKey } from '@/lib/i18n/dictionary';
-import { cn } from '@/lib/utils';
-import { STATUS_TONE_CLASSES, type StatusTone } from '@/lib/status-tone';
 import { PageHeader } from '@/components/layout/page-header';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { apiClient, ApiError } from '@/lib/apiClient';
+import type { TranslationKey } from '@/lib/i18n/dictionary';
+import { useLocale } from '@/lib/i18n/locale-provider';
+import { useSession } from '@/lib/session/session-provider';
+import { STATUS_TONE_CLASSES, type StatusTone } from '@/lib/status-tone';
+import { cn } from '@/lib/utils';
 import { CancelDialog } from '../cancel-dialog';
 import { ExtractFormDialog } from '../extract-form-dialog';
 import type { ExtractRow, ExtractStatus } from '../types';
@@ -47,7 +47,12 @@ function StatusBadge({ status }: { status: ExtractStatus }) {
   return (
     <span
       data-testid="extract-header-status"
-      className={cn('inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium', tone.bg, tone.fg, tone.border)}
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium',
+        tone.bg,
+        tone.fg,
+        tone.border,
+      )}
     >
       <span className={cn('size-1.5 shrink-0 rounded-full', tone.dot)} aria-hidden />
       {t(STATUS_LABEL_KEYS[status])}
@@ -56,7 +61,11 @@ function StatusBadge({ status }: { status: ExtractStatus }) {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 export default function ExtractDetailPage() {
@@ -73,9 +82,15 @@ export default function ExtractDetailPage() {
   const [isApproving, setIsApproving] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
-  const { data: extract, isLoading, isError, refetch } = useQuery({
+  const {
+    data: extract,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['extracts', params.id],
-    queryFn: ({ signal }) => apiClient.get<ExtractRow>(`/api/extracts/${params.id}`, undefined, signal),
+    queryFn: ({ signal }) =>
+      apiClient.get<ExtractRow>(`/api/extracts/${params.id}`, undefined, signal),
   });
 
   function invalidate() {
@@ -119,7 +134,8 @@ export default function ExtractDetailPage() {
   }
 
   const isLocked = extract.status !== 'Draft' && extract.status !== 'Under Review';
-  const canCancelNow = canCancel && extract.status !== 'Cancelled' && extract.status !== 'Collected';
+  const canCancelNow =
+    canCancel && extract.status !== 'Cancelled' && extract.status !== 'Collected';
 
   return (
     <>
@@ -174,7 +190,10 @@ export default function ExtractDetailPage() {
             <Field
               label={t('extracts.fieldCustomer')}
               value={
-                <Link href={`/customers/${extract.customer.id}`} className="text-primary hover:underline">
+                <Link
+                  href={`/customers/${extract.customer.id}`}
+                  className="text-primary hover:underline"
+                >
                   {extract.customerNameSnapshot || extract.customer.companyName}
                 </Link>
               }
@@ -182,14 +201,22 @@ export default function ExtractDetailPage() {
             <Field
               label={t('extracts.fieldProject')}
               value={
-                <Link href={`/projects/${extract.project.id}`} className="text-primary hover:underline">
+                <Link
+                  href={`/projects/${extract.project.id}`}
+                  className="text-primary hover:underline"
+                >
                   {extract.project.name}
                 </Link>
               }
             />
-            <Field label={t('extracts.fieldPeriod')} value={`${formatDate(extract.period.start)} – ${formatDate(extract.period.end)}`} />
+            <Field
+              label={t('extracts.fieldPeriod')}
+              value={`${formatDate(extract.period.start)} – ${formatDate(extract.period.end)}`}
+            />
             <Field label={t('extracts.fieldContracts')} value={`${extract.contractIds.length}`} />
-            {extract.status === 'Cancelled' ? <Field label={t('extracts.cancelReason')} value={extract.cancelReason} /> : null}
+            {extract.status === 'Cancelled' ? (
+              <Field label={t('extracts.cancelReason')} value={extract.cancelReason} />
+            ) : null}
           </dl>
         </div>
 
@@ -199,7 +226,11 @@ export default function ExtractDetailPage() {
             <Field label={t('extracts.fieldDiscounts')} value={extract.discounts} mono />
             <Field
               label={t('extracts.vatRate')}
-              value={extract.vatRateSnapshot !== null ? t('extracts.lockedRate', { rate: (extract.vatRateSnapshot * 100).toFixed(0) }) : t('extracts.liveEstimate')}
+              value={
+                extract.vatRateSnapshot !== null
+                  ? t('extracts.lockedRate', { rate: (extract.vatRateSnapshot * 100).toFixed(0) })
+                  : t('extracts.liveEstimate')
+              }
             />
             <Field label={t('extracts.netBeforeVat')} value={extract.totalBeforeVat ?? '—'} mono />
             <Field label={t('extracts.vat')} value={extract.vat ?? '—'} mono />
@@ -210,17 +241,31 @@ export default function ExtractDetailPage() {
       </div>
 
       <div className="rounded-lg border border-border bg-surface">
-        <h2 className="px-4 pt-4 text-sm font-medium text-foreground">{t('extracts.fieldLineItems')}</h2>
+        <h2 className="px-4 pt-4 text-sm font-medium text-foreground">
+          {t('extracts.fieldLineItems')}
+        </h2>
         {extract.lineItems.length === 0 ? (
           <div className="p-4">
-            <EmptyState title={t('extracts.noLineItems')} description={t('extracts.noLineItemsDescription')} />
+            <EmptyState
+              title={t('extracts.noLineItems')}
+              description={t('extracts.noLineItemsDescription')}
+            />
           </div>
         ) : (
           <ul className="mt-2 flex flex-col divide-y divide-border">
             {extract.lineItems.map((item) => (
-              <li key={item.id} className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
+              <li
+                key={item.id}
+                className="flex items-center justify-between gap-4 px-4 py-3 text-sm"
+              >
                 <div>
-                  <span className="font-medium capitalize">{t(`extracts.type${item.type[0]!.toUpperCase()}${item.type.slice(1)}` as 'extracts.typeRent' | 'extracts.typeTransport' | 'extracts.typeServices')}</span> — {item.description}
+                  <span className="font-medium capitalize">
+                    {t(
+                      `extracts.type${item.type[0]!.toUpperCase()}${item.type.slice(1)}` as
+                        'extracts.typeRent' | 'extracts.typeTransport' | 'extracts.typeServices',
+                    )}
+                  </span>{' '}
+                  — {item.description}
                 </div>
                 <span className="tabular-data">{item.amount}</span>
               </li>
@@ -229,7 +274,9 @@ export default function ExtractDetailPage() {
         )}
       </div>
 
-      {canWrite && !isLocked ? <ExtractFormDialog open={isEditing} onOpenChange={setIsEditing} extract={extract} /> : null}
+      {canWrite && !isLocked ? (
+        <ExtractFormDialog open={isEditing} onOpenChange={setIsEditing} extract={extract} />
+      ) : null}
 
       <ConfirmDialog
         open={isApproving}

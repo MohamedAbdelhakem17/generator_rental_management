@@ -1,24 +1,27 @@
 'use client';
 
-import { Suspense, useState } from 'react';
-import Link from 'next/link';
-import { createColumnHelper } from '@tanstack/react-table';
-import { useLocale } from '@/lib/i18n/locale-provider';
 import type { TranslationKey } from '@/lib/i18n/dictionary';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import type { ColumnDef } from '@tanstack/react-table';
+import { createColumnHelper } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
+import Link from 'next/link';
+import { Suspense, useState } from 'react';
 
-import { apiClient } from '@/lib/apiClient';
-import { useDataTableQuery } from '@/hooks/useDataTableQuery';
-import { useSession } from '@/lib/session/session-provider';
-import { cn } from '@/lib/utils';
-import { STATUS_TONE_CLASSES, type StatusTone } from '@/lib/status-tone';
-import { PageHeader } from '@/components/layout/page-header';
 import { DataTable } from '@/components/data-table/data-table';
-import { DataTablePagination } from '@/components/data-table/pagination';
+import {
+  DateRangeFilter,
+  type DateRangeValue,
+} from '@/components/data-table/filters/date-range-filter';
 import { StatusFilter } from '@/components/data-table/filters/status-filter';
-import { DateRangeFilter, type DateRangeValue } from '@/components/data-table/filters/date-range-filter';
+import { DataTablePagination } from '@/components/data-table/pagination';
+import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
+import { useDataTableQuery } from '@/hooks/useDataTableQuery';
+import { apiClient } from '@/lib/apiClient';
+import { useSession } from '@/lib/session/session-provider';
+import { STATUS_TONE_CLASSES, type StatusTone } from '@/lib/status-tone';
+import { cn } from '@/lib/utils';
 import { CustomerCombobox } from '../projects/customer-combobox';
 import { ExtractFormDialog } from './extract-form-dialog';
 import type { ExtractRow, ExtractStatus } from './types';
@@ -47,7 +50,14 @@ function ExtractStatusBadge({ status }: { status: ExtractStatus }) {
   const { t } = useLocale();
   const tone = STATUS_TONE_CLASSES[STATUS_TONES[status]];
   return (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium', tone.bg, tone.fg, tone.border)}>
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium',
+        tone.bg,
+        tone.fg,
+        tone.border,
+      )}
+    >
       <span className={cn('size-1.5 shrink-0 rounded-full', tone.dot)} aria-hidden />
       {t(STATUS_LABEL_KEYS[status])}
     </span>
@@ -55,7 +65,11 @@ function ExtractStatusBadge({ status }: { status: ExtractStatus }) {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 export default function ExtractsPage() {
@@ -97,24 +111,46 @@ function ExtractsPageContent() {
     columnHelper.accessor('number', {
       header: t('extracts.columnNumber'),
       cell: (info) => (
-        <Link href={`/extracts/${info.row.original.id}`} className="font-medium text-primary hover:underline">
+        <Link
+          href={`/extracts/${info.row.original.id}`}
+          className="font-medium text-primary hover:underline"
+        >
           {info.getValue()}
         </Link>
       ),
     }),
-    columnHelper.accessor((row) => row.customer.companyName, { id: 'customer', header: t('extracts.columnCustomer'), enableSorting: false }),
-    columnHelper.accessor((row) => row.project.name, { id: 'project', header: t('extracts.columnProject'), enableSorting: false }),
-    columnHelper.accessor((row) => `${formatDate(row.period.start)} – ${formatDate(row.period.end)}`, {
-      id: 'period',
-      header: t('extracts.columnPeriod'),
+    columnHelper.accessor((row) => row.customer.companyName, {
+      id: 'customer',
+      header: t('extracts.columnCustomer'),
       enableSorting: false,
     }),
+    columnHelper.accessor((row) => row.project.name, {
+      id: 'project',
+      header: t('extracts.columnProject'),
+      enableSorting: false,
+    }),
+    columnHelper.accessor(
+      (row) => `${formatDate(row.period.start)} – ${formatDate(row.period.end)}`,
+      {
+        id: 'period',
+        header: t('extracts.columnPeriod'),
+        enableSorting: false,
+      },
+    ),
     columnHelper.accessor('finalTotal', {
       header: t('extracts.columnTotal'),
       enableSorting: false,
-      cell: (info) => (info.getValue() === null ? <span className="text-muted-foreground">—</span> : <span className="tabular-data">{info.getValue()}</span>),
+      cell: (info) =>
+        info.getValue() === null ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          <span className="tabular-data">{info.getValue()}</span>
+        ),
     }),
-    columnHelper.accessor('status', { header: t('table.status'), cell: (info) => <ExtractStatusBadge status={info.getValue() as ExtractStatus} /> }),
+    columnHelper.accessor('status', {
+      header: t('table.status'),
+      cell: (info) => <ExtractStatusBadge status={info.getValue() as ExtractStatus} />,
+    }),
     columnHelper.display({
       id: 'collected',
       header: t('extracts.columnCollectedRemaining'),
@@ -147,7 +183,10 @@ function ExtractsPageContent() {
       />
 
       <div className="flex flex-wrap items-center gap-2">
-        <CustomerCombobox value={table.filters.customerId ?? ''} onSelect={(customer) => table.setFilter('customerId', customer.id)} />
+        <CustomerCombobox
+          value={table.filters.customerId ?? ''}
+          onSelect={(customer) => table.setFilter('customerId', customer.id)}
+        />
         <StatusFilter
           value={table.filters.status}
           onChange={(value) => table.setFilter('status', value)}
@@ -182,10 +221,16 @@ function ExtractsPageContent() {
         onClearFilters={table.clearFilters}
         showColumnVisibility={false}
         emptyTitle={t('extracts.emptyTitle')}
-        emptyDescription={canWrite ? t('extracts.emptyDescriptionWrite') : t('extracts.emptyDescriptionReadOnly')}
+        emptyDescription={
+          canWrite ? t('extracts.emptyDescriptionWrite') : t('extracts.emptyDescriptionReadOnly')
+        }
       />
 
-      <DataTablePagination meta={table.meta} onPageChange={table.setPage} onPageSizeChange={table.setPageSize} />
+      <DataTablePagination
+        meta={table.meta}
+        onPageChange={table.setPage}
+        onPageSizeChange={table.setPageSize}
+      />
 
       {canWrite ? <ExtractFormDialog open={isCreating} onOpenChange={setIsCreating} /> : null}
     </>

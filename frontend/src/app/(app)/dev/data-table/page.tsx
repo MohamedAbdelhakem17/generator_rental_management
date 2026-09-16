@@ -1,20 +1,17 @@
 'use client';
 
-import { Suspense, useCallback, useRef, useState } from 'react';
-import { createColumnHelper } from '@tanstack/react-table';
 import type { ColumnDef, RowSelectionState, VisibilityState } from '@tanstack/react-table';
+import { createColumnHelper } from '@tanstack/react-table';
 import { MoreHorizontal, Pencil, ShieldAlert, Trash2 } from 'lucide-react';
+import { Suspense, useCallback, useRef, useState } from 'react';
 
-import { useDataTableQuery } from '@/hooks/useDataTableQuery';
-import { useLocale } from '@/lib/i18n/locale-provider';
-import type { TranslationKey } from '@/lib/i18n/dictionary';
-import { PageHeader } from '@/components/layout/page-header';
-import { DataTable } from '@/components/data-table/data-table';
-import { DataTablePagination } from '@/components/data-table/pagination';
 import { createActionsColumn, createSelectionColumn } from '@/components/data-table/columns';
+import { DataTable } from '@/components/data-table/data-table';
+import { DateRangeFilter } from '@/components/data-table/filters/date-range-filter';
 import { SearchInput } from '@/components/data-table/filters/search-input';
 import { StatusFilter } from '@/components/data-table/filters/status-filter';
-import { DateRangeFilter } from '@/components/data-table/filters/date-range-filter';
+import { DataTablePagination } from '@/components/data-table/pagination';
+import { PageHeader } from '@/components/layout/page-header';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,56 +20,66 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useDataTableQuery } from '@/hooks/useDataTableQuery';
+import type { TranslationKey } from '@/lib/i18n/dictionary';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import { fetchMockGenerators, type MockGenerator } from './mock-generators';
 
 const columnHelper = createColumnHelper<MockGenerator>();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function createColumns(t: (key: TranslationKey, params?: Record<string, string | number>) => string): ColumnDef<MockGenerator, any>[] {
+function createColumns(
+  t: (key: TranslationKey, params?: Record<string, string | number>) => string,
+): ColumnDef<MockGenerator, any>[] {
   return [
-  createSelectionColumn<MockGenerator>(),
-  columnHelper.accessor('code', {
-    header: t('devTable.columnCode'),
-    cell: (info) => <span className="tabular-data font-medium">{info.getValue()}</span>,
-  }),
-  columnHelper.accessor('kva', {
-    header: t('devTable.columnKva'),
-    cell: (info) => <span className="tabular-data">{info.getValue()}</span>,
-  }),
-  columnHelper.accessor('status', {
-    header: t('table.status'),
-    cell: (info) => <StatusBadge status={info.getValue()} />,
-  }),
-  columnHelper.accessor('location', {
-    header: t('devTable.columnLocation'),
-    enableSorting: false,
-  }),
-  columnHelper.accessor('currentMeter', {
-    header: t('devTable.columnMeter'),
-    cell: (info) => <span className="tabular-data">{info.getValue().toLocaleString()}</span>,
-  }),
-  columnHelper.accessor('installedAt', {
-    header: t('devTable.columnInstalled'),
-  }),
-  createActionsColumn<MockGenerator>((row) => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="size-7" aria-label={t('devTable.actionsFor', { code: row.code })}>
-          <MoreHorizontal className="size-4" aria-hidden />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem>
-          <Pencil className="size-4" aria-hidden />
-          {t('devTable.edit')}
-        </DropdownMenuItem>
-        <DropdownMenuItem className="text-destructive focus:text-destructive">
-          <Trash2 className="size-4" aria-hidden />
-          {t('devTable.delete')}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )),
+    createSelectionColumn<MockGenerator>(),
+    columnHelper.accessor('code', {
+      header: t('devTable.columnCode'),
+      cell: (info) => <span className="tabular-data font-medium">{info.getValue()}</span>,
+    }),
+    columnHelper.accessor('kva', {
+      header: t('devTable.columnKva'),
+      cell: (info) => <span className="tabular-data">{info.getValue()}</span>,
+    }),
+    columnHelper.accessor('status', {
+      header: t('table.status'),
+      cell: (info) => <StatusBadge status={info.getValue()} />,
+    }),
+    columnHelper.accessor('location', {
+      header: t('devTable.columnLocation'),
+      enableSorting: false,
+    }),
+    columnHelper.accessor('currentMeter', {
+      header: t('devTable.columnMeter'),
+      cell: (info) => <span className="tabular-data">{info.getValue().toLocaleString()}</span>,
+    }),
+    columnHelper.accessor('installedAt', {
+      header: t('devTable.columnInstalled'),
+    }),
+    createActionsColumn<MockGenerator>((row) => (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            aria-label={t('devTable.actionsFor', { code: row.code })}
+          >
+            <MoreHorizontal className="size-4" aria-hidden />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem>
+            <Pencil className="size-4" aria-hidden />
+            {t('devTable.edit')}
+          </DropdownMenuItem>
+          <DropdownMenuItem className="text-destructive focus:text-destructive">
+            <Trash2 className="size-4" aria-hidden />
+            {t('devTable.delete')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )),
   ];
 }
 
@@ -134,7 +141,11 @@ function DataTableFoundationContent() {
         title={t('devTable.title')}
         description={t('devTable.description')}
         action={
-          <Button variant={errorMode ? 'destructive' : 'outline'} size="sm" onClick={toggleErrorMode}>
+          <Button
+            variant={errorMode ? 'destructive' : 'outline'}
+            size="sm"
+            onClick={toggleErrorMode}
+          >
             <ShieldAlert className="size-4" aria-hidden />
             {errorMode ? t('devTable.stopSimulatingError') : t('devTable.simulateError')}
           </Button>
@@ -142,7 +153,12 @@ function DataTableFoundationContent() {
       />
 
       <div className="flex flex-wrap items-center gap-2">
-        <SearchInput value={table.search} onChange={table.setSearch} placeholder={t('devTable.searchPlaceholder')} className="w-64" />
+        <SearchInput
+          value={table.search}
+          onChange={table.setSearch}
+          placeholder={t('devTable.searchPlaceholder')}
+          className="w-64"
+        />
         <StatusFilter
           value={table.filters.status}
           onChange={(value) => table.setFilter('status', value)}
@@ -163,7 +179,9 @@ function DataTableFoundationContent() {
           </Button>
         ) : null}
         {Object.keys(rowSelection).length > 0 ? (
-          <span className="ms-auto text-sm text-muted-foreground">{t('devTable.selectedCount', { count: Object.keys(rowSelection).length })}</span>
+          <span className="ms-auto text-sm text-muted-foreground">
+            {t('devTable.selectedCount', { count: Object.keys(rowSelection).length })}
+          </span>
         ) : null}
       </div>
 
@@ -186,7 +204,11 @@ function DataTableFoundationContent() {
         emptyDescription={t('generators.emptyDescriptionReadOnly')}
       />
 
-      <DataTablePagination meta={table.meta} onPageChange={table.setPage} onPageSizeChange={table.setPageSize} />
+      <DataTablePagination
+        meta={table.meta}
+        onPageChange={table.setPage}
+        onPageSizeChange={table.setPageSize}
+      />
     </>
   );
 }

@@ -1,26 +1,28 @@
 'use client';
 
-import { Suspense } from 'react';
-import { useState } from 'react';
-import { createColumnHelper } from '@tanstack/react-table';
-import type { ColumnDef } from '@tanstack/react-table';
 import { useQuery } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
+import { createColumnHelper } from '@tanstack/react-table';
 import { AlertTriangle, HelpCircle, Plus } from 'lucide-react';
+import { Suspense, useState } from 'react';
 
-import { apiClient } from '@/lib/apiClient';
-import { useDataTableQuery } from '@/hooks/useDataTableQuery';
-import { useSession } from '@/lib/session/session-provider';
-import { useLocale } from '@/lib/i18n/locale-provider';
-import { cn } from '@/lib/utils';
-import { STATUS_TONE_CLASSES, type StatusTone } from '@/lib/status-tone';
-import { PageHeader } from '@/components/layout/page-header';
 import { DataTable } from '@/components/data-table/data-table';
-import { DataTablePagination } from '@/components/data-table/pagination';
+import {
+  DateRangeFilter,
+  type DateRangeValue,
+} from '@/components/data-table/filters/date-range-filter';
 import { SelectFilter } from '@/components/data-table/filters/select-filter';
-import { DateRangeFilter, type DateRangeValue } from '@/components/data-table/filters/date-range-filter';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DataTablePagination } from '@/components/data-table/pagination';
+import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useDataTableQuery } from '@/hooks/useDataTableQuery';
+import { apiClient } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
+import { useSession } from '@/lib/session/session-provider';
+import { STATUS_TONE_CLASSES, type StatusTone } from '@/lib/status-tone';
+import { cn } from '@/lib/utils';
 import type { GeneratorRow } from '../generators/types';
 import type { ProjectRow } from '../projects/types';
 import { FuelAlertsTab } from './fuel-alerts-tab';
@@ -59,7 +61,14 @@ function VarianceBadge({ rate, normal }: { rate: number | null; normal: number }
   const { value, tone } = varianceTone(rate, normal);
   const classes = STATUS_TONE_CLASSES[tone];
   return (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium', classes.bg, classes.fg, classes.border)}>
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium',
+        classes.bg,
+        classes.fg,
+        classes.border,
+      )}
+    >
       <span className={cn('size-1.5 shrink-0 rounded-full', classes.dot)} aria-hidden />
       {value === null
         ? t('fuel.varianceUnavailable')
@@ -71,7 +80,11 @@ function VarianceBadge({ rate, normal }: { rate: number | null; normal: number }
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 export default function FuelPage() {
@@ -93,17 +106,23 @@ function FuelPageContent() {
 
   const { data: generators } = useQuery({
     queryKey: ['generators', 'select'],
-    queryFn: ({ signal }) => apiClient.getPaginated<GeneratorRow>('/api/generators', { limit: 100, sort: 'code' }, signal),
+    queryFn: ({ signal }) =>
+      apiClient.getPaginated<GeneratorRow>('/api/generators', { limit: 100, sort: 'code' }, signal),
   });
   const { data: projects } = useQuery({
     queryKey: ['projects', 'select', 'all'],
-    queryFn: ({ signal }) => apiClient.getPaginated<ProjectRow>('/api/projects', { limit: 100, sort: 'name' }, signal),
+    queryFn: ({ signal }) =>
+      apiClient.getPaginated<ProjectRow>('/api/projects', { limit: 100, sort: 'name' }, signal),
   });
 
   const table = useDataTableQuery<FuelLogRow>({
     queryKey: 'fuel',
     queryFn: (params, signal) =>
-      apiClient.getPaginated<FuelLogRow>('/api/fuel', { page: params.page, limit: params.limit, sort: params.sort, ...params.filters }, signal),
+      apiClient.getPaginated<FuelLogRow>(
+        '/api/fuel',
+        { page: params.page, limit: params.limit, sort: params.sort, ...params.filters },
+        signal,
+      ),
     defaultSort: '-date',
   });
 
@@ -111,11 +130,28 @@ function FuelPageContent() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: ColumnDef<FuelLogRow, any>[] = [
-    columnHelper.accessor('date', { header: t('fuel.columnDate'), cell: (info) => formatDate(info.getValue()) }),
-    columnHelper.accessor((row) => row.generator.code, { id: 'generator', header: t('fuel.columnGenerator'), enableSorting: false }),
-    columnHelper.accessor('liters', { header: t('fuel.columnLiters'), cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
-    columnHelper.accessor('pricePerLiter', { header: t('fuel.columnPricePerLiter'), enableSorting: false, cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
-    columnHelper.accessor('totalCost', { header: t('fuel.columnTotalCost'), cell: (info) => <span className="tabular-data">{info.getValue()}</span> }),
+    columnHelper.accessor('date', {
+      header: t('fuel.columnDate'),
+      cell: (info) => formatDate(info.getValue()),
+    }),
+    columnHelper.accessor((row) => row.generator.code, {
+      id: 'generator',
+      header: t('fuel.columnGenerator'),
+      enableSorting: false,
+    }),
+    columnHelper.accessor('liters', {
+      header: t('fuel.columnLiters'),
+      cell: (info) => <span className="tabular-data">{info.getValue()}</span>,
+    }),
+    columnHelper.accessor('pricePerLiter', {
+      header: t('fuel.columnPricePerLiter'),
+      enableSorting: false,
+      cell: (info) => <span className="tabular-data">{info.getValue()}</span>,
+    }),
+    columnHelper.accessor('totalCost', {
+      header: t('fuel.columnTotalCost'),
+      cell: (info) => <span className="tabular-data">{info.getValue()}</span>,
+    }),
     columnHelper.accessor('consumptionRate', {
       header: t('fuel.columnConsumption'),
       enableSorting: false,
@@ -139,7 +175,12 @@ function FuelPageContent() {
           </Tooltip>
         </span>
       ),
-      cell: ({ row }) => <VarianceBadge rate={row.original.consumptionRate} normal={row.original.generator.normalFuelConsumption} />,
+      cell: ({ row }) => (
+        <VarianceBadge
+          rate={row.original.consumptionRate}
+          normal={row.original.generator.normalFuelConsumption}
+        />
+      ),
     }),
   ];
 
@@ -219,14 +260,20 @@ function FuelFiltersAndTable({
         <SelectFilter
           value={table.filters.generatorId}
           onChange={(value) => table.setFilter('generatorId', value)}
-          options={(generators?.items ?? []).map((generator) => ({ value: generator.id, label: generator.code }))}
+          options={(generators?.items ?? []).map((generator) => ({
+            value: generator.id,
+            label: generator.code,
+          }))}
           placeholder={t('fuel.generatorFilterPlaceholder')}
           allLabel={t('fuel.allGeneratorsLabel')}
         />
         <SelectFilter
           value={table.filters.projectId}
           onChange={(value) => table.setFilter('projectId', value)}
-          options={(projects?.items ?? []).map((project) => ({ value: project.id, label: project.name }))}
+          options={(projects?.items ?? []).map((project) => ({
+            value: project.id,
+            label: project.name,
+          }))}
           placeholder={t('fuel.projectFilterPlaceholder')}
           allLabel={t('fuel.allProjectsLabel')}
         />
@@ -258,10 +305,16 @@ function FuelFiltersAndTable({
         onClearFilters={table.clearFilters}
         showColumnVisibility={false}
         emptyTitle={t('fuel.emptyTitle')}
-        emptyDescription={canWrite ? t('fuel.emptyDescriptionWrite') : t('fuel.emptyDescriptionReadOnly')}
+        emptyDescription={
+          canWrite ? t('fuel.emptyDescriptionWrite') : t('fuel.emptyDescriptionReadOnly')
+        }
       />
 
-      <DataTablePagination meta={table.meta} onPageChange={table.setPage} onPageSizeChange={table.setPageSize} />
+      <DataTablePagination
+        meta={table.meta}
+        onPageChange={table.setPage}
+        onPageSizeChange={table.setPageSize}
+      />
     </>
   );
 }

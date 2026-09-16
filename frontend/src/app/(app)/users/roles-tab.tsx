@@ -1,16 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { createColumnHelper } from '@tanstack/react-table';
-import type { ColumnDef } from '@tanstack/react-table';
-import { ShieldCheck } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/locale-provider';
+import type { ColumnDef } from '@tanstack/react-table';
+import { createColumnHelper } from '@tanstack/react-table';
+import { ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
 
 import { DataTable } from '@/components/data-table/data-table';
 import { Button } from '@/components/ui/button';
-import { useRolesQuery } from './use-roles';
 import { RolePermissionsDialog } from './role-permissions-dialog';
 import type { RoleRow } from './types';
+import { useRolesQuery } from './use-roles';
 
 const columnHelper = createColumnHelper<RoleRow>();
 
@@ -21,7 +21,10 @@ export function RolesTab() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: ColumnDef<RoleRow, any>[] = [
-    columnHelper.accessor('name', { header: t('users.columnRole'), cell: (info) => <span className="font-medium">{info.getValue()}</span> }),
+    columnHelper.accessor('name', {
+      header: t('users.columnRole'),
+      cell: (info) => <span className="font-medium">{info.getValue()}</span>,
+    }),
     columnHelper.accessor((row) => row.permissions.length, {
       id: 'permissionCount',
       header: t('users.columnPermissions'),

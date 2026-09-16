@@ -1,12 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { apiClient, ApiError } from '@/lib/apiClient';
-import { useLocale } from '@/lib/i18n/locale-provider';
-import { PERMISSION_GROUPS, PERMISSION_GROUP_LABEL_KEYS, PERMISSION_LABEL_KEYS, type PermissionKey } from '@/lib/permissions/permission-keys';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -17,8 +14,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { ROLES_QUERY_KEY } from './use-roles';
+import { apiClient, ApiError } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
+import {
+  PERMISSION_GROUP_LABEL_KEYS,
+  PERMISSION_GROUPS,
+  PERMISSION_LABEL_KEYS,
+  type PermissionKey,
+} from '@/lib/permissions/permission-keys';
 import type { RoleRow } from './types';
+import { ROLES_QUERY_KEY } from './use-roles';
 
 export interface RolePermissionsDialogProps {
   role: RoleRow | null;
@@ -65,7 +70,9 @@ export function RolePermissionsDialog({ role, open, onOpenChange }: RolePermissi
       await queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
       onOpenChange(false);
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : t('users.permissionsSaveFailedToast'));
+      toast.error(
+        error instanceof ApiError ? error.message : t('users.permissionsSaveFailedToast'),
+      );
     } finally {
       setIsSaving(false);
     }
@@ -95,8 +102,14 @@ export function RolePermissionsDialog({ role, open, onOpenChange }: RolePermissi
                 </label>
                 <div className="ms-6 flex flex-col gap-1.5">
                   {group.keys.map((key) => (
-                    <label key={key} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Checkbox checked={selected.has(key)} onCheckedChange={(checked) => toggle(key, Boolean(checked))} />
+                    <label
+                      key={key}
+                      className="flex items-center gap-2 text-sm text-muted-foreground"
+                    >
+                      <Checkbox
+                        checked={selected.has(key)}
+                        onCheckedChange={(checked) => toggle(key, Boolean(checked))}
+                      />
                       {t(PERMISSION_LABEL_KEYS[key])}
                     </label>
                   ))}
@@ -107,7 +120,12 @@ export function RolePermissionsDialog({ role, open, onOpenChange }: RolePermissi
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSaving}
+          >
             {t('common.cancel')}
           </Button>
           <Button type="button" onClick={handleSave} disabled={isSaving || selected.size === 0}>

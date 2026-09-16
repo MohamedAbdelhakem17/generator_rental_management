@@ -2,10 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+import { Checkbox } from '@/components/ui/checkbox';
 import { apiClient } from '@/lib/apiClient';
 import { useLocale } from '@/lib/i18n/locale-provider';
 import { cn } from '@/lib/utils';
-import { Checkbox } from '@/components/ui/checkbox';
 import type { ContractRow } from '../contracts/types';
 
 export interface ContractMultiSelectProps {
@@ -17,21 +17,35 @@ export interface ContractMultiSelectProps {
 }
 
 /** Section 6: contracts are scoped to the selected customer+project and must be Active to bill against. */
-export function ContractMultiSelect({ customerId, projectId, value, onChange, disabled }: ContractMultiSelectProps) {
+export function ContractMultiSelect({
+  customerId,
+  projectId,
+  value,
+  onChange,
+  disabled,
+}: ContractMultiSelectProps) {
   const { t } = useLocale();
   const { data, isFetching } = useQuery({
     queryKey: ['contracts', 'select', customerId, projectId],
     queryFn: ({ signal }) =>
-      apiClient.getPaginated<ContractRow>('/api/contracts', { customerId, projectId, status: 'Active', limit: 50 }, signal),
+      apiClient.getPaginated<ContractRow>(
+        '/api/contracts',
+        { customerId, projectId, status: 'Active', limit: 50 },
+        signal,
+      ),
     enabled: Boolean(customerId && projectId),
   });
 
   function toggle(contractId: string) {
-    onChange(value.includes(contractId) ? value.filter((id) => id !== contractId) : [...value, contractId]);
+    onChange(
+      value.includes(contractId) ? value.filter((id) => id !== contractId) : [...value, contractId],
+    );
   }
 
   if (!customerId || !projectId) {
-    return <p className="text-sm text-muted-foreground">{t('extracts.chooseCustomerProjectFirst')}</p>;
+    return (
+      <p className="text-sm text-muted-foreground">{t('extracts.chooseCustomerProjectFirst')}</p>
+    );
   }
   if (isFetching) {
     return <p className="text-sm text-muted-foreground">{t('extracts.loadingContracts')}</p>;
@@ -50,9 +64,14 @@ export function ContractMultiSelect({ customerId, projectId, value, onChange, di
             disabled && 'pointer-events-none opacity-50',
           )}
         >
-          <Checkbox checked={value.includes(contract.id)} onCheckedChange={() => toggle(contract.id)} disabled={disabled} />
+          <Checkbox
+            checked={value.includes(contract.id)}
+            onCheckedChange={() => toggle(contract.id)}
+            disabled={disabled}
+          />
           <span>
-            {contract.number} · {contract.rentalMethod} · {contract.startDate.slice(0, 10)} – {contract.endDate.slice(0, 10)}
+            {contract.number} · {contract.rentalMethod} · {contract.startDate.slice(0, 10)} –{' '}
+            {contract.endDate.slice(0, 10)}
           </span>
         </label>
       ))}

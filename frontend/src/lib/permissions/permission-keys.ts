@@ -72,18 +72,38 @@ export const PERMISSION_GROUPS: { label: string; keys: PermissionKey[] }[] = [
   { label: 'Projects', keys: ['projects:read', 'projects:write'] },
   {
     label: 'Contracts',
-    keys: ['contracts:read', 'contracts:write', 'contracts:sharedAssignmentOverride', 'contracts:previewRent'],
+    keys: [
+      'contracts:read',
+      'contracts:write',
+      'contracts:sharedAssignmentOverride',
+      'contracts:previewRent',
+    ],
   },
   { label: 'Operations', keys: ['operations:read', 'operations:write', 'operations:correct'] },
   {
     label: 'Fuel',
-    keys: ['fuel:read', 'fuel:write', 'fuel-alerts:read', 'fuel-alerts:acknowledge', 'fuel-alerts:resolve'],
+    keys: [
+      'fuel:read',
+      'fuel:write',
+      'fuel-alerts:read',
+      'fuel-alerts:acknowledge',
+      'fuel-alerts:resolve',
+    ],
   },
   {
     label: 'Maintenance',
-    keys: ['maintenance:read', 'maintenance:write', 'maintenance:complete', 'maintenance-alerts:read', 'maintenance-alerts:acknowledge'],
+    keys: [
+      'maintenance:read',
+      'maintenance:write',
+      'maintenance:complete',
+      'maintenance-alerts:read',
+      'maintenance-alerts:acknowledge',
+    ],
   },
-  { label: 'Extracts', keys: ['extracts:read', 'extracts:create', 'extracts:approve', 'extracts:cancel'] },
+  {
+    label: 'Extracts',
+    keys: ['extracts:read', 'extracts:create', 'extracts:approve', 'extracts:cancel'],
+  },
   { label: 'Receipts', keys: ['receipts:read', 'receipts:write'] },
   { label: 'Expenses', keys: ['expenses:read', 'expenses:write'] },
   { label: 'Reports', keys: ['reports:read'] },

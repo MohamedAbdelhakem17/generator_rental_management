@@ -1,16 +1,14 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { useQuery } from '@tanstack/react-query';
 
-import { apiClient, ApiError } from '@/lib/apiClient';
-import { useLocale } from '@/lib/i18n/locale-provider';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -23,10 +21,18 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { apiClient, ApiError } from '@/lib/apiClient';
+import { useLocale } from '@/lib/i18n/locale-provider';
 import type { GeneratorRow } from '../generators/types';
-import { useRolesQuery } from './use-roles';
 import type { UserRow } from './types';
+import { useRolesQuery } from './use-roles';
 
 const TECHNICIAN_ROLE_NAME = 'Technician';
 
@@ -53,7 +59,8 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
   const { data: roles } = useRolesQuery();
   const { data: generators } = useQuery({
     queryKey: ['generators', 'select'],
-    queryFn: ({ signal }) => apiClient.getPaginated<GeneratorRow>('/api/generators', { limit: 100, sort: 'code' }, signal),
+    queryFn: ({ signal }) =>
+      apiClient.getPaginated<GeneratorRow>('/api/generators', { limit: 100, sort: 'code' }, signal),
   });
 
   const formSchema = useMemo(() => {
@@ -67,14 +74,25 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
     });
     return baseSchema.superRefine((data, ctx) => {
       if (!isEdit && (!data.password || data.password.length < 8)) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['password'], message: t('users.passwordMinLength') });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['password'],
+          message: t('users.passwordMinLength'),
+        });
       }
     });
   }, [isEdit, t]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { name: '', email: '', password: '', role: '', active: true, assignedGenerators: [] },
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      role: '',
+      active: true,
+      assignedGenerators: [],
+    },
   });
 
   useEffect(() => {
@@ -148,7 +166,12 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
           {!isEdit ? (
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="user-password">{t('users.fieldPassword')}</Label>
-              <Input id="user-password" type="password" autoComplete="new-password" {...form.register('password')} />
+              <Input
+                id="user-password"
+                type="password"
+                autoComplete="new-password"
+                {...form.register('password')}
+              />
               {form.formState.errors.password ? (
                 <p className="text-xs text-destructive">{form.formState.errors.password.message}</p>
               ) : null}
@@ -157,7 +180,10 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="user-role">{t('users.fieldRole')}</Label>
-            <Select value={form.watch('role')} onValueChange={(value) => form.setValue('role', value, { shouldValidate: true })}>
+            <Select
+              value={form.watch('role')}
+              onValueChange={(value) => form.setValue('role', value, { shouldValidate: true })}
+            >
               <SelectTrigger id="user-role">
                 <SelectValue placeholder={t('users.chooseRolePlaceholder')} />
               </SelectTrigger>
@@ -186,13 +212,18 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
                     const assigned = form.watch('assignedGenerators');
                     const checked = assigned.includes(generator.id);
                     return (
-                      <label key={generator.id} className="flex items-center gap-2 text-sm text-foreground">
+                      <label
+                        key={generator.id}
+                        className="flex items-center gap-2 text-sm text-foreground"
+                      >
                         <Checkbox
                           checked={checked}
                           onCheckedChange={(next) =>
                             form.setValue(
                               'assignedGenerators',
-                              next ? [...assigned, generator.id] : assigned.filter((id) => id !== generator.id),
+                              next
+                                ? [...assigned, generator.id]
+                                : assigned.filter((id) => id !== generator.id),
                             )
                           }
                         />
