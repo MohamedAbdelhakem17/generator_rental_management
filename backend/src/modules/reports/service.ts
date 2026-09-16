@@ -4,11 +4,44 @@ import { toDecimal, toDisplayString } from '../../services/money.js';
 import { paginateQuery, type PaginatedResult } from '../../services/pagination.js';
 import { CustomerLedgerService } from '../customer-ledger-engine/service.js';
 import { ExpenseModel } from '../expenses/expense.model.js';
+import { ContractItemModel } from '../contracts/contract-item.model.js';
 import { ExtractModel, type ExtractAttrs } from '../extracts/extract.model.js';
 import { FuelLogModel } from '../fuel/fuel-log.model.js';
+import { GeneratorModel } from '../generators/generator.model.js';
 import { MaintenanceModel } from '../maintenance/maintenance.model.js';
 import { OperationLogModel } from '../operations/operation-log.model.js';
 import { ProfitabilityEngineService } from '../profitability-engine/service.js';
+import { ProjectModel } from '../projects/project.model.js';
+
+/** Read-time name enrichment (same join-not-store pattern as TASK-022's receipt customerName) —
+ * report rows need human-readable codes, not raw ObjectIds, and none of these reports' owning
+ * models snapshot a generator/project code at write time. */
+async function generatorCodeMap(ids: unknown[]): Promise<Map<string, string>> {
+  const unique = [...new Set(ids.map(String))];
+  const generators = await GeneratorModel.find({ _id: { $in: unique } }).select('_id code');
+  return new Map(generators.map((g) => [String(g._id), g.code]));
+}
+
+async function generatorInfoMap(
+  ids: unknown[],
+): Promise<Map<string, { code: string; normalFuelConsumption: number }>> {
+  const unique = [...new Set(ids.map(String))];
+  const generators = await GeneratorModel.find({ _id: { $in: unique } }).select(
+    '_id code normalFuelConsumption',
+  );
+  return new Map(
+    generators.map((g) => [
+      String(g._id),
+      { code: g.code, normalFuelConsumption: g.normalFuelConsumption },
+    ]),
+  );
+}
+
+async function projectNameMap(ids: unknown[]): Promise<Map<string, string>> {
+  const unique = [...new Set(ids.map(String))];
+  const projects = await ProjectModel.find({ _id: { $in: unique } }).select('_id code name');
+  return new Map(projects.map((p) => [String(p._id), `${p.code} — ${p.name}`]));
+}
 
 export interface UncollectedExtractRow {
   extractNumber: string;
@@ -47,7 +80,7 @@ export interface ProfitabilityReportQuery {
 const statuses = ['Approved', 'Partially Collected'] as const;
 
 export const ReportsService = {
-  async revenue(query: UncollectedExtractQuery & { projectId?: string }) {
+  async revenue(query: UncollectedExtractQuery & { projectId?: string; generatorId?: string }) {
     const filters: Record<string, unknown> = {
       status: { $in: ['Approved', 'Partially Collected', 'Collected'] },
     };
@@ -58,19 +91,29 @@ export const ReportsService = {
         ...(query.to ? { $lte: query.to } : {}),
       };
     }
+    if (query.generatorId) {
+      // Extract has no direct generatorId — it's linked via ContractItem, same join
+      // ProfitabilityEngineService uses (Section 6: "Generator Revenue ... filters: ... generator").
+      const contractIds = await ContractItemModel.find({
+        generatorId: query.generatorId,
+      }).distinct('contractId');
+      filters.contractIds = { $in: contractIds };
+    }
     const result = await paginateQuery(ExtractModel, filters, {
       page: query.page,
       limit: query.limit,
       sort: '-period.end',
       allowedSortFields: ['period.end', 'number', 'createdAt'],
     });
+    const projectNames = await projectNameMap(result.items.map((e) => e.projectId));
     return {
       items: result.items.map((extract) => ({
         extractNumber: extract.number,
         customer: extract.customerNameSnapshot,
-        projectId: extract.projectId,
+        project: projectNames.get(String(extract.projectId)) ?? String(extract.projectId),
         revenue: toDisplayString(extract.finalTotal ?? '0'),
-        period: extract.period,
+        periodStart: extract.period.start,
+        periodEnd: extract.period.end,
       })),
       meta: result.meta,
     };
@@ -106,12 +149,26 @@ export const ReportsService = {
         ...(query.to ? { $lte: query.to } : {}),
       };
     }
-    return paginateQuery(OperationLogModel, filters, {
+    const result = await paginateQuery(OperationLogModel, filters, {
       page: query.page,
       limit: query.limit,
       sort: '-date',
       allowedSortFields: ['date', 'createdAt'],
     });
+    const generatorCodes = await generatorCodeMap(result.items.map((log) => log.generatorId));
+    const projectNames = await projectNameMap(result.items.map((log) => log.projectId));
+    return {
+      items: result.items.map((log) => ({
+        date: log.date,
+        generator: generatorCodes.get(String(log.generatorId)) ?? String(log.generatorId),
+        project: projectNames.get(String(log.projectId)) ?? String(log.projectId),
+        startMeter: log.startMeter,
+        endMeter: log.endMeter,
+        operatingHours: log.operatingHours,
+        downtimeHours: log.downtimeHours,
+      })),
+      meta: result.meta,
+    };
   },
 
   async fuelConsumption(query: UncollectedExtractQuery & { generatorId?: string }) {
@@ -129,12 +186,25 @@ export const ReportsService = {
       sort: '-date',
       allowedSortFields: ['date', 'createdAt'],
     });
+    const generators = await generatorInfoMap(result.items.map((log) => log.generatorId));
     return {
-      items: result.items.map((log) => ({
-        ...(log as unknown as { toObject(): Record<string, unknown> }).toObject(),
-        pricePerLiter: toDisplayString(log.pricePerLiter),
-        totalCost: toDisplayString(log.totalCost),
-      })),
+      items: result.items.map((log) => {
+        const generator = generators.get(String(log.generatorId));
+        const normal = generator?.normalFuelConsumption ?? 0;
+        const variancePercent =
+          log.consumptionRate !== null && normal > 0
+            ? ((log.consumptionRate - normal) / normal) * 100
+            : null;
+        return {
+          date: log.date,
+          generator: generator?.code ?? String(log.generatorId),
+          liters: log.liters,
+          pricePerLiter: toDisplayString(log.pricePerLiter),
+          totalCost: toDisplayString(log.totalCost),
+          consumptionRate: log.consumptionRate,
+          variancePercent,
+        };
+      }),
       meta: result.meta,
     };
   },
@@ -155,9 +225,13 @@ export const ReportsService = {
       sort: '-date',
       allowedSortFields: ['date', 'createdAt'],
     });
+    const generatorCodes = await generatorCodeMap(result.items.map((record) => record.generatorId));
     return {
       items: result.items.map((record) => ({
-        ...(record as unknown as { toObject(): Record<string, unknown> }).toObject(),
+        date: record.date,
+        generator: generatorCodes.get(String(record.generatorId)) ?? String(record.generatorId),
+        type: record.type,
+        status: record.status,
         partsCost: toDisplayString(record.partsCost),
         oilCost: toDisplayString(record.oilCost),
         laborCost: toDisplayString(record.laborCost),
@@ -191,9 +265,23 @@ export const ReportsService = {
       sort: '-date',
       allowedSortFields: ['date', 'category', 'createdAt'],
     });
+    const generatorCodes = await generatorCodeMap(
+      result.items.filter((e) => e.generatorId).map((e) => e.generatorId),
+    );
+    const projectNames = await projectNameMap(
+      result.items.filter((e) => e.projectId).map((e) => e.projectId),
+    );
     return {
       items: result.items.map((expense) => ({
-        ...(expense as unknown as { toObject(): Record<string, unknown> }).toObject(),
+        date: expense.date,
+        category: expense.category,
+        description: expense.description,
+        generator: expense.generatorId
+          ? (generatorCodes.get(String(expense.generatorId)) ?? String(expense.generatorId))
+          : null,
+        project: expense.projectId
+          ? (projectNames.get(String(expense.projectId)) ?? String(expense.projectId))
+          : null,
         amount: toDisplayString(expense.amount),
       })),
       meta: result.meta,

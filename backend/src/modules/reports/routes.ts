@@ -20,46 +20,46 @@ export const reportsRouter = Router();
 reportsRouter.use('/reports', requireAuth);
 reportsRouter.get(
   '/reports/revenue',
-  requirePermission('reports:read'),
+  requirePermission('reports:revenue'),
   asyncHandler(getRevenueReport),
 );
 reportsRouter.get(
   '/reports/profit-expense-summary',
-  requirePermission('reports:read'),
+  requirePermission('reports:profitExpenseSummary'),
   asyncHandler(getProfitExpenseSummaryReport),
 );
 reportsRouter.get(
   '/reports/operations',
-  requirePermission('reports:read'),
+  requirePermission('reports:operations'),
   asyncHandler(getOperationsReport),
 );
 reportsRouter.get(
   '/reports/fuel-consumption',
-  requirePermission('reports:read'),
+  requirePermission('reports:fuelConsumption'),
   asyncHandler(getFuelConsumptionReport),
 );
 reportsRouter.get(
   '/reports/maintenance',
-  requirePermission('reports:read'),
+  requirePermission('reports:maintenance'),
   asyncHandler(getMaintenanceReport),
 );
 reportsRouter.get(
   '/reports/expenses',
-  requirePermission('reports:read'),
+  requirePermission('reports:expenses'),
   asyncHandler(getExpensesReport),
 );
 reportsRouter.get(
   '/reports/profitability',
-  requirePermission('reports:read'),
+  requirePermission('reports:profitability'),
   asyncHandler(getProfitabilityReport),
 );
 reportsRouter.get(
   '/reports/customer-statement',
-  requirePermission('reports:read'),
+  requirePermission('reports:customerStatement'),
   asyncHandler(getCustomerStatement),
 );
 reportsRouter.get(
   '/reports/uncollected-extracts',
-  requirePermission('reports:read'),
+  requirePermission('reports:uncollectedExtracts'),
   asyncHandler(getUncollectedExtracts),
 );
