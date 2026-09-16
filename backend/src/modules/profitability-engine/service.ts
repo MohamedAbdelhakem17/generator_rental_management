@@ -66,7 +66,7 @@ export const ProfitabilityEngineService = {
       'period.start': { $lte: query.to },
     };
     if (query.generatorId) {
-      extractQuery.contractIds = { $in: contractIds.length ? contractIds : ['__none__'] };
+      extractQuery.contractIds = { $in: contractIds };
     }
     if (query.projectId) {
       extractQuery.projectId = query.projectId;
@@ -75,8 +75,13 @@ export const ProfitabilityEngineService = {
       extractQuery.customerId = query.customerId;
     }
 
+    // A generator with no contract items has zero possible matching extracts — querying with
+    // an empty $in is equivalent to "match nothing," so skip the round-trip entirely rather
+    // than passing a placeholder string through an ObjectId field (which Mongoose can't cast).
+    const skipExtracts = Boolean(query.generatorId) && contractIds.length === 0;
+
     const [extracts, fuelLogs, maintenanceRecords, expenses] = await Promise.all([
-      ExtractModel.find(extractQuery),
+      skipExtracts ? Promise.resolve([]) : ExtractModel.find(extractQuery),
       FuelLogModel.find({
         ...(query.generatorId ? { generatorId: query.generatorId } : {}),
         ...(query.projectId ? { projectId: query.projectId } : {}),

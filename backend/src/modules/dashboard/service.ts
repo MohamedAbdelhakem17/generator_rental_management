@@ -1,13 +1,25 @@
 import { Decimal } from 'decimal.js';
 
 import { toDecimal, toDisplayString } from '../../services/money.js';
+import { ValidationError } from '../../utils/AppError.js';
+import { CustomerModel } from '../customers/customer.model.js';
+import { CustomerLedgerService } from '../customer-ledger-engine/service.js';
+import { RentalContractModel } from '../contracts/contract.model.js';
 import { ExpenseModel } from '../expenses/expense.model.js';
 import { ExtractModel } from '../extracts/extract.model.js';
+import { FuelAlertModel } from '../fuel-alert-engine/fuel-alert.model.js';
 import { FuelLogModel } from '../fuel/fuel-log.model.js';
 import { GeneratorModel } from '../generators/generator.model.js';
+import { MaintenanceAlertModel } from '../maintenance-schedule-engine/maintenance-alert.model.js';
 import { MaintenanceModel } from '../maintenance/maintenance.model.js';
+import { OperationLogModel } from '../operations/operation-log.model.js';
 import { ProfitabilityEngineService } from '../profitability-engine/service.js';
 import { ReceiptModel } from '../receipts/receipt.model.js';
+
+const EXPIRING_CONTRACT_WINDOW_DAYS = 30;
+const TOP_GENERATORS_LIMIT = 5;
+/** Bounds the per-generator ProfitabilityEngineService.calculate() fan-out for the "top profitable" chart. */
+const PROFITABILITY_CANDIDATE_LIMIT = 20;
 
 export interface DashboardPeriodInput {
   from?: Date;
@@ -63,7 +75,9 @@ export const DashboardService = {
     const resolvedTo = input.to ?? new Date();
 
     if (resolvedTo.getTime() < resolvedFrom.getTime()) {
-      throw new Error('to must be on or after from');
+      throw new ValidationError('Validation failed', [
+        { field: 'to', message: 'to must be on or after from' },
+      ]);
     }
 
     const period = monthRangeFor(resolvedFrom);
@@ -73,53 +87,77 @@ export const DashboardService = {
     const projectFilters = input.projectId ? { projectId: input.projectId } : {};
     const customerFilters = input.customerId ? { customerId: input.customerId } : {};
 
-    const [generatorCounts, extracts, fuelLogs, maintenanceRecords, expenses, profitability] =
-      await Promise.all([
-        GeneratorModel.aggregate([
-          {
-            $match: {
-              isDeleted: { $ne: true },
-            },
+    const [
+      generatorCounts,
+      extracts,
+      fuelLogs,
+      maintenanceRecords,
+      expenses,
+      profitability,
+      operationLogs,
+      openMaintenanceAlerts,
+      openFuelAlerts,
+      expiringContracts,
+    ] = await Promise.all([
+      GeneratorModel.aggregate([
+        {
+          $match: {
+            isDeleted: { $ne: true },
           },
-          {
-            $group: {
-              _id: null,
-              total: { $sum: 1 },
-              available: { $sum: { $cond: [{ $eq: ['$status', 'Available'] }, 1, 0] } },
-              rented: { $sum: { $cond: [{ $eq: ['$status', 'Rented'] }, 1, 0] } },
-              underMaintenance: {
-                $sum: { $cond: [{ $eq: ['$status', 'Under Maintenance'] }, 1, 0] },
-              },
-              stopped: { $sum: { $cond: [{ $eq: ['$status', 'Stopped'] }, 1, 0] } },
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            available: { $sum: { $cond: [{ $eq: ['$status', 'Available'] }, 1, 0] } },
+            rented: { $sum: { $cond: [{ $eq: ['$status', 'Rented'] }, 1, 0] } },
+            underMaintenance: {
+              $sum: { $cond: [{ $eq: ['$status', 'Under Maintenance'] }, 1, 0] },
             },
+            stopped: { $sum: { $cond: [{ $eq: ['$status', 'Stopped'] }, 1, 0] } },
           },
-        ]),
-        ExtractModel.find({
-          status: { $in: ['Approved', 'Partially Collected', 'Collected'] },
-          'period.end': { $gte: from },
-          'period.start': { $lte: to },
-          ...projectFilters,
-          ...customerFilters,
-        }),
-        FuelLogModel.find({
-          date: { $gte: from, $lte: to },
-          ...projectFilters,
-        }),
-        MaintenanceModel.find({
-          date: { $gte: from, $lte: to },
-          ...(input.projectId ? { projectId: input.projectId } : {}),
-        }),
-        ExpenseModel.find({
-          date: { $gte: from, $lte: to },
-          ...projectFilters,
-        }),
-        ProfitabilityEngineService.calculate({
-          from: period.from,
-          to: period.to,
-          ...(input.projectId ? { projectId: input.projectId } : {}),
-          ...(input.customerId ? { customerId: input.customerId } : {}),
-        }),
-      ]);
+        },
+      ]),
+      ExtractModel.find({
+        status: { $in: ['Approved', 'Partially Collected', 'Collected'] },
+        'period.end': { $gte: from },
+        'period.start': { $lte: to },
+        ...projectFilters,
+        ...customerFilters,
+      }),
+      FuelLogModel.find({
+        date: { $gte: from, $lte: to },
+        ...projectFilters,
+      }),
+      MaintenanceModel.find({
+        date: { $gte: from, $lte: to },
+        ...(input.projectId ? { projectId: input.projectId } : {}),
+      }),
+      ExpenseModel.find({
+        date: { $gte: from, $lte: to },
+        ...projectFilters,
+      }),
+      ProfitabilityEngineService.calculate({
+        from: period.from,
+        to: period.to,
+        ...(input.projectId ? { projectId: input.projectId } : {}),
+        ...(input.customerId ? { customerId: input.customerId } : {}),
+      }),
+      OperationLogModel.find({
+        date: { $gte: from, $lte: to },
+        status: 'Active',
+        ...projectFilters,
+      }),
+      MaintenanceAlertModel.countDocuments({ status: { $in: ['Open', 'Acknowledged'] } }),
+      FuelAlertModel.countDocuments({ status: { $in: ['Open', 'Acknowledged'] } }),
+      RentalContractModel.countDocuments({
+        status: 'Active',
+        endDate: {
+          $gte: new Date(),
+          $lte: new Date(Date.now() + EXPIRING_CONTRACT_WINDOW_DAYS * 24 * 60 * 60 * 1000),
+        },
+      }),
+    ]);
 
     const revenue = extracts.reduce((sum, extract) => {
       const rentTotal = (extract.lineItems ?? []).reduce((lineSum, item) => {
@@ -138,10 +176,30 @@ export const DashboardService = {
       (sum, receipt) => sum.plus(toDecimal(receipt.amount)),
       new Decimal(0),
     );
-    const operatingHours = fuelLogs.reduce(
-      (sum, log) => sum.plus(toDecimal(log.totalCost).dividedBy(1)),
+    const operatingHours = operationLogs.reduce(
+      (sum, log) => sum.plus(log.operatingHours),
       new Decimal(0),
     );
+
+    // Section 23/Business Rule 6.8: Σ positive customer balances (Ledger Engine). No due-date/aging
+    // concept exists anywhere in the Ledger Engine (TASK-023 didn't define one), so "overdue" here is
+    // the closest available proxy — any customer currently owing money — not a true aging threshold.
+    const customerFilterForBalances = input.customerId ? { _id: input.customerId } : {};
+    const activeCustomers = await CustomerModel.find({
+      active: true,
+      isDeleted: { $ne: true },
+      ...customerFilterForBalances,
+    }).select('_id');
+    const balances = await Promise.all(
+      activeCustomers.map((customer) => CustomerLedgerService.getBalance(String(customer._id))),
+    );
+    const positiveBalances = balances.map((balance) => toDecimal(balance)).filter((b) => b.gt(0));
+    const outstandingReceivables = positiveBalances.reduce(
+      (sum, balance) => sum.plus(balance),
+      new Decimal(0),
+    );
+    const overdueCustomersCount = positiveBalances.length;
+
     const maintenanceCost = maintenanceRecords.reduce(
       (sum, record) => sum.plus(toDecimal(record.totalCost)),
       new Decimal(0),
@@ -159,6 +217,69 @@ export const DashboardService = {
       stopped: 0,
     };
 
+    const revenueByMonth = new Map<string, Decimal>();
+    for (const extract of extracts) {
+      const rentTotal = (extract.lineItems ?? []).reduce((lineSum, item) => {
+        if (item.type !== 'rent') return lineSum;
+        return lineSum.plus(toDecimal(item.amount));
+      }, new Decimal(0));
+      const monthKey = extract.period.start.toISOString().slice(0, 7);
+      revenueByMonth.set(monthKey, (revenueByMonth.get(monthKey) ?? new Decimal(0)).plus(rentTotal));
+    }
+    const revenueTrend = [...revenueByMonth.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, monthRevenue]) => ({ month, revenue: toDisplayString(monthRevenue) }));
+
+    const extractStatusCounts = new Map<string, number>();
+    for (const extract of extracts) {
+      extractStatusCounts.set(extract.status, (extractStatusCounts.get(extract.status) ?? 0) + 1);
+    }
+    const extractStatus = [...extractStatusCounts.entries()].map(([status, value]) => ({
+      status,
+      value,
+    }));
+
+    const utilizationByGenerator = new Map<string, number>();
+    for (const log of operationLogs) {
+      const key = String(log.generatorId);
+      utilizationByGenerator.set(key, (utilizationByGenerator.get(key) ?? 0) + log.operatingHours);
+    }
+    const generatorCodeById = new Map(
+      (await GeneratorModel.find({ isDeleted: { $ne: true } }).select('_id code')).map((g) => [
+        String(g._id),
+        g.code,
+      ]),
+    );
+    const topGeneratorsUtilization = [...utilizationByGenerator.entries()]
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, TOP_GENERATORS_LIMIT)
+      .map(([generatorId, hours]) => ({
+        generatorCode: generatorCodeById.get(generatorId) ?? generatorId,
+        utilization: hours,
+      }));
+
+    const profitabilityCandidateIds = [...utilizationByGenerator.keys()].slice(
+      0,
+      PROFITABILITY_CANDIDATE_LIMIT,
+    );
+    const profitabilityByGenerator = await Promise.all(
+      profitabilityCandidateIds.map(async (generatorId) => ({
+        generatorId,
+        result: await ProfitabilityEngineService.calculate({
+          generatorId,
+          from: period.from,
+          to: period.to,
+        }),
+      })),
+    );
+    const topGeneratorsProfitability = profitabilityByGenerator
+      .sort((a, b) => Number(b.result.netProfit) - Number(a.result.netProfit))
+      .slice(0, TOP_GENERATORS_LIMIT)
+      .map(({ generatorId, result }) => ({
+        generatorCode: generatorCodeById.get(generatorId) ?? generatorId,
+        netProfit: result.netProfit,
+      }));
+
     return {
       fleet: {
         total: Number(fleet.total ?? 0),
@@ -170,7 +291,7 @@ export const DashboardService = {
       financial: {
         revenue: toDisplayString(revenue),
         receipts: toDisplayString(outstandingRevenue),
-        outstanding: '0.00',
+        outstanding: toDisplayString(outstandingReceivables),
         expenses: toDisplayString(expensesTotal),
         netProfit: profitability.netProfit,
       },
@@ -182,17 +303,17 @@ export const DashboardService = {
         maintenanceCost: toDisplayString(maintenanceCost),
       },
       alerts: {
-        expiringContracts: 0,
-        overdueCustomers: 0,
-        maintenance: 0,
+        expiringContracts,
+        overdueCustomers: overdueCustomersCount,
+        maintenance: openMaintenanceAlerts,
         stoppedGenerators: Number(fleet.stopped ?? 0),
-        abnormalFuel: 0,
+        abnormalFuel: openFuelAlerts,
       },
       charts: {
-        revenueTrend: [{ month: 'This period', revenue: toDisplayString(revenue) }],
-        extractStatus: [{ status: 'Approved', value: extracts.length }],
-        topGeneratorsUtilization: [],
-        topGeneratorsProfitability: [],
+        revenueTrend,
+        extractStatus,
+        topGeneratorsUtilization,
+        topGeneratorsProfitability,
       },
     };
   },
