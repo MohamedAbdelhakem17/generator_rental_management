@@ -29,6 +29,7 @@ import { projectRouter } from './modules/projects/project.routes.js';
 import { receiptRouter } from './modules/receipts/receipt.routes.js';
 import { reportsRouter } from './modules/reports/routes.js';
 import { roleRouter } from './modules/roles/role.routes.js';
+import { settingsRouter } from './modules/settings/settings.routes.js';
 import { statusEngineRouter } from './modules/status-engine/status-engine.routes.js';
 import { userRouter } from './modules/users/user.routes.js';
 
@@ -70,6 +71,7 @@ export function createApp(): Express {
   app.use('/api', profitabilityRouter);
   app.use('/api', dashboardRouter);
   app.use('/api', exportRouter);
+  app.use('/api', settingsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

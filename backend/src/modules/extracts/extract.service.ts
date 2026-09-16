@@ -6,7 +6,7 @@ import { CustomerModel } from '../customers/customer.model.js';
 import { RentalContractModel } from '../contracts/contract.model.js';
 import { FinancialEngineService } from '../financial-engine/service.js';
 import { ProjectModel } from '../projects/project.model.js';
-import { SINGLETON_KEY, SystemSettingModel } from '../settings/systemSetting.model.js';
+import { SettingsService } from '../settings/settings.service.js';
 import { ConflictError, NotFoundError, ValidationError } from '../../utils/AppError.js';
 import { toDecimal, toDecimal128, type MoneyInput } from '../../services/money.js';
 import { paginateQuery, type PaginatedResult } from '../../services/pagination.js';
@@ -97,11 +97,7 @@ function assertEditable(extract: ExtractDocument): void {
 }
 
 async function getLiveVatRateFraction(): Promise<Decimal> {
-  const settings = await SystemSettingModel.findOne({ key: SINGLETON_KEY });
-  if (!settings) {
-    throw new Error('SystemSetting has not been seeded — run the baseline seed');
-  }
-  return toDecimal(settings.vatRatePercent).dividedBy(100);
+  return SettingsService.getVatRateFraction();
 }
 
 export const ExtractService = {

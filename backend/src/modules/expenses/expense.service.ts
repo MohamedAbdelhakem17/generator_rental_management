@@ -7,6 +7,7 @@ import { ConflictError, NotFoundError, ValidationError } from '../../utils/AppEr
 import { AuditService } from '../audit/audit.service.js';
 import { GeneratorModel } from '../generators/generator.model.js';
 import { ProjectModel } from '../projects/project.model.js';
+import { SettingsService } from '../settings/settings.service.js';
 import { ExpenseModel, type ExpenseAttrs, type ExpenseDocument } from './expense.model.js';
 import type {
   AllocateExpenseInput,
@@ -31,6 +32,17 @@ async function assertProjectExists(projectId: string): Promise<void> {
   if (!project) {
     throw new ValidationError('Validation failed', [
       { field: 'projectId', message: 'Project does not exist' },
+    ]);
+  }
+}
+
+/** TASK-024 FR-001, closed by TASK-030: `category` must come from the configurable
+ * System Settings list, not free text. */
+async function assertKnownCategory(category: string): Promise<void> {
+  const categories = await SettingsService.getExpenseCategories();
+  if (!categories.includes(category)) {
+    throw new ValidationError('Validation failed', [
+      { field: 'category', message: `category must be one of: ${categories.join(', ')}` },
     ]);
   }
 }
@@ -89,6 +101,7 @@ export const ExpenseService = {
   },
 
   async create(input: CreateExpenseInput, actorUserId: string): Promise<ExpenseDocument> {
+    await assertKnownCategory(input.category);
     if (input.generatorId) {
       await assertGeneratorExists(input.generatorId);
     }
@@ -141,7 +154,10 @@ export const ExpenseService = {
       if (input.projectId) await assertProjectExists(input.projectId);
       expense.projectId = input.projectId ? new Types.ObjectId(input.projectId) : null;
     }
-    if (input.category !== undefined) expense.category = input.category;
+    if (input.category !== undefined) {
+      await assertKnownCategory(input.category);
+      expense.category = input.category;
+    }
     if (input.date !== undefined) expense.date = input.date;
     if (input.amount !== undefined) expense.amount = toDecimal128(input.amount);
     if (input.description !== undefined) expense.description = input.description ?? '';

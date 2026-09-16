@@ -2,7 +2,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { GeneratorModel } from '../generators/generator.model.js';
 import { MaintenanceModel } from '../maintenance/maintenance.model.js';
 import { NotificationEngineService } from '../notification-engine/service.js';
-import { SINGLETON_KEY, SystemSettingModel } from '../settings/systemSetting.model.js';
+import { SettingsService } from '../settings/settings.service.js';
 import { isGeneratorAssignedToUser } from '../users/user.service.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../utils/AppError.js';
 import { paginateQuery, type PaginatedResult } from '../../services/pagination.js';
@@ -31,11 +31,7 @@ async function populateRefsMany<T extends { _id: unknown }>(items: T[]): Promise
 }
 
 async function getUpcomingBufferHours(): Promise<number> {
-  const settings = await SystemSettingModel.findOne({ key: SINGLETON_KEY });
-  if (!settings) {
-    throw new Error('SystemSetting has not been seeded — run the baseline seed');
-  }
-  return settings.maintenanceUpcomingBufferHours;
+  return SettingsService.getMaintenanceUpcomingBufferHours();
 }
 
 /** Business Rule 6.6/FR-001: `currentMeter >= dueAtMeter` -> Overdue; within the configured

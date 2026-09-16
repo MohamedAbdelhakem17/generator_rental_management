@@ -4,7 +4,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { FuelLogModel } from '../fuel/fuel-log.model.js';
 import { GeneratorModel } from '../generators/generator.model.js';
 import { NotificationEngineService } from '../notification-engine/service.js';
-import { SINGLETON_KEY, SystemSettingModel } from '../settings/systemSetting.model.js';
+import { SettingsService } from '../settings/settings.service.js';
 import { isGeneratorAssignedToUser } from '../users/user.service.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../utils/AppError.js';
 import { toDecimal } from '../../services/money.js';
@@ -30,14 +30,7 @@ async function populateRefsMany<T extends { _id: unknown }>(items: T[]): Promise
 }
 
 async function getFuelToleranceBands(): Promise<{ warningPercent: Decimal; criticalPercent: Decimal }> {
-  const settings = await SystemSettingModel.findOne({ key: SINGLETON_KEY });
-  if (!settings) {
-    throw new Error('SystemSetting has not been seeded — run the baseline seed');
-  }
-  return {
-    warningPercent: toDecimal(settings.fuelTolerancePercent),
-    criticalPercent: toDecimal(settings.fuelCriticalTolerancePercent),
-  };
+  return SettingsService.getFuelToleranceBands();
 }
 
 /** Business Rule 6.5: Warning at 15–30% above normal, Critical above 30%; `null` = within tolerance. */
