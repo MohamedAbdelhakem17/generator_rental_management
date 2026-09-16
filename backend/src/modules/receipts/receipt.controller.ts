@@ -1,12 +1,28 @@
 import type { Request, Response } from 'express';
 
+import { toDisplayString } from '../../services/money.js';
 import { successResponse } from '../../utils/responseEnvelope.js';
 import { idParamSchema, parseOrThrow } from '../../utils/validate.js';
-import { toDisplayString } from '../../services/money.js';
 import { ReceiptService } from './receipt.service.js';
-import { cancelReceiptSchema, createReceiptSchema, listReceiptsQuerySchema } from './receipt.validation.js';
+import {
+  cancelReceiptSchema,
+  createReceiptSchema,
+  listReceiptsQuerySchema,
+} from './receipt.validation.js';
 
-function toReceiptResponse(receipt: { _id: { toString(): string }; customerId: unknown; date: Date; amount: unknown; paymentMethod: string; account: string; transferNumber: string; allocations: Array<{ extractId: unknown; amount: unknown }>; status: string; cancelReason: string; createdAt: Date }) {
+function toReceiptResponse(receipt: {
+  _id: { toString(): string };
+  customerId: unknown;
+  date: Date;
+  amount: unknown;
+  paymentMethod: string;
+  account: string;
+  transferNumber: string;
+  allocations: Array<{ extractId: unknown; amount: unknown }>;
+  status: string;
+  cancelReason: string;
+  createdAt: Date;
+}) {
   return {
     id: String(receipt._id),
     customerId: String(receipt.customerId),

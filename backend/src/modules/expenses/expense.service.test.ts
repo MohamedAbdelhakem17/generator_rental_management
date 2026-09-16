@@ -30,7 +30,12 @@ async function createProject(customerId: string) {
 async function createGenerator() {
   return GeneratorModel.create({
     code: `GEN-${Math.random().toString(36).slice(2, 8)}`,
-    specifications: { kva: 100, brand: 'CAT', model: '400', serialNumber: `SN-${Math.random().toString(36).slice(2, 8)}` },
+    specifications: {
+      kva: 100,
+      brand: 'CAT',
+      model: '400',
+      serialNumber: `SN-${Math.random().toString(36).slice(2, 8)}`,
+    },
     currentMeter: 1000,
     location: 'Cairo',
     normalFuelConsumption: 6,
@@ -70,17 +75,24 @@ describe('ExpenseService (TASK-024)', () => {
 
     const actorUserId = new Types.ObjectId().toString();
 
-    await ExpenseService.allocate(String(parent._id), {
-      splits: [
-        { generatorId: String(firstGenerator._id), percentage: 60 },
-        { generatorId: String(secondGenerator._id), percentage: 40 },
-      ],
-    }, actorUserId, 'Finance Manager');
+    await ExpenseService.allocate(
+      String(parent._id),
+      {
+        splits: [
+          { generatorId: String(firstGenerator._id), percentage: 60 },
+          { generatorId: String(secondGenerator._id), percentage: 40 },
+        ],
+      },
+      actorUserId,
+      'Finance Manager',
+    );
 
     const children = await ExpenseModel.find({ allocatedFrom: parent._id }).sort({ amount: 1 });
     expect(children).toHaveLength(2);
     expect(children.map((child) => child.amount.toString())).toEqual(['4000.00', '6000.00']);
-    expect(children.every((child) => String(child.allocatedFrom) === String(parent._id))).toBe(true);
+    expect(children.every((child) => String(child.allocatedFrom) === String(parent._id))).toBe(
+      true,
+    );
   });
 
   it('rejects allocations whose percentages do not total 100%', async () => {
@@ -102,7 +114,12 @@ describe('ExpenseService (TASK-024)', () => {
     await expect(
       ExpenseService.allocate(
         String(parent._id),
-        { splits: [{ generatorId: String(firstGenerator._id), percentage: 60 }, { generatorId: String(firstGenerator._id), percentage: 30 }] },
+        {
+          splits: [
+            { generatorId: String(firstGenerator._id), percentage: 60 },
+            { generatorId: String(firstGenerator._id), percentage: 30 },
+          ],
+        },
         actorUserId,
         'Finance Manager',
       ),

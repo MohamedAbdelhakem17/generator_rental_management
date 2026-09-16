@@ -8,5 +8,13 @@ import { getCustomerBalance, getCustomerStatement } from './controller.js';
 export const ledgerRouter = Router();
 
 ledgerRouter.use('/customers', requireAuth);
-ledgerRouter.get('/customers/:id/balance', requirePermission('customers:read'), asyncHandler(getCustomerBalance));
-ledgerRouter.get('/customers/:id/statement', requirePermission('customers:read'), asyncHandler(getCustomerStatement));
+ledgerRouter.get(
+  '/customers/:id/balance',
+  requirePermission('customers:read'),
+  asyncHandler(getCustomerBalance),
+);
+ledgerRouter.get(
+  '/customers/:id/statement',
+  requirePermission('customers:read'),
+  asyncHandler(getCustomerStatement),
+);

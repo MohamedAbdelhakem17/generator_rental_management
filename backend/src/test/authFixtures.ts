@@ -2,8 +2,8 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 
 import { ROLE_NAMES, type RoleName } from '../modules/auth/permissions.js';
-import { seedRoles } from '../modules/roles/role.seed.js';
 import { RoleModel, type RoleDocument } from '../modules/roles/role.model.js';
+import { seedRoles } from '../modules/roles/role.seed.js';
 import { SINGLETON_KEY, SystemSettingModel } from '../modules/settings/systemSetting.model.js';
 import { UserModel } from '../modules/users/user.model.js';
 import { hashPassword } from '../utils/password.js';
@@ -30,7 +30,10 @@ export async function seedTestRoles(): Promise<Record<RoleName, RoleDocument>> {
   await seedRoles();
   const roles = await RoleModel.find();
   const byName = new Map(roles.map((role) => [role.name, role]));
-  return Object.fromEntries(ROLE_NAMES.map((name) => [name, byName.get(name)!])) as Record<RoleName, RoleDocument>;
+  return Object.fromEntries(ROLE_NAMES.map((name) => [name, byName.get(name)!])) as Record<
+    RoleName,
+    RoleDocument
+  >;
 }
 
 /** Mirrors TASK-007's baseline seed (VAT/currency/fuel-tolerance defaults) for suites that

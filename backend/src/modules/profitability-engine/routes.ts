@@ -8,4 +8,8 @@ import { getProfitability } from './controller.js';
 export const profitabilityRouter = Router();
 
 profitabilityRouter.use('/profitability', requireAuth);
-profitabilityRouter.get('/profitability', requirePermission('reports:read'), asyncHandler(getProfitability));
+profitabilityRouter.get(
+  '/profitability',
+  requirePermission('reports:read'),
+  asyncHandler(getProfitability),
+);

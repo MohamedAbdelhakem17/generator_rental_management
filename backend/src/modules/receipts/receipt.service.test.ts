@@ -147,7 +147,11 @@ describe('ReceiptService (TASK-022)', () => {
       ACTOR_ID,
     );
 
-    await ReceiptService.cancel(String(receipt._id), { reason: 'Duplicate payment reversed' }, ACTOR_ID);
+    await ReceiptService.cancel(
+      String(receipt._id),
+      { reason: 'Duplicate payment reversed' },
+      ACTOR_ID,
+    );
 
     const updated = await ExtractModel.findById(extract._id);
     expect(updated!.status).toBe('Approved');

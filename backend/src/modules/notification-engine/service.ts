@@ -1,4 +1,9 @@
-import { NotificationModel, type NotificationAttrs, type NotificationDocument, type NotificationStatus } from './notification.model.js';
+import {
+  NotificationModel,
+  type NotificationAttrs,
+  type NotificationDocument,
+  type NotificationStatus,
+} from './notification.model.js';
 
 export interface NotifyInput {
   type?: NotificationAttrs['type'];
@@ -36,7 +41,10 @@ export const NotificationEngineService = {
     });
   },
 
-  async listForUser(user: NotificationUserContext, query: NotificationListQuery = {}): Promise<NotificationAttrs[]> {
+  async listForUser(
+    user: NotificationUserContext,
+    query: NotificationListQuery = {},
+  ): Promise<NotificationAttrs[]> {
     const filters: Record<string, unknown> = { recipientRoles: user.role };
     if (query.status) filters.status = query.status;
 
@@ -52,11 +60,16 @@ export const NotificationEngineService = {
     return result.map((doc) => doc.toObject());
   },
 
-  async markRead(notificationId: string, user: NotificationUserContext): Promise<NotificationDocument> {
+  async markRead(
+    notificationId: string,
+    user: NotificationUserContext,
+  ): Promise<NotificationDocument> {
     const notification = await NotificationModel.findOne({
       _id: notificationId,
       recipientRoles: user.role,
-      ...(user.role === 'Technician' ? { $or: [{ assignedUserId: null }, { assignedUserId: user.id }] } : {}),
+      ...(user.role === 'Technician'
+        ? { $or: [{ assignedUserId: null }, { assignedUserId: user.id }] }
+        : {}),
     });
 
     if (!notification) {

@@ -29,4 +29,7 @@ const creditNoteSchema = new Schema<CreditNoteAttrs>(
 creditNoteSchema.index({ number: 1 }, { unique: true, name: 'credit_notes_number_idx' });
 
 export type CreditNoteDocument = HydratedDocument<CreditNoteAttrs>;
-export const CreditNoteModel: Model<CreditNoteAttrs> = model<CreditNoteAttrs>('CreditNote', creditNoteSchema);
+export const CreditNoteModel: Model<CreditNoteAttrs> = model<CreditNoteAttrs>(
+  'CreditNote',
+  creditNoteSchema,
+);

@@ -1,10 +1,15 @@
 import type { Request, Response } from 'express';
 
+import { toDisplayString } from '../../services/money.js';
 import { successResponse } from '../../utils/responseEnvelope.js';
 import { idParamSchema, parseOrThrow } from '../../utils/validate.js';
-import { toDisplayString } from '../../services/money.js';
 import { ExpenseService } from './expense.service.js';
-import { allocateExpenseSchema, createExpenseSchema, listExpensesQuerySchema, updateExpenseSchema } from './expense.validation.js';
+import {
+  allocateExpenseSchema,
+  createExpenseSchema,
+  listExpensesQuerySchema,
+  updateExpenseSchema,
+} from './expense.validation.js';
 
 function toExpenseResponse(expense: {
   _id: { toString(): string };

@@ -12,4 +12,8 @@ receiptRouter.use('/receipts', requireAuth);
 receiptRouter.get('/receipts', requirePermission('receipts:read'), asyncHandler(listReceipts));
 receiptRouter.get('/receipts/:id', requirePermission('receipts:read'), asyncHandler(getReceipt));
 receiptRouter.post('/receipts', requirePermission('receipts:write'), asyncHandler(createReceipt));
-receiptRouter.post('/receipts/:id/cancel', requirePermission('receipts:write'), asyncHandler(cancelReceipt));
+receiptRouter.post(
+  '/receipts/:id/cancel',
+  requirePermission('receipts:write'),
+  asyncHandler(cancelReceipt),
+);

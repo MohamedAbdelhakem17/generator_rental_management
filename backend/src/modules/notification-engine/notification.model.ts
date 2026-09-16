@@ -2,7 +2,12 @@ import { Schema, model, type HydratedDocument, type Model, type Types } from 'mo
 
 import type { TimestampFields } from '../../db/baseSchema.js';
 
-export type NotificationType = 'FuelAlert' | 'MaintenanceAlert' | 'ContractExpiry' | 'OverdueCustomer' | 'GeneratorStoppedWhileAssigned';
+export type NotificationType =
+  | 'FuelAlert'
+  | 'MaintenanceAlert'
+  | 'ContractExpiry'
+  | 'OverdueCustomer'
+  | 'GeneratorStoppedWhileAssigned';
 export type NotificationSeverity = 'info' | 'warning' | 'critical';
 export type NotificationStatus = 'Unread' | 'Read' | 'Dismissed';
 
@@ -23,13 +28,27 @@ export interface NotificationAttrs extends TimestampFields {
 
 const notificationSchema = new Schema<NotificationAttrs>(
   {
-    type: { type: String, enum: ['FuelAlert', 'MaintenanceAlert', 'ContractExpiry', 'OverdueCustomer', 'GeneratorStoppedWhileAssigned'], required: true },
+    type: {
+      type: String,
+      enum: [
+        'FuelAlert',
+        'MaintenanceAlert',
+        'ContractExpiry',
+        'OverdueCustomer',
+        'GeneratorStoppedWhileAssigned',
+      ],
+      required: true,
+    },
     severity: { type: String, enum: ['info', 'warning', 'critical'], required: true },
     title: { type: String, required: true, trim: true, maxlength: 150 },
     message: { type: String, required: true, trim: true, maxlength: 500 },
     entityType: { type: String, required: true, trim: true },
     entityId: { type: Schema.Types.Mixed, required: true },
-    recipientRoles: { type: [{ type: String, trim: true }], required: true, validate: [(value: string[]) => value.length > 0] },
+    recipientRoles: {
+      type: [{ type: String, trim: true }],
+      required: true,
+      validate: [(value: string[]) => value.length > 0],
+    },
     assignedUserId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     status: { type: String, enum: ['Unread', 'Read', 'Dismissed'], default: 'Unread' },
     dueDate: { type: Date, default: null },
@@ -38,8 +57,14 @@ const notificationSchema = new Schema<NotificationAttrs>(
   { timestamps: true },
 );
 
-notificationSchema.index({ recipientRoles: 1, status: 1, createdAt: -1 }, { name: 'notifications_recipient_status_created_idx' });
+notificationSchema.index(
+  { recipientRoles: 1, status: 1, createdAt: -1 },
+  { name: 'notifications_recipient_status_created_idx' },
+);
 notificationSchema.index({ entityType: 1, entityId: 1 }, { name: 'notifications_entity_idx' });
 
 export type NotificationDocument = HydratedDocument<NotificationAttrs>;
-export const NotificationModel: Model<NotificationAttrs> = model<NotificationAttrs>('Notification', notificationSchema);
+export const NotificationModel: Model<NotificationAttrs> = model<NotificationAttrs>(
+  'Notification',
+  notificationSchema,
+);

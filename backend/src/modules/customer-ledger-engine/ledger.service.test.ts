@@ -1,8 +1,8 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { resetTestDb, startTestDb, stopTestDb } from '../../test/authFixtures.js';
-import { CustomerModel } from '../customers/customer.model.js';
 import { CreditNoteModel } from '../credit-notes/credit-note.model.js';
+import { CustomerModel } from '../customers/customer.model.js';
 import { ExtractModel } from '../extracts/extract.model.js';
 import { ReceiptModel } from '../receipts/receipt.model.js';
 import { CustomerLedgerService } from './service.js';

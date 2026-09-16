@@ -1,7 +1,7 @@
 import { Decimal } from 'decimal.js';
 
-import { ValidationError } from '../../utils/AppError.js';
 import { toDecimal, toDisplayString } from '../../services/money.js';
+import { ValidationError } from '../../utils/AppError.js';
 import { ContractItemModel } from '../contracts/contract-item.model.js';
 import { ExpenseModel } from '../expenses/expense.model.js';
 import { ExtractModel } from '../extracts/extract.model.js';
@@ -44,11 +44,16 @@ function categoryMatches(category: string, keywords: string[]): boolean {
 export const ProfitabilityEngineService = {
   async calculate(query: ProfitabilityQuery): Promise<ProfitabilityResult> {
     if (query.to.getTime() < query.from.getTime()) {
-      throw new ValidationError('Validation failed', [{ field: 'to', message: 'to must be on or after from' }]);
+      throw new ValidationError('Validation failed', [
+        { field: 'to', message: 'to must be on or after from' },
+      ]);
     }
 
     const projectIdsForCustomer = query.customerId
-      ? await ProjectModel.find({ customerId: query.customerId, isDeleted: { $ne: true } }).distinct('_id')
+      ? await ProjectModel.find({
+          customerId: query.customerId,
+          isDeleted: { $ne: true },
+        }).distinct('_id')
       : [];
 
     const contractIds = query.generatorId
@@ -100,8 +105,14 @@ export const ProfitabilityEngineService = {
       return sum.plus(rentValue);
     }, new Decimal(0));
 
-    const fuelCost = fuelLogs.reduce((sum, log) => sum.plus(toDecimal(log.totalCost)), new Decimal(0));
-    const maintenanceCost = maintenanceRecords.reduce((sum, record) => sum.plus(toDecimal(record.totalCost)), new Decimal(0));
+    const fuelCost = fuelLogs.reduce(
+      (sum, log) => sum.plus(toDecimal(log.totalCost)),
+      new Decimal(0),
+    );
+    const maintenanceCost = maintenanceRecords.reduce(
+      (sum, record) => sum.plus(toDecimal(record.totalCost)),
+      new Decimal(0),
+    );
 
     const transportCost = expenses
       .filter((expense) => !query.generatorId || String(expense.generatorId) === query.generatorId)
@@ -128,7 +139,11 @@ export const ProfitabilityEngineService = {
       parts: toMoneyString(partsCost),
     };
 
-    const totalCost = fuelCost.plus(maintenanceCost).plus(transportCost).plus(laborCost).plus(partsCost);
+    const totalCost = fuelCost
+      .plus(maintenanceCost)
+      .plus(transportCost)
+      .plus(laborCost)
+      .plus(partsCost);
     const netProfit = revenue.minus(totalCost);
 
     return {

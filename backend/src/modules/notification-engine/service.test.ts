@@ -1,8 +1,8 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { resetTestDb, startTestDb, stopTestDb } from '../../test/authFixtures.js';
-import { NotificationEngineService } from './service.js';
 import { NotificationModel } from './notification.model.js';
+import { NotificationEngineService } from './service.js';
 
 describe('NotificationEngineService (TASK-026)', () => {
   beforeAll(async () => {

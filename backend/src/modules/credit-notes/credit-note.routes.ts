@@ -8,4 +8,8 @@ import { createCreditNote } from './credit-note.controller.js';
 export const creditNoteRouter = Router();
 
 creditNoteRouter.use('/credit-notes', requireAuth);
-creditNoteRouter.post('/credit-notes', requirePermission('credit-notes:write'), asyncHandler(createCreditNote));
+creditNoteRouter.post(
+  '/credit-notes',
+  requirePermission('credit-notes:write'),
+  asyncHandler(createCreditNote),
+);

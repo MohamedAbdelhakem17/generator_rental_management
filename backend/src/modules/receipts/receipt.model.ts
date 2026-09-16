@@ -39,7 +39,11 @@ const receiptSchema = new Schema<ReceiptAttrs>(
     customerId: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
     date: { type: Date, required: true },
     amount: { type: Schema.Types.Decimal128, required: true },
-    paymentMethod: { type: String, enum: ['Cash', 'BankTransfer', 'Cheque', 'Card'], required: true },
+    paymentMethod: {
+      type: String,
+      enum: ['Cash', 'BankTransfer', 'Cheque', 'Card'],
+      required: true,
+    },
     account: { type: String, default: '', trim: true },
     transferNumber: { type: String, default: '', trim: true },
     allocations: { type: [allocationSchema], default: [] },
@@ -49,7 +53,10 @@ const receiptSchema = new Schema<ReceiptAttrs>(
       default: '',
       trim: true,
       validate: {
-        validator: function validateCancelReason(this: { status: ReceiptStatus }, value: string): boolean {
+        validator: function validateCancelReason(
+          this: { status: ReceiptStatus },
+          value: string,
+        ): boolean {
           return this.status !== 'Cancelled' || value.trim().length > 0;
         },
         message: 'cancelReason is required when status is Cancelled',

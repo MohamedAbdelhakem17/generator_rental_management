@@ -1,27 +1,36 @@
 import { Decimal } from 'decimal.js';
 
+import { toDecimal, toDecimal128 } from '../../services/money.js';
+import { paginateQuery, type PaginatedResult } from '../../services/pagination.js';
+import { ConflictError, NotFoundError, ValidationError } from '../../utils/AppError.js';
 import { AuditService } from '../audit/audit.service.js';
 import { GeneratorModel } from '../generators/generator.model.js';
 import { ProjectModel } from '../projects/project.model.js';
-import { ConflictError, NotFoundError, ValidationError } from '../../utils/AppError.js';
-import { toDecimal, toDecimal128, toDisplayString } from '../../services/money.js';
-import { paginateQuery, type PaginatedResult } from '../../services/pagination.js';
 import { ExpenseModel, type ExpenseAttrs, type ExpenseDocument } from './expense.model.js';
-import type { AllocateExpenseInput, CreateExpenseInput, ListExpensesQuery, UpdateExpenseInput } from './expense.validation.js';
+import type {
+  AllocateExpenseInput,
+  CreateExpenseInput,
+  ListExpensesQuery,
+  UpdateExpenseInput,
+} from './expense.validation.js';
 
 const ALLOWED_SORT_FIELDS = ['date', 'amount', 'createdAt'] as const;
 
 async function assertGeneratorExists(generatorId: string): Promise<void> {
   const generator = await GeneratorModel.findOne({ _id: generatorId, isDeleted: { $ne: true } });
   if (!generator) {
-    throw new ValidationError('Validation failed', [{ field: 'generatorId', message: 'Generator does not exist' }]);
+    throw new ValidationError('Validation failed', [
+      { field: 'generatorId', message: 'Generator does not exist' },
+    ]);
   }
 }
 
 async function assertProjectExists(projectId: string): Promise<void> {
   const project = await ProjectModel.findOne({ _id: projectId, isDeleted: { $ne: true } });
   if (!project) {
-    throw new ValidationError('Validation failed', [{ field: 'projectId', message: 'Project does not exist' }]);
+    throw new ValidationError('Validation failed', [
+      { field: 'projectId', message: 'Project does not exist' },
+    ]);
   }
 }
 
@@ -30,12 +39,16 @@ function parseSplitMode(splits: AllocateExpenseInput['splits']): 'percentage' | 
   const hasAmount = splits.some((split) => split.amount !== undefined);
 
   if (hasPercentage && hasAmount) {
-    throw new ValidationError('Validation failed', [{ field: 'splits', message: 'Mixing percentage and amount splits is not allowed' }]);
+    throw new ValidationError('Validation failed', [
+      { field: 'splits', message: 'Mixing percentage and amount splits is not allowed' },
+    ]);
   }
 
   if (hasPercentage) return 'percentage';
   if (hasAmount) return 'amount';
-  throw new ValidationError('Validation failed', [{ field: 'splits', message: 'Each split must include either percentage or amount' }]);
+  throw new ValidationError('Validation failed', [
+    { field: 'splits', message: 'Each split must include either percentage or amount' },
+  ]);
 }
 
 export const ExpenseService = {
@@ -106,7 +119,11 @@ export const ExpenseService = {
     return expense;
   },
 
-  async update(expenseId: string, input: UpdateExpenseInput, actorUserId: string): Promise<ExpenseDocument> {
+  async update(
+    expenseId: string,
+    input: UpdateExpenseInput,
+    actorUserId: string,
+  ): Promise<ExpenseDocument> {
     const expense = await ExpenseModel.findById(expenseId);
     if (!expense) {
       throw new NotFoundError('Expense not found');
@@ -148,7 +165,9 @@ export const ExpenseService = {
     actorRole: string,
   ): Promise<ExpenseDocument[]> {
     if (actorRole !== 'Admin' && actorRole !== 'Finance Manager') {
-      throw new ValidationError('Validation failed', [{ field: 'role', message: 'Only Admin and Finance Manager can allocate expenses' }]);
+      throw new ValidationError('Validation failed', [
+        { field: 'role', message: 'Only Admin and Finance Manager can allocate expenses' },
+      ]);
     }
 
     const expense = await ExpenseModel.findById(expenseId);
@@ -169,7 +188,9 @@ export const ExpenseService = {
     if (mode === 'percentage') {
       const totalPercent = input.splits.reduce((sum, split) => sum + (split.percentage ?? 0), 0);
       if (Math.abs(totalPercent - 100) > 0.000001) {
-        throw new ValidationError('Validation failed', [{ field: 'splits', message: 'Split percentages must total 100%' }]);
+        throw new ValidationError('Validation failed', [
+          { field: 'splits', message: 'Split percentages must total 100%' },
+        ]);
       }
 
       childEntries = input.splits.map((split) => {
@@ -184,7 +205,9 @@ export const ExpenseService = {
     } else {
       const totalAmount = input.splits.reduce((sum, split) => sum + (split.amount ?? 0), 0);
       if (Math.abs(toDecimal(totalAmount).minus(total).toNumber()) > 0.000001) {
-        throw new ValidationError('Validation failed', [{ field: 'splits', message: 'Split amounts must total the original amount' }]);
+        throw new ValidationError('Validation failed', [
+          { field: 'splits', message: 'Split amounts must total the original amount' },
+        ]);
       }
 
       childEntries = input.splits.map((split) => ({

@@ -19,15 +19,19 @@ async function runAtomicOrFallback<T>(work: (session: any) => Promise<T>): Promi
   }
 }
 
+import { toDecimal, toDecimal128, type MoneyInput } from '../../services/money.js';
+import { paginateQuery, type PaginatedResult } from '../../services/pagination.js';
+import { ForbiddenError, NotFoundError, ValidationError } from '../../utils/AppError.js';
 import { AuditService } from '../audit/audit.service.js';
 import { CustomerModel } from '../customers/customer.model.js';
 import { ExtractModel } from '../extracts/extract.model.js';
-import { ForbiddenError, NotFoundError, ValidationError } from '../../utils/AppError.js';
-import { toDecimal, toDecimal128, type MoneyInput } from '../../services/money.js';
-import { paginateQuery, type PaginatedResult } from '../../services/pagination.js';
 import { nextReceiptNumber } from './receipt-number.js';
 import { ReceiptModel, type ReceiptAttrs, type ReceiptDocument } from './receipt.model.js';
-import type { CancelReceiptInput, CreateReceiptInput, ListReceiptsQuery } from './receipt.validation.js';
+import type {
+  CancelReceiptInput,
+  CreateReceiptInput,
+  ListReceiptsQuery,
+} from './receipt.validation.js';
 
 const ALLOWED_SORT_FIELDS = ['date', 'createdAt'] as const;
 
@@ -38,14 +42,24 @@ function clampAmount(amount: MoneyInput): Decimal {
 async function assertCustomerExists(customerId: string): Promise<void> {
   const customer = await CustomerModel.findOne({ _id: customerId, isDeleted: { $ne: true } });
   if (!customer) {
-    throw new ValidationError('Validation failed', [{ field: 'customerId', message: 'Customer does not exist' }]);
+    throw new ValidationError('Validation failed', [
+      { field: 'customerId', message: 'Customer does not exist' },
+    ]);
   }
 }
 
 async function getExtractForReceipt(extractId: string): Promise<any> {
-  const extract = await ExtractModel.findOne({ _id: extractId, status: { $in: ['Approved', 'Partially Collected', 'Collected'] } });
+  const extract = await ExtractModel.findOne({
+    _id: extractId,
+    status: { $in: ['Approved', 'Partially Collected', 'Collected'] },
+  });
   if (!extract) {
-    throw new ValidationError('Validation failed', [{ field: 'allocations', message: 'Only Approved or open extracts can receive a receipt allocation' }]);
+    throw new ValidationError('Validation failed', [
+      {
+        field: 'allocations',
+        message: 'Only Approved or open extracts can receive a receipt allocation',
+      },
+    ]);
   }
   return extract;
 }
@@ -88,10 +102,15 @@ export const ReceiptService = {
   async create(input: CreateReceiptInput, actorUserId: string): Promise<ReceiptDocument> {
     await assertCustomerExists(input.customerId);
 
-    const totalAllocated = input.allocations.reduce((sum, allocation) => sum.plus(clampAmount(allocation.amount)), new Decimal(0));
+    const totalAllocated = input.allocations.reduce(
+      (sum, allocation) => sum.plus(clampAmount(allocation.amount)),
+      new Decimal(0),
+    );
     const receiptTotal = clampAmount(input.amount);
     if (totalAllocated.greaterThan(receiptTotal)) {
-      throw new ValidationError('Validation failed', [{ field: 'allocations', message: 'Allocation total cannot exceed receipt amount' }]);
+      throw new ValidationError('Validation failed', [
+        { field: 'allocations', message: 'Allocation total cannot exceed receipt amount' },
+      ]);
     }
 
     let receipt: ReceiptDocument | null = null;
@@ -102,45 +121,59 @@ export const ReceiptService = {
         uniqueExtractIds.add(allocation.extractId);
       }
 
-      const extracts = await ExtractModel.find({ _id: { $in: Array.from(uniqueExtractIds) } }).session(session as any);
+      const extracts = await ExtractModel.find({
+        _id: { $in: Array.from(uniqueExtractIds) },
+      }).session(session as any);
       const extractedMap = new Map(extracts.map((extract) => [String(extract._id), extract]));
 
       for (const allocation of input.allocations) {
         const extract = extractedMap.get(allocation.extractId);
         if (!extract) {
-          throw new ValidationError('Validation failed', [{ field: 'allocations', message: 'One or more extracts are not allocatable' }]);
+          throw new ValidationError('Validation failed', [
+            { field: 'allocations', message: 'One or more extracts are not allocatable' },
+          ]);
         }
         const remaining = getRemainingBalance(extract);
         if (clampAmount(allocation.amount).greaterThan(remaining)) {
           throw new ValidationError('Allocation exceeds remaining balance', [
-            { field: 'allocations', message: `Allocation exceeds the remaining balance for extract ${extract.number}` },
+            {
+              field: 'allocations',
+              message: `Allocation exceeds the remaining balance for extract ${extract.number}`,
+            },
           ]);
         }
       }
 
       const number = await nextReceiptNumber();
-      const created = await ReceiptModel.create([
-        {
-          number,
-          customerId: input.customerId,
-          date: input.date,
-          amount: toDecimal128(receiptTotal),
-          paymentMethod: input.paymentMethod,
-          account: input.account ?? '',
-          transferNumber: input.transferNumber ?? '',
-          allocations: input.allocations.map((allocation) => ({
-            extractId: allocation.extractId,
-            amount: toDecimal128(allocation.amount),
-          })),
-        },
-      ], session ? { session } : undefined);
+      const created = await ReceiptModel.create(
+        [
+          {
+            number,
+            customerId: input.customerId,
+            date: input.date,
+            amount: toDecimal128(receiptTotal),
+            paymentMethod: input.paymentMethod,
+            account: input.account ?? '',
+            transferNumber: input.transferNumber ?? '',
+            allocations: input.allocations.map((allocation) => ({
+              extractId: allocation.extractId,
+              amount: toDecimal128(allocation.amount),
+            })),
+          },
+        ],
+        session ? { session } : undefined,
+      );
 
       receipt = created[0];
       for (const allocation of input.allocations) {
         const extract = extractedMap.get(allocation.extractId)!;
-        const newCollected = clampAmount(extract.collectedAmount).plus(clampAmount(allocation.amount));
+        const newCollected = clampAmount(extract.collectedAmount).plus(
+          clampAmount(allocation.amount),
+        );
         extract.collectedAmount = toDecimal128(newCollected);
-        extract.status = newCollected.greaterThanOrEqualTo(toDecimal(extract.finalTotal ?? '0')) ? 'Collected' : 'Partially Collected';
+        extract.status = newCollected.greaterThanOrEqualTo(toDecimal(extract.finalTotal ?? '0'))
+          ? 'Collected'
+          : 'Partially Collected';
         await extract.save(session ? { session } : undefined);
       }
 
@@ -159,7 +192,11 @@ export const ReceiptService = {
     return receipt;
   },
 
-  async cancel(receiptId: string, input: CancelReceiptInput, actorUserId: string): Promise<ReceiptDocument> {
+  async cancel(
+    receiptId: string,
+    input: CancelReceiptInput,
+    actorUserId: string,
+  ): Promise<ReceiptDocument> {
     const receipt = await ReceiptModel.findById(receiptId);
     if (!receipt) {
       throw new NotFoundError('Receipt not found');
@@ -170,13 +207,17 @@ export const ReceiptService = {
 
     await runAtomicOrFallback(async (session: any) => {
       const extractIds = receipt.allocations.map((allocation) => String(allocation.extractId));
-      const extracts = await ExtractModel.find({ _id: { $in: extractIds } }).session(session as any);
+      const extracts = await ExtractModel.find({ _id: { $in: extractIds } }).session(
+        session as any,
+      );
       const map = new Map(extracts.map((extract) => [String(extract._id), extract]));
 
       for (const allocation of receipt.allocations) {
         const extract = map.get(String(allocation.extractId));
         if (!extract) continue;
-        const newCollected = clampAmount(extract.collectedAmount).minus(clampAmount(allocation.amount));
+        const newCollected = clampAmount(extract.collectedAmount).minus(
+          clampAmount(allocation.amount),
+        );
         extract.collectedAmount = toDecimal128(newCollected);
         extract.status = newCollected.greaterThan(0) ? 'Partially Collected' : 'Approved';
         await extract.save(session ? { session } : undefined);

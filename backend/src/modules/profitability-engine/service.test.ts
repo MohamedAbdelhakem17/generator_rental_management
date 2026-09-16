@@ -34,7 +34,12 @@ async function createProject(customerId: string) {
 async function createGenerator() {
   return GeneratorModel.create({
     code: `GEN-${Math.random().toString(36).slice(2, 8)}`,
-    specifications: { kva: 100, brand: 'CAT', model: '400', serialNumber: `SN-${Math.random().toString(36).slice(2, 8)}` },
+    specifications: {
+      kva: 100,
+      brand: 'CAT',
+      model: '400',
+      serialNumber: `SN-${Math.random().toString(36).slice(2, 8)}`,
+    },
     currentMeter: 1000,
     location: 'Cairo',
     normalFuelConsumption: 6,

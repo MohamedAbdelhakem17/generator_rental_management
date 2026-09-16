@@ -5,7 +5,9 @@ const dateSchema = z.coerce.date({ errorMap: () => ({ message: 'Enter a valid da
 
 export const createExpenseSchema = z.object({
   category: z.string().trim().min(1, 'category is required'),
-  date: dateSchema.refine((value) => value.getTime() <= Date.now(), { message: 'date cannot be in the future' }),
+  date: dateSchema.refine((value) => value.getTime() <= Date.now(), {
+    message: 'date cannot be in the future',
+  }),
   amount: z.coerce.number().positive('amount must be greater than 0'),
   generatorId: objectIdSchema.optional().nullable(),
   projectId: objectIdSchema.optional().nullable(),

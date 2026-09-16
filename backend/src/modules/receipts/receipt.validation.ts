@@ -12,7 +12,9 @@ const allocationSchema = z.object({
 export const createReceiptSchema = z
   .object({
     customerId: objectIdSchema,
-    date: dateSchema.refine((value) => value.getTime() <= Date.now(), { message: 'date cannot be in the future' }),
+    date: dateSchema.refine((value) => value.getTime() <= Date.now(), {
+      message: 'date cannot be in the future',
+    }),
     amount: moneySchema.refine((value) => value > 0, { message: 'amount must be greater than 0' }),
     paymentMethod: z.enum(['Cash', 'BankTransfer', 'Cheque', 'Card']),
     account: z.string().trim().max(80).optional().default(''),
@@ -25,7 +27,10 @@ export const createReceiptSchema = z
     { message: 'transferNumber is required for BankTransfer', path: ['transferNumber'] },
   )
   .refine(
-    (value) => (value.paymentMethod === 'BankTransfer' || value.paymentMethod === 'Cheque' ? value.account.trim().length > 0 : true),
+    (value) =>
+      value.paymentMethod === 'BankTransfer' || value.paymentMethod === 'Cheque'
+        ? value.account.trim().length > 0
+        : true,
     { message: 'account is required for BankTransfer and Cheque', path: ['account'] },
   );
 

@@ -1,9 +1,9 @@
 import { Decimal } from 'decimal.js';
 
-import { NotFoundError, ValidationError } from '../../utils/AppError.js';
 import { toDecimal, toDisplayString } from '../../services/money.js';
-import { CustomerModel } from '../customers/customer.model.js';
+import { NotFoundError, ValidationError } from '../../utils/AppError.js';
 import { CreditNoteModel } from '../credit-notes/credit-note.model.js';
+import { CustomerModel } from '../customers/customer.model.js';
 import { ExtractModel } from '../extracts/extract.model.js';
 import { ReceiptModel } from '../receipts/receipt.model.js';
 
@@ -58,7 +58,10 @@ export const CustomerLedgerService = {
       (sum, extract) => sum.plus(toDecimal(extract.finalTotal ?? '0')),
       new Decimal(0),
     );
-    const receiptTotal = receipts.reduce((sum, receipt) => sum.plus(toDecimal(receipt.amount)), new Decimal(0));
+    const receiptTotal = receipts.reduce(
+      (sum, receipt) => sum.plus(toDecimal(receipt.amount)),
+      new Decimal(0),
+    );
     const creditNoteTotal = creditNotes.reduce(
       (sum, creditNote) => sum.plus(toDecimal(creditNote.amount)),
       new Decimal(0),
@@ -73,7 +76,9 @@ export const CustomerLedgerService = {
     const from = query.from ?? null;
     const to = query.to ?? null;
     if (from && to && to.getTime() < from.getTime()) {
-      throw new ValidationError('Validation failed', [{ field: 'to', message: 'to must be on or after from' }]);
+      throw new ValidationError('Validation failed', [
+        { field: 'to', message: 'to must be on or after from' },
+      ]);
     }
 
     const [extracts, receipts, creditNotes] = await Promise.all([
@@ -83,16 +88,26 @@ export const CustomerLedgerService = {
     ]);
 
     const acceptedExtracts = extracts.filter((extract) => {
-      const date = extract.period?.end ? new Date(extract.period.end) : extract.updatedAt ?? new Date();
+      const date = extract.period?.end
+        ? new Date(extract.period.end)
+        : (extract.updatedAt ?? new Date());
       const matchesFrom = !from || date >= from;
       const matchesTo = !to || date <= to;
       return matchesFrom && matchesTo;
     });
 
-    const entries: Array<{ date: Date; type: StatementEntry['type']; reference: string; debit: Decimal; credit: Decimal }> = [];
+    const entries: Array<{
+      date: Date;
+      type: StatementEntry['type'];
+      reference: string;
+      debit: Decimal;
+      credit: Decimal;
+    }> = [];
 
     for (const extract of acceptedExtracts) {
-      const extractDate = extract.period?.end ? new Date(extract.period.end) : extract.updatedAt ?? new Date();
+      const extractDate = extract.period?.end
+        ? new Date(extract.period.end)
+        : (extract.updatedAt ?? new Date());
       if (extract.status === 'Cancelled') {
         entries.push({
           date: extractDate,
@@ -116,7 +131,7 @@ export const CustomerLedgerService = {
     }
 
     for (const receipt of receipts) {
-      const date = receipt.date ? new Date(receipt.date) : receipt.createdAt ?? new Date();
+      const date = receipt.date ? new Date(receipt.date) : (receipt.createdAt ?? new Date());
       const matchesFrom = !from || date >= from;
       const matchesTo = !to || date <= to;
       if (matchesFrom && matchesTo) {
