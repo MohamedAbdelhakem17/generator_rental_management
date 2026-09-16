@@ -1,3 +1,5 @@
+import type { TranslationKey } from '@/lib/i18n/dictionary';
+
 /**
  * Frontend copy of the PRD Section 7.2 Global Permission Matrix, used only to decide
  * which modules the Sidebar renders (FR-*, Section 17). This is a UX convenience —
@@ -5,15 +7,16 @@
  * hiding a module here is never a security control.
  */
 
-export type Role = 'admin' | 'ops_manager' | 'finance_manager' | 'accountant' | 'technician' | 'viewer';
+export type Role =
+  'admin' | 'ops_manager' | 'finance_manager' | 'accountant' | 'technician' | 'viewer';
 
-export const ROLE_LABELS: Record<Role, string> = {
-  admin: 'System Admin',
-  ops_manager: 'Operations Manager',
-  finance_manager: 'Finance Manager',
-  accountant: 'Accountant',
-  technician: 'Technician',
-  viewer: 'Viewer',
+export const ROLE_LABEL_KEYS: Record<Role, TranslationKey> = {
+  admin: 'role.admin',
+  ops_manager: 'role.opsManager',
+  finance_manager: 'role.financeManager',
+  accountant: 'role.accountant',
+  technician: 'role.technician',
+  viewer: 'role.viewer',
 };
 
 export type ModuleKey =

@@ -1,23 +1,36 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
 import { PackageX, Plus, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { useState } from 'react';
 
-import { useLocale } from '@/lib/i18n/locale-provider';
-import { useSession } from '@/lib/session/session-provider';
-import { ROLE_LABELS } from '@/lib/permissions/roles';
 import { PageHeader } from '@/components/layout/page-header';
-import { StatusBadge, type GeneratorStatus } from '@/components/shared/status-badge';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
+import {
+  SkeletonCard,
+  SkeletonList,
+  SkeletonTable,
+  SkeletonText,
+} from '@/components/shared/loading-skeleton';
+import { StatusBadge, type GeneratorStatus } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
-import { SkeletonCard, SkeletonList, SkeletonTable, SkeletonText } from '@/components/shared/loading-skeleton';
+import { useLocale } from '@/lib/i18n/locale-provider';
+import { ROLE_LABEL_KEYS } from '@/lib/permissions/roles';
+import { useSession } from '@/lib/session/session-provider';
 
 const STATUSES: GeneratorStatus[] = ['available', 'rented', 'under_maintenance', 'stopped'];
 
-function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+function Section({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="flex flex-col items-start gap-3">
       <div>
@@ -37,9 +50,15 @@ export default function ShellFoundationPage() {
 
   return (
     <>
-      <PageHeader title={t('dashboard.title')} description={t('dashboard.description', { name: userName, role: ROLE_LABELS[role] })} />
+      <PageHeader
+        title={t('dashboard.title')}
+        description={t('dashboard.description', { name: userName, role: t(ROLE_LABEL_KEYS[role]) })}
+      />
 
-      <Section title={t('dashboard.generatorStatus')} description={t('dashboard.generatorStatusDescription')}>
+      <Section
+        title={t('dashboard.generatorStatus')}
+        description={t('dashboard.generatorStatusDescription')}
+      >
         <div className="flex flex-wrap gap-2">
           {STATUSES.map((status) => (
             <StatusBadge key={status} status={status} />
@@ -75,7 +94,10 @@ export default function ShellFoundationPage() {
         )}
       </Section>
 
-      <Section title={t('dashboard.confirmDialog')} description={t('dashboard.confirmDialogDescription')}>
+      <Section
+        title={t('dashboard.confirmDialog')}
+        description={t('dashboard.confirmDialogDescription')}
+      >
         <Button variant="destructive" size="sm" onClick={() => setConfirmOpen(true)}>
           <Trash2 className="size-4" aria-hidden />
           {t('dashboard.deleteGenerator')}
@@ -111,7 +133,10 @@ export default function ShellFoundationPage() {
         </div>
       </Section>
 
-      <Section title={t('dashboard.dataTableFoundation')} description={t('dashboard.dataTableFoundationDescription')}>
+      <Section
+        title={t('dashboard.dataTableFoundation')}
+        description={t('dashboard.dataTableFoundationDescription')}
+      >
         <Link href="/dev/data-table" className="text-sm font-medium text-primary hover:underline">
           {t('dashboard.openDataTablePreview')}
         </Link>

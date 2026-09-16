@@ -2,13 +2,8 @@
 
 import { Bell, Languages, LogOut, Menu, Search, User } from 'lucide-react';
 
-import { useLocale } from '@/lib/i18n/locale-provider';
-import { useSession } from '@/lib/session/session-provider';
-import { useSidebarState } from '@/lib/layout/sidebar-context';
-import { useBreadcrumb } from '@/lib/layout/use-breadcrumb';
-import { ROLE_LABELS } from '@/lib/permissions/roles';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +12,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useLocale } from '@/lib/i18n/locale-provider';
+import { useSidebarState } from '@/lib/layout/sidebar-context';
+import { useBreadcrumb } from '@/lib/layout/use-breadcrumb';
+import { ROLE_LABEL_KEYS } from '@/lib/permissions/roles';
+import { useSession } from '@/lib/session/session-provider';
 import { Breadcrumb } from './breadcrumb';
 
 export function Header() {
@@ -33,7 +33,7 @@ export function Header() {
     .toUpperCase();
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-surface/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-surface/80">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-surface/95 px-4 backdrop-blur supports-backdrop-filter:bg-surface/80">
       <Button
         variant="ghost"
         size="icon"
@@ -48,7 +48,10 @@ export function Header() {
 
       <div className="ms-auto flex items-center gap-1.5">
         <div className="relative hidden md:block">
-          <Search className="pointer-events-none absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Search
+            className="pointer-events-none absolute inset-s-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
           <input
             type="search"
             placeholder={t('shell.search')}
@@ -78,7 +81,9 @@ export function Header() {
           <DropdownMenuContent align="end" className="w-64">
             <DropdownMenuLabel>{t('shell.notifications')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <p className="px-2 py-4 text-center text-sm text-muted-foreground">{t('shell.noNotifications')}</p>
+            <p className="px-2 py-4 text-center text-sm text-muted-foreground">
+              {t('shell.noNotifications')}
+            </p>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -96,7 +101,9 @@ export function Header() {
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuLabel>
               <p className="truncate font-medium">{userName}</p>
-              <p className="truncate text-xs font-normal text-muted-foreground">{ROLE_LABELS[role]}</p>
+              <p className="truncate text-xs font-normal text-muted-foreground">
+                {t(ROLE_LABEL_KEYS[role])}
+              </p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>

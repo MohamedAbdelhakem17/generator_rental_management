@@ -1,15 +1,15 @@
 'use client';
 
+import { Zap } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Zap } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
-import { useLocale } from '@/lib/i18n/locale-provider';
-import { useSession } from '@/lib/session/session-provider';
-import { canAccessModule } from '@/lib/permissions/roles';
-import { NAV_GROUPS } from '@/lib/nav-config';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useLocale } from '@/lib/i18n/locale-provider';
+import { NAV_GROUPS } from '@/lib/nav-config';
+import { canAccessModule } from '@/lib/permissions/roles';
+import { useSession } from '@/lib/session/session-provider';
+import { cn } from '@/lib/utils';
 
 export function useVisibleNavGroups() {
   const { role } = useSession();
@@ -19,12 +19,15 @@ export function useVisibleNavGroups() {
 }
 
 export function SidebarBrand({ collapsed }: { collapsed?: boolean }) {
+  const { t } = useLocale();
   return (
     <Link href="/" className="flex h-14 shrink-0 items-center gap-2 px-4">
       <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
         <Zap className="size-4" aria-hidden />
       </span>
-      {!collapsed && <span className="truncate text-sm font-semibold text-foreground">Generator Rental</span>}
+      {!collapsed && (
+        <span className="truncate text-sm font-semibold text-foreground">{t('shell.brand')}</span>
+      )}
     </Link>
   );
 }
