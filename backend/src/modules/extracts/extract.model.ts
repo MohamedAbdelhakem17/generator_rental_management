@@ -115,6 +115,10 @@ const extractSchema = new Schema<ExtractAttrs>(
 extractSchema.index({ number: 1 }, { unique: true, name: 'extracts_number_idx' });
 extractSchema.index({ customerId: 1, status: 1 }, { name: 'extracts_customer_status_idx' });
 extractSchema.index({ projectId: 1, 'period.start': 1 }, { name: 'extracts_project_period_idx' });
+extractSchema.index(
+  { status: 1, 'period.end': 1, customerId: 1 },
+  { name: 'extracts_status_period_end_customer_idx' },
+);
 
 export type ExtractDocument = HydratedDocument<ExtractAttrs>;
 export const ExtractModel: Model<ExtractAttrs> = model<ExtractAttrs>('Extract', extractSchema);

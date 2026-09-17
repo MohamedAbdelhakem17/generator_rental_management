@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { resetTestDb, startTestDb, stopTestDb } from '../../test/authFixtures.js';
+import { resetTestDb, seedTestSettings, startTestDb, stopTestDb } from '../../test/authFixtures.js';
 import { RentalContractModel } from '../contracts/contract.model.js';
 import { CustomerModel } from '../customers/customer.model.js';
 import { ExtractModel } from '../extracts/extract.model.js';
@@ -26,6 +26,7 @@ describe('DashboardService (TASK-027)', () => {
   });
 
   it('returns a composed dashboard summary for the selected period', async () => {
+    await seedTestSettings();
     const customer = await CustomerModel.create({
       code: 'C-001',
       companyName: 'Dash Customer',
@@ -84,6 +85,7 @@ describe('DashboardService (TASK-027)', () => {
   });
 
   it('cross-checks alert counts and operating hours against their owning engines (Section 28)', async () => {
+    await seedTestSettings();
     const customer = await CustomerModel.create({
       code: 'C-002',
       companyName: 'Cross-Check Customer',

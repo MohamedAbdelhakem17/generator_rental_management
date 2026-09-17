@@ -87,6 +87,9 @@ export const SettingsService = {
   async getPaymentMethods(): Promise<string[]> {
     return (await loadSettings()).paymentMethods;
   },
+  async getOverdueGracePeriodDays(): Promise<number> {
+    return (await loadSettings()).overdueGracePeriodDays;
+  },
 
   /** Section 12 GET /api/settings: grouped by category, field-filtered for Finance Manager
    * (Financial only) rather than just hidden client-side. */

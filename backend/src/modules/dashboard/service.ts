@@ -15,6 +15,7 @@ import { MaintenanceModel } from '../maintenance/maintenance.model.js';
 import { OperationLogModel } from '../operations/operation-log.model.js';
 import { ProfitabilityEngineService } from '../profitability-engine/service.js';
 import { ReceiptModel } from '../receipts/receipt.model.js';
+import { SettingsService } from '../settings/settings.service.js';
 
 const EXPIRING_CONTRACT_WINDOW_DAYS = 30;
 const TOP_GENERATORS_LIMIT = 5;
@@ -181,20 +182,24 @@ export const DashboardService = {
       new Decimal(0),
     );
 
-    // Section 23/Business Rule 6.8: Σ positive customer balances (Ledger Engine). No due-date/aging
-    // concept exists anywhere in the Ledger Engine (TASK-023 didn't define one), so "overdue" here is
-    // the closest available proxy — any customer currently owing money — not a true aging threshold.
+    // Business Rule 6.8: Σ positive customer balances (Ledger Engine) for total receivables.
+    // "Overdue" is a real aging calculation (Extract past its period.end + the configured
+    // grace period, not yet fully collected) via getOverdueSummaryForCustomers — a customer
+    // with a positive balance but no extract past its grace period is NOT counted as overdue.
     const customerFilterForBalances = input.customerId ? { _id: input.customerId } : {};
     const activeCustomers = await CustomerModel.find({
       active: true,
       isDeleted: { $ne: true },
       ...customerFilterForBalances,
     }).select('_id');
+    const activeCustomerIds = activeCustomers.map((customer) => String(customer._id));
     // TASK-034: batched into 3 grouped queries total (one per collection) instead of fanning
     // out getBalance's 3 queries per customer with no cap on active-customer count.
-    const balancesByCustomer = await CustomerLedgerService.getBalancesForCustomers(
-      activeCustomers.map((customer) => String(customer._id)),
-    );
+    const overdueGraceDays = await SettingsService.getOverdueGracePeriodDays();
+    const [balancesByCustomer, overdueByCustomer] = await Promise.all([
+      CustomerLedgerService.getBalancesForCustomers(activeCustomerIds),
+      CustomerLedgerService.getOverdueSummaryForCustomers(activeCustomerIds, overdueGraceDays),
+    ]);
     const positiveBalances = [...balancesByCustomer.values()]
       .map((balance) => toDecimal(balance))
       .filter((b) => b.gt(0));
@@ -202,7 +207,7 @@ export const DashboardService = {
       (sum, balance) => sum.plus(balance),
       new Decimal(0),
     );
-    const overdueCustomersCount = positiveBalances.length;
+    const overdueCustomersCount = overdueByCustomer.size;
 
     const maintenanceCost = maintenanceRecords.reduce(
       (sum, record) => sum.plus(toDecimal(record.totalCost)),

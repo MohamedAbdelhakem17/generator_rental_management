@@ -66,7 +66,67 @@ async function sumByCustomer(
   return result;
 }
 
+export interface CustomerOverdueSummary {
+  overdueBalance: string;
+  overdueDays: number;
+  overdueExtractCount: number;
+}
+
 export const CustomerLedgerService = {
+  /**
+   * Real aging, not "any positive balance": an Extract counts as overdue once it is
+   * Approved/Partially Collected (not yet fully collected, not Draft/Under Review/Cancelled)
+   * and its `period.end` is more than `overdueGracePeriodDays` (Settings, TASK-030) in the
+   * past. `overdueDays` is measured from the OLDEST overdue extract's due date (period.end +
+   * grace period) to `asOf`, per customer. Single aggregation across all given customers —
+   * no per-customer fan-out (same batching precedent as `getBalancesForCustomers`, TASK-034).
+   */
+  async getOverdueSummaryForCustomers(
+    customerIds: string[],
+    graceDays: number,
+    asOf: Date = new Date(),
+  ): Promise<Map<string, CustomerOverdueSummary>> {
+    if (customerIds.length === 0) return new Map();
+
+    const dueCutoff = new Date(asOf.getTime() - graceDays * 24 * 60 * 60 * 1000);
+
+    const rows: {
+      _id: unknown;
+      overdueBalance: unknown;
+      overdueExtractCount: number;
+      oldestPeriodEnd: Date;
+    }[] = await ExtractModel.aggregate([
+      {
+        $match: {
+          customerId: { $in: customerIds.map((id) => new Types.ObjectId(id)) },
+          status: { $in: ['Approved', 'Partially Collected'] },
+          'period.end': { $lte: dueCutoff },
+        },
+      },
+      {
+        $group: {
+          _id: '$customerId',
+          overdueBalance: { $sum: '$finalTotal' },
+          overdueExtractCount: { $sum: 1 },
+          oldestPeriodEnd: { $min: '$period.end' },
+        },
+      },
+    ]);
+
+    const result = new Map<string, CustomerOverdueSummary>();
+    const msPerDay = 24 * 60 * 60 * 1000;
+    for (const row of rows) {
+      const dueDate = new Date(new Date(row.oldestPeriodEnd).getTime() + graceDays * msPerDay);
+      const overdueDays = Math.max(0, Math.floor((asOf.getTime() - dueDate.getTime()) / msPerDay));
+      result.set(String(row._id), {
+        overdueBalance: toMoneyString(toDecimal(row.overdueBalance as never)),
+        overdueDays,
+        overdueExtractCount: row.overdueExtractCount,
+      });
+    }
+    return result;
+  },
+
   async getBalancesForCustomers(customerIds: string[]): Promise<Map<string, string>> {
     if (customerIds.length === 0) return new Map();
 

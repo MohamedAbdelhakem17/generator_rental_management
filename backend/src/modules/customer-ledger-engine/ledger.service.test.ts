@@ -125,4 +125,124 @@ describe('CustomerLedgerService (TASK-023)', () => {
     const result = await CustomerLedgerService.getBalancesForCustomers([]);
     expect(result.size).toBe(0);
   });
+
+  describe('getOverdueSummaryForCustomers (TASK-026)', () => {
+    const GRACE_DAYS = 30;
+    const asOf = new Date('2026-06-01T00:00:00.000Z');
+
+    async function createExtract(overrides: Record<string, unknown>) {
+      return ExtractModel.create({
+        number: `EXT-${Math.random().toString(36).slice(2, 10)}`,
+        projectId: '000000000000000000000001',
+        contractIds: ['000000000000000000000002'],
+        lineItems: [{ type: 'rent', description: 'Rent', amount: '10000.00' }],
+        discounts: '0',
+        vatRateSnapshot: 0.14,
+        totalBeforeVat: '10000.00',
+        vat: '1400.00',
+        finalTotal: '10000.00',
+        collectedAmount: '0',
+        customerNameSnapshot: 'Acme Construction',
+        ...overrides,
+      });
+    }
+
+    it('excludes an extract still inside the grace period', async () => {
+      const customer = await createCustomer();
+      // period.end 20 days before asOf, grace period 30 days -> not yet due
+      await createExtract({
+        customerId: customer._id,
+        period: { start: new Date('2026-05-01'), end: new Date('2026-05-12') },
+        status: 'Approved',
+      });
+
+      const result = await CustomerLedgerService.getOverdueSummaryForCustomers(
+        [String(customer._id)],
+        GRACE_DAYS,
+        asOf,
+      );
+      expect(result.has(String(customer._id))).toBe(false);
+    });
+
+    it('flags an extract past the grace period as overdue with the correct day count', async () => {
+      const customer = await createCustomer();
+      // period.end 40 days before asOf; due date = period.end + 30 days = 10 days before asOf
+      await createExtract({
+        customerId: customer._id,
+        period: { start: new Date('2026-04-01'), end: new Date('2026-04-22') },
+        status: 'Approved',
+      });
+
+      const result = await CustomerLedgerService.getOverdueSummaryForCustomers(
+        [String(customer._id)],
+        GRACE_DAYS,
+        asOf,
+      );
+      const summary = result.get(String(customer._id));
+      expect(summary).toBeDefined();
+      expect(summary?.overdueExtractCount).toBe(1);
+      expect(summary?.overdueBalance).toBe('10000.00');
+      expect(summary?.overdueDays).toBe(10);
+    });
+
+    it('never counts a fully Collected extract as overdue', async () => {
+      const customer = await createCustomer();
+      await createExtract({
+        customerId: customer._id,
+        period: { start: new Date('2026-01-01'), end: new Date('2026-01-10') },
+        status: 'Collected',
+        collectedAmount: '10000.00',
+      });
+
+      const result = await CustomerLedgerService.getOverdueSummaryForCustomers(
+        [String(customer._id)],
+        GRACE_DAYS,
+        asOf,
+      );
+      expect(result.has(String(customer._id))).toBe(false);
+    });
+
+    it('excludes Draft/Under Review/Cancelled extracts even if their period.end is old', async () => {
+      const customer = await createCustomer();
+      await createExtract({
+        customerId: customer._id,
+        period: { start: new Date('2026-01-01'), end: new Date('2026-01-10') },
+        status: 'Draft',
+        finalTotal: null,
+        totalBeforeVat: null,
+        vat: null,
+      });
+
+      const result = await CustomerLedgerService.getOverdueSummaryForCustomers(
+        [String(customer._id)],
+        GRACE_DAYS,
+        asOf,
+      );
+      expect(result.has(String(customer._id))).toBe(false);
+    });
+
+    it('is exactly on the grace-period boundary at 0 overdue days, not excluded or negative', async () => {
+      const customer = await createCustomer();
+      // due date = period.end + 30 days = exactly asOf
+      await createExtract({
+        customerId: customer._id,
+        period: { start: new Date('2026-04-22'), end: new Date('2026-05-02') },
+        status: 'Partially Collected',
+      });
+
+      const result = await CustomerLedgerService.getOverdueSummaryForCustomers(
+        [String(customer._id)],
+        GRACE_DAYS,
+        asOf,
+      );
+      const summary = result.get(String(customer._id));
+      expect(summary).toBeDefined();
+      expect(summary?.overdueDays).toBe(0);
+    });
+
+    it('returns an empty map for an empty customer list', async () => {
+      const result = await CustomerLedgerService.getOverdueSummaryForCustomers([], GRACE_DAYS, asOf);
+      expect(result.size).toBe(0);
+    });
+  });
 });
