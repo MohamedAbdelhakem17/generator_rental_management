@@ -23,7 +23,6 @@ import { Label } from '@/components/ui/label';
 import type { GeneratorRow } from './types';
 
 type FormValues = {
-  code: string;
   kva: number;
   brand: string;
   model: string;
@@ -34,7 +33,6 @@ type FormValues = {
 };
 
 const DEFAULT_VALUES: FormValues = {
-  code: '',
   kva: 0,
   brand: '',
   model: '',
@@ -59,12 +57,6 @@ export function GeneratorFormDialog({ open, onOpenChange, generator }: Generator
   const formSchema = useMemo(
     () =>
       z.object({
-        code: z
-          .string()
-          .trim()
-          .min(2, t('common.minChars', { count: 2 }))
-          .max(20)
-          .regex(/^[a-zA-Z0-9-]+$/, t('generators.formCodeInvalid')),
         kva: z.coerce.number().positive(t('common.enterPositiveNumber')),
         brand: z.string().trim().min(1, t('generators.formBrandRequired')).max(50),
         model: z.string().trim().min(1, t('generators.formModelRequired')).max(50),
@@ -86,7 +78,6 @@ export function GeneratorFormDialog({ open, onOpenChange, generator }: Generator
     form.reset(
       generator
         ? {
-            code: generator.code,
             kva: generator.specifications.kva,
             brand: generator.specifications.brand,
             model: generator.specifications.model,
@@ -110,16 +101,15 @@ export function GeneratorFormDialog({ open, onOpenChange, generator }: Generator
           normalFuelConsumption: values.normalFuelConsumption,
           maintenanceCycleHours: values.maintenanceCycleHours,
         });
-        toast.success(t('generators.updatedToast', { code: values.code }));
+        toast.success(t('generators.updatedToast', { code: generator.code }));
       } else {
-        await apiClient.post('/api/generators', {
-          code: values.code,
+        const created = await apiClient.post<{ code: string }>('/api/generators', {
           specifications,
           location: values.location,
           normalFuelConsumption: values.normalFuelConsumption,
           maintenanceCycleHours: values.maintenanceCycleHours,
         });
-        toast.success(t('generators.registeredToast', { code: values.code }));
+        toast.success(t('generators.registeredToast', { code: created.code }));
       }
       await queryClient.invalidateQueries({ queryKey: ['generators'] });
       onOpenChange(false);
@@ -146,19 +136,6 @@ export function GeneratorFormDialog({ open, onOpenChange, generator }: Generator
         <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="gen-code">{t('generators.fieldCode')}</Label>
-              <Input id="gen-code" disabled={isEdit} {...form.register('code')} />
-              {form.formState.errors.code ? <p className="text-xs text-destructive">{form.formState.errors.code.message}</p> : null}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="gen-kva">{t('generators.fieldKva')}</Label>
-              <Input id="gen-kva" type="number" step="any" {...form.register('kva')} />
-              {form.formState.errors.kva ? <p className="text-xs text-destructive">{form.formState.errors.kva.message}</p> : null}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
               <Label htmlFor="gen-brand">{t('generators.fieldBrand')}</Label>
               <Input id="gen-brand" {...form.register('brand')} />
               {form.formState.errors.brand ? <p className="text-xs text-destructive">{form.formState.errors.brand.message}</p> : null}
@@ -167,6 +144,14 @@ export function GeneratorFormDialog({ open, onOpenChange, generator }: Generator
               <Label htmlFor="gen-model">{t('generators.fieldModel')}</Label>
               <Input id="gen-model" {...form.register('model')} />
               {form.formState.errors.model ? <p className="text-xs text-destructive">{form.formState.errors.model.message}</p> : null}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="gen-kva">{t('generators.fieldKva')}</Label>
+              <Input id="gen-kva" type="number" step="any" {...form.register('kva')} />
+              {form.formState.errors.kva ? <p className="text-xs text-destructive">{form.formState.errors.kva.message}</p> : null}
             </div>
           </div>
 

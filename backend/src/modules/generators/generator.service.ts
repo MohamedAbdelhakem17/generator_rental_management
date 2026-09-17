@@ -3,6 +3,7 @@ import { ConflictError, NotFoundError } from '../../utils/AppError.js';
 import { paginateQuery, type PaginatedResult } from '../../services/pagination.js';
 import { StatusEngineService } from '../status-engine/status-engine.service.js';
 import { findDeactivationBlockReason } from './deactivation-guards.js';
+import { nextGeneratorCode } from './generator-code.js';
 import { GeneratorModel, type GeneratorAttrs, type GeneratorDocument } from './generator.model.js';
 import type {
   CreateGeneratorInput,
@@ -70,10 +71,11 @@ export const GeneratorService = {
     // `StatusEngineService.recalculate` (which needs an existing document to re-read).
     const { status, commercialStatus } = StatusEngineService.computeStatus(null, false, false);
 
+    const code = await nextGeneratorCode();
     let generator: GeneratorDocument;
     try {
       generator = await GeneratorModel.create({
-        code: input.code,
+        code,
         specifications: input.specifications,
         currentMeter: input.currentMeter ?? 0,
         location: input.location ?? '',

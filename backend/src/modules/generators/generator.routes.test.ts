@@ -14,7 +14,6 @@ async function loginAs(email: string, password = 'password123') {
 }
 
 const validPayload = {
-  code: 'GEN-001',
   specifications: { kva: 500, brand: 'Cummins', model: 'C500D5', serialNumber: 'SN-0001' },
   normalFuelConsumption: 25,
 };
@@ -71,30 +70,50 @@ describe('generator routes (TASK-008)', () => {
 
     const list = await admin.get('/api/generators');
     expect(list.body.data).toHaveLength(1);
-    expect(list.body.data[0].code).toBe('GEN-001');
+    expect(list.body.data[0].code).toBe('GEN-0001');
   });
 
-  it('FR-001: rejects a duplicate code with 409', async () => {
+  it('AC: system-generated codes increment sequentially across creates', async () => {
     const roles = await seedTestRoles();
     await createTestUser({ email: 'admin@test.com', password: 'password123', roleId: roles['System Admin']._id });
     const admin = await loginAs('admin@test.com');
-    await admin.post('/api/generators').send(validPayload);
-
-    const dup = await admin.post('/api/generators').send({
-      ...validPayload,
+    const first = await admin.post('/api/generators').send(validPayload);
+    const second = await admin.post('/api/generators').send({
       specifications: { ...validPayload.specifications, serialNumber: 'SN-DIFFERENT' },
+      normalFuelConsumption: validPayload.normalFuelConsumption,
     });
 
-    expect(dup.status).toBe(409);
+    expect(first.body.data.code).toBe('GEN-0001');
+    expect(second.body.data.code).toBe('GEN-0002');
   });
 
-  it('rejects a duplicate serial number with 409 even when the code differs', async () => {
+  it('AC: concurrent creates never collide on a generated code (retry-on-conflict)', async () => {
+    const roles = await seedTestRoles();
+    await createTestUser({ email: 'admin@test.com', password: 'password123', roleId: roles['System Admin']._id });
+    const admin = await loginAs('admin@test.com');
+
+    const concurrentCount = 8;
+    const responses = await Promise.all(
+      Array.from({ length: concurrentCount }, (_, index) =>
+        admin.post('/api/generators').send({
+          specifications: { ...validPayload.specifications, serialNumber: `SN-CONCURRENT-${index}` },
+          normalFuelConsumption: validPayload.normalFuelConsumption,
+        }),
+      ),
+    );
+
+    responses.forEach((response) => expect(response.status).toBe(201));
+    const codes = responses.map((response) => response.body.data.code as string);
+    expect(new Set(codes).size).toBe(concurrentCount);
+  });
+
+  it('rejects a duplicate serial number with 409', async () => {
     const roles = await seedTestRoles();
     await createTestUser({ email: 'admin@test.com', password: 'password123', roleId: roles['System Admin']._id });
     const admin = await loginAs('admin@test.com');
     await admin.post('/api/generators').send(validPayload);
 
-    const dup = await admin.post('/api/generators').send({ ...validPayload, code: 'GEN-002' });
+    const dup = await admin.post('/api/generators').send(validPayload);
 
     expect(dup.status).toBe(409);
   });
@@ -105,7 +124,6 @@ describe('generator routes (TASK-008)', () => {
     const admin = await loginAs('admin@test.com');
 
     const response = await admin.post('/api/generators').send({
-      code: 'G',
       specifications: { kva: -1, brand: '', model: '', serialNumber: '' },
       normalFuelConsumption: -5,
     });
@@ -219,7 +237,6 @@ describe('generator routes (TASK-008)', () => {
     const admin = await loginAs('admin@test.com');
     await admin.post('/api/generators').send(validPayload);
     await admin.post('/api/generators').send({
-      code: 'GEN-002',
       specifications: { kva: 250, brand: 'Perkins', model: 'P250', serialNumber: 'SN-0002' },
       normalFuelConsumption: 15,
       location: 'Warehouse A',
@@ -227,7 +244,7 @@ describe('generator routes (TASK-008)', () => {
 
     const bySearch = await admin.get('/api/generators').query({ search: 'Perkins' });
     expect(bySearch.body.data).toHaveLength(1);
-    expect(bySearch.body.data[0].code).toBe('GEN-002');
+    expect(bySearch.body.data[0].code).toBe('GEN-0002');
 
     const byLocation = await admin.get('/api/generators').query({ location: 'Warehouse' });
     expect(byLocation.body.data).toHaveLength(1);

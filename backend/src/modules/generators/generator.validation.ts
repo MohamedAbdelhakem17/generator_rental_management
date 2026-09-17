@@ -1,12 +1,5 @@
 import { z } from 'zod';
 
-const codeSchema = z
-  .string()
-  .trim()
-  .min(2, 'Code must be at least 2 characters')
-  .max(20, 'Code must be at most 20 characters')
-  .regex(/^[a-zA-Z0-9-]+$/, 'Code may only contain letters, numbers, and dashes');
-
 const specificationsSchema = z.object({
   kva: z.coerce.number().positive('kVA must be a positive number'),
   brand: z.string().trim().min(1, 'Brand is required').max(50),
@@ -15,7 +8,6 @@ const specificationsSchema = z.object({
 });
 
 export const createGeneratorSchema = z.object({
-  code: codeSchema,
   specifications: specificationsSchema,
   currentMeter: z.coerce.number().min(0).optional(),
   location: z.string().trim().max(200).optional(),
