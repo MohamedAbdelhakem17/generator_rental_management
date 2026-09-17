@@ -7,6 +7,7 @@ import express, { type Express, type RequestHandler } from 'express';
 const require = createRequire(import.meta.url);
 const helmet: (options?: Record<string, unknown>) => RequestHandler = require('helmet');
 
+import { connectDatabase } from './config/database.js';
 import { env } from './config/env.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
@@ -86,3 +87,15 @@ export function createApp(): Express {
 
   return app;
 }
+
+/**
+ * Vercel's Node.js runtime imports this file directly as a Serverless Function and requires
+ * a default export that is a callable app/handler — it never runs server.ts's app.listen()
+ * flow. mongoose.connect is safe to call again here even when server.ts already connected
+ * (e.g. local dev): it reuses the existing connection/connection-in-progress.
+ */
+void connectDatabase();
+
+const app = createApp();
+
+export default app;

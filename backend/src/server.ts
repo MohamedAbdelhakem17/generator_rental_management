@@ -1,4 +1,4 @@
-import { createApp } from './app.js';
+import app from './app.js';
 import { connectDatabase, disconnectDatabase } from './config/database.js';
 import { env } from './config/env.js';
 import { runContractExpiryAlertJob } from './modules/contracts/contract-expiry-alert.job.js';
@@ -14,8 +14,6 @@ const OVERDUE_CUSTOMER_ALERT_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 async function main(): Promise<void> {
   await connectDatabase();
-
-  const app = createApp();
 
   const server = app.listen(env.PORT, () => {
     console.log(`[backend] listening on port ${env.PORT} (${env.NODE_ENV})`);
