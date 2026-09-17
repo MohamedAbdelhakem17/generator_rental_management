@@ -77,4 +77,24 @@ describe('reports routes (TASK-028, permission layer closed for TASK-033)', () =
     const response = await admin.get('/api/reports/customer-statement');
     expect(response.status).toBe(422);
   });
+
+  /** Regression (frontend bug): the table-view reports must return `data` as a bare array
+   * with pagination `meta` at the envelope's top level — matching every other paginated
+   * list endpoint's contract. Nesting `{items, meta}` inside `data` (the original shape)
+   * broke `apiClient.getPaginated`'s unwrapping, causing `ReportTableView`'s `data.map is
+   * not a function` crash on every table-report page. */
+  it.each(['revenue', 'operations', 'fuel-consumption', 'maintenance', 'expenses', 'uncollected-extracts'])(
+    'table-view report %s returns data as a bare array with top-level pagination meta',
+    async (reportId) => {
+      const roles = await seedTestRoles();
+      await createTestUser({ email: 'admin2@test.com', password: 'password123', roleId: roles['System Admin']._id });
+      const admin = await loginAs('admin2@test.com');
+
+      const response = await admin.get(`/api/reports/${reportId}`);
+      expect(response.status).toBe(200);
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.meta).toHaveProperty('page');
+      expect(response.body.meta).toHaveProperty('total');
+    },
+  );
 });
