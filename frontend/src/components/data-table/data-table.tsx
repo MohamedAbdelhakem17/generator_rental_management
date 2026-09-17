@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   type ColumnDef,
   type OnChangeFn,
@@ -70,6 +71,14 @@ export function DataTable<T>({
   showColumnVisibility = true,
 }: DataTableProps<T>) {
   const { t } = useLocale();
+  // TanStack Table's row model unconditionally calls `row.getIsSelected()` for every
+  // row (see the render loop below), which indexes into `state.rowSelection` by row id
+  // regardless of whether this consumer opted into row selection. `state.rowSelection`
+  // must therefore always be a real object, never `undefined` — fall back to an internal,
+  // uncontrolled selection state when the caller doesn't provide a controlled one.
+  const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
+  const effectiveRowSelection = rowSelection ?? internalRowSelection;
+  const effectiveOnRowSelectionChange = onRowSelectionChange ?? setInternalRowSelection;
   const table = useReactTable({
     data,
     columns,
@@ -77,8 +86,8 @@ export function DataTable<T>({
     getRowId,
     manualPagination: true,
     manualSorting: true,
-    state: { rowSelection, columnVisibility },
-    onRowSelectionChange,
+    state: { rowSelection: effectiveRowSelection, columnVisibility },
+    onRowSelectionChange: effectiveOnRowSelectionChange,
     onColumnVisibilityChange,
     enableRowSelection: Boolean(onRowSelectionChange),
   });
