@@ -14,6 +14,7 @@ import type { TranslationKey } from '@/lib/i18n/dictionary';
 import { cn } from '@/lib/utils';
 import { STATUS_TONE_CLASSES, type StatusTone } from '@/lib/status-tone';
 import { PageHeader } from '@/components/layout/page-header';
+import { AttachmentsPanel } from '@/components/shared/attachments-panel';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
@@ -164,6 +165,7 @@ export default function ContractDetailPage() {
           <TabsTrigger value="overview">{t('contracts.tabOverview')}</TabsTrigger>
           <TabsTrigger value="items">{t('contracts.tabItems')}</TabsTrigger>
           <TabsTrigger value="extracts">{t('contracts.tabExtracts')}</TabsTrigger>
+          <TabsTrigger value="attachments">{t('contracts.tabAttachments')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -257,6 +259,10 @@ export default function ContractDetailPage() {
               </Link>
             }
           />
+        </TabsContent>
+
+        <TabsContent value="attachments">
+          <AttachmentsPanel entityType="Contract" entityId={contract.id} canWrite={canWrite} />
         </TabsContent>
       </Tabs>
 

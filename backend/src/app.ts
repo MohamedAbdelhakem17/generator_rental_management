@@ -9,6 +9,7 @@ import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { auditRouter } from './modules/audit/audit.routes.js';
+import { attachmentRouter } from './modules/attachments/attachment.routes.js';
 import { contractRouter } from './modules/contracts/contract.routes.js';
 import { creditNoteRouter } from './modules/credit-notes/credit-note.routes.js';
 import { ledgerRouter } from './modules/customer-ledger-engine/routes.js';
@@ -74,6 +75,7 @@ export function createApp(): Express {
   app.use('/api', exportRouter);
   app.use('/api', settingsRouter);
   app.use('/api', auditRouter);
+  app.use('/api', attachmentRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

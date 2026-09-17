@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { PageHeader } from '@/components/layout/page-header';
+import { AttachmentsPanel } from '@/components/shared/attachments-panel';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
@@ -280,6 +281,14 @@ export default function ExtractDetailPage() {
             ))}
           </ul>
         )}
+      </div>
+
+      <div className="rounded-lg border border-border bg-surface p-4">
+        <h2 className="text-sm font-medium text-foreground">{t('attachments.title')}</h2>
+        <div className="mt-3">
+          {/* FR-002: attachments are still allowed on a locked (Approved+) extract. */}
+          <AttachmentsPanel entityType="Extract" entityId={extract.id} canWrite={canWrite} />
+        </div>
       </div>
 
       {canWrite && !isLocked ? (

@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
+import { AttachmentsPanel } from '@/components/shared/attachments-panel';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -155,7 +156,7 @@ export function MaintenanceFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
             {isEdit
@@ -306,6 +307,13 @@ export function MaintenanceFormDialog({
             {t('maintenance.totalCostLabel')}:{' '}
             <span className="tabular-data font-medium text-foreground">{totalCost}</span>
           </p>
+
+          {isEdit && record ? (
+            <div className="flex flex-col gap-1.5">
+              <Label>{t('attachments.title')}</Label>
+              <AttachmentsPanel entityType="Maintenance" entityId={record.id} canWrite />
+            </div>
+          ) : null}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>

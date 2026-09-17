@@ -21,6 +21,9 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
+# TASK-032: local-disk attachment storage (dev/test only — never committed)
+backend/uploads/
+
 .vscode/*
 !.vscode/extensions.json
 .idea/

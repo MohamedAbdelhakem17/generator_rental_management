@@ -180,6 +180,24 @@ async function postForFileOrJob(
   return { mode: 'file', blob, filename };
 }
 
+/** TASK-032: multipart upload — `fetch` sets the correct `multipart/form-data` boundary itself
+ * as long as no explicit `Content-Type` header is set, so this never JSON-stringifies the body
+ * the way `requestEnvelope` does for every other mutation. */
+async function postFormData<T>(path: string, formData: FormData): Promise<T> {
+  const response = await fetch(buildUrl(path), {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  });
+
+  const envelope = (await response.json()) as SuccessEnvelope<T> | ErrorEnvelope;
+  if (!envelope.success) {
+    if (response.status === 401) unauthorizedHandler();
+    throw new ApiError(envelope.message, response.status, envelope.errors);
+  }
+  return envelope.data;
+}
+
 export const apiClient = {
   get<T>(path: string, params?: Record<string, QueryParamValue>, signal?: AbortSignal) {
     return requestData<T>(path, { method: 'GET', params, signal });
@@ -201,6 +219,9 @@ export const apiClient = {
   },
   postForFileOrJob(path: string, body: unknown) {
     return postForFileOrJob(path, body);
+  },
+  uploadFormData<T>(path: string, formData: FormData) {
+    return postFormData<T>(path, formData);
   },
   async downloadFile(path: string): Promise<FileDownloadResult> {
     const response = await fetch(buildUrl(path), { credentials: 'include' });
