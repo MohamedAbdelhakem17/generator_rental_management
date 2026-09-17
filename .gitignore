@@ -18,6 +18,10 @@ blob-report/
 npm-debug.log*
 pnpm-debug.log*
 
+# pnpm-only workspace — never commit a stray npm lockfile
+backend/package-lock.json
+frontend/package-lock.json
+
 .DS_Store
 Thumbs.db
 
