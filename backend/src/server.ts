@@ -1,13 +1,16 @@
 import { createApp } from './app.js';
 import { connectDatabase, disconnectDatabase } from './config/database.js';
 import { env } from './config/env.js';
+import { runContractExpiryAlertJob } from './modules/contracts/contract-expiry-alert.job.js';
 import { runContractExpiryJob } from './modules/contracts/expire-contracts.job.js';
+import { runOverdueCustomerAlertJob } from './modules/customer-ledger-engine/overdue-customer-alert.job.js';
 import { runMaintenanceScheduleSweep } from './modules/maintenance-schedule-engine/job.js';
 import { runStatusReconciliation } from './modules/status-engine/status-engine.job.js';
 
 const RECONCILIATION_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const CONTRACT_EXPIRY_INTERVAL_MS = 60 * 60 * 1000;
 const MAINTENANCE_SCHEDULE_SWEEP_INTERVAL_MS = 60 * 60 * 1000;
+const OVERDUE_CUSTOMER_ALERT_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 async function main(): Promise<void> {
   await connectDatabase();
@@ -37,6 +40,14 @@ async function main(): Promise<void> {
   }, CONTRACT_EXPIRY_INTERVAL_MS);
   contractExpiryTimer.unref();
 
+  /** TASK-026: same cadence as the expiry job — forward-looking "expiring soon" alert. */
+  const contractExpiryAlertTimer = setInterval(() => {
+    runContractExpiryAlertJob().catch((error: unknown) => {
+      console.error('[contracts] expiry alert job run failed', error);
+    });
+  }, CONTRACT_EXPIRY_INTERVAL_MS);
+  contractExpiryAlertTimer.unref();
+
   /** TASK-019 FR-002: hourly fallback sweep — the on-write trigger handles the common case. */
   const maintenanceScheduleTimer = setInterval(() => {
     runMaintenanceScheduleSweep().catch((error: unknown) => {
@@ -45,11 +56,21 @@ async function main(): Promise<void> {
   }, MAINTENANCE_SCHEDULE_SWEEP_INTERVAL_MS);
   maintenanceScheduleTimer.unref();
 
+  /** TASK-026: daily since overdue aging is date-based, not real-time-sensitive. */
+  const overdueCustomerAlertTimer = setInterval(() => {
+    runOverdueCustomerAlertJob().catch((error: unknown) => {
+      console.error('[customer-ledger-engine] overdue customer alert job run failed', error);
+    });
+  }, OVERDUE_CUSTOMER_ALERT_INTERVAL_MS);
+  overdueCustomerAlertTimer.unref();
+
   function shutdown(signal: NodeJS.Signals): void {
     console.log(`[backend] received ${signal}, shutting down gracefully`);
     clearInterval(reconciliationTimer);
     clearInterval(contractExpiryTimer);
+    clearInterval(contractExpiryAlertTimer);
     clearInterval(maintenanceScheduleTimer);
+    clearInterval(overdueCustomerAlertTimer);
     server.close(() => {
       void disconnectDatabase().finally(() => process.exit(0));
     });
