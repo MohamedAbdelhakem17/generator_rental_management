@@ -111,6 +111,7 @@ export const ROLE_PERMISSIONS: Record<RoleName, PermissionKey[]> = {
     'maintenance-alerts:read',
     'maintenance-alerts:acknowledge',
     'extracts:read',
+    'receipts:read',
     'expenses:read',
     'profitability:read',
     'reports:read',
