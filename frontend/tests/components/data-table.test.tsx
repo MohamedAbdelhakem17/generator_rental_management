@@ -12,10 +12,9 @@ interface Row {
   name: string;
 }
 
-const data: Row[] = [
-  { id: '6aabb0bff0c2d70e0d0d13e8', name: 'Alpha' },
-  { id: '6aabb0bff0c2d70e0d0d13e9', name: 'Beta' },
-];
+const rowAlpha: Row = { id: '6aabb0bff0c2d70e0d0d13e8', name: 'Alpha' };
+const rowBeta: Row = { id: '6aabb0bff0c2d70e0d0d13e9', name: 'Beta' };
+const data: Row[] = [rowAlpha, rowBeta];
 
 const columns: ColumnDef<Row, unknown>[] = [
   {
@@ -50,7 +49,7 @@ describe('DataTable row selection', () => {
     ).not.toThrow();
 
     expect(screen.getByText('Alpha')).toBeInTheDocument();
-    expect(screen.getByLabelText(`select-${data[0].id}`)).not.toBeChecked();
+    expect(screen.getByLabelText(`select-${rowAlpha.id}`)).not.toBeChecked();
   });
 
   it('renders selection checkboxes without crashing when selection is not controlled (no onRowSelectionChange)', async () => {
@@ -58,7 +57,7 @@ describe('DataTable row selection', () => {
     // by design — this only asserts getIsSelected()/the click handler never throw.
     renderWithProviders(<DataTable columns={columns} data={data} getRowId={(row) => row.id} />);
 
-    const checkbox = screen.getByLabelText(`select-${data[0].id}`);
+    const checkbox = screen.getByLabelText(`select-${rowAlpha.id}`);
     expect(checkbox).not.toBeChecked();
     await expect(userEvent.click(checkbox)).resolves.not.toThrow();
     expect(checkbox).not.toBeChecked();
@@ -80,11 +79,11 @@ describe('DataTable row selection', () => {
 
     renderWithProviders(<Wrapper />);
 
-    const checkbox = screen.getByLabelText(`select-${data[0].id}`);
+    const checkbox = screen.getByLabelText(`select-${rowAlpha.id}`);
     expect(checkbox).not.toBeChecked();
     await userEvent.click(checkbox);
     expect(checkbox).toBeChecked();
-    expect(screen.getByLabelText(`select-${data[1].id}`)).not.toBeChecked();
+    expect(screen.getByLabelText(`select-${rowBeta.id}`)).not.toBeChecked();
   });
 
   it('never throws reading rowSelection by row id even with no selection columns at all', () => {
