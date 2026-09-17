@@ -1,7 +1,12 @@
+import { createRequire } from 'node:module';
+
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { type Express } from 'express';
-import helmet from 'helmet';
+import type helmetType from 'helmet';
+
+const require = createRequire(import.meta.url);
+const helmet: typeof helmetType = require('helmet');
 
 import { env } from './config/env.js';
 import { errorHandler } from './middleware/errorHandler.js';
