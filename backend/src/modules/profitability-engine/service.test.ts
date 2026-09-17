@@ -157,4 +157,142 @@ describe('ProfitabilityEngineService.calculate (TASK-025)', () => {
     expect(result.cost.parts).toBe('0.00');
     expect(result.netProfit).toBe('225000.00');
   });
+
+  it('calculateBatch produces results identical to per-generator calculate() for multiple generators', async () => {
+    const customer = await createCustomer();
+    const project = await createProject(String(customer._id));
+    const generatorA = await createGenerator();
+    const generatorB = await createGenerator();
+    const generatorC = await createGenerator(); // no contracts/activity at all
+
+    const contractA = await RentalContractModel.create({
+      number: 'CT-2026-0002',
+      customerId: customer._id,
+      projectId: project._id,
+      startDate: new Date('2026-01-01'),
+      endDate: new Date('2026-12-31'),
+      rentalMethod: 'monthly',
+      status: 'Active',
+      insurance: { provider: 'AIG', policyNumber: 'POL-2', amount: '5000.00' },
+    });
+    const contractB = await RentalContractModel.create({
+      number: 'CT-2026-0003',
+      customerId: customer._id,
+      projectId: project._id,
+      startDate: new Date('2026-01-01'),
+      endDate: new Date('2026-12-31'),
+      rentalMethod: 'monthly',
+      status: 'Active',
+      insurance: { provider: 'AIG', policyNumber: 'POL-3', amount: '5000.00' },
+    });
+
+    await ContractItemModel.create({
+      contractId: contractA._id,
+      generatorId: generatorA._id,
+      billingMethod: 'monthly',
+      unitPrice: '1000.00',
+      priceSnapshot: '1000.00',
+      isSharedAssignmentException: false,
+      sharedAssignmentJustification: '',
+    });
+    await ContractItemModel.create({
+      contractId: contractB._id,
+      generatorId: generatorB._id,
+      billingMethod: 'monthly',
+      unitPrice: '2000.00',
+      priceSnapshot: '2000.00',
+      isSharedAssignmentException: false,
+      sharedAssignmentJustification: '',
+    });
+
+    await ExtractModel.create({
+      number: 'EX-2026-0002',
+      customerId: customer._id,
+      projectId: project._id,
+      contractIds: [contractA._id],
+      period: { start: new Date('2026-01-01'), end: new Date('2026-01-31') },
+      lineItems: [{ type: 'rent', description: 'Rent', amount: '100000.00' }],
+      discounts: '0',
+      vatRateSnapshot: 0.14,
+      vat: '14000.00',
+      totalBeforeVat: '100000.00',
+      finalTotal: '100000.00',
+      status: 'Approved',
+      collectedAmount: '0',
+      customerNameSnapshot: 'Profitability Customer',
+    });
+    await ExtractModel.create({
+      number: 'EX-2026-0003',
+      customerId: customer._id,
+      projectId: project._id,
+      contractIds: [contractB._id],
+      period: { start: new Date('2026-01-01'), end: new Date('2026-01-31') },
+      lineItems: [{ type: 'rent', description: 'Rent', amount: '80000.00' }],
+      discounts: '0',
+      vatRateSnapshot: 0.14,
+      vat: '11200.00',
+      totalBeforeVat: '80000.00',
+      finalTotal: '80000.00',
+      status: 'Approved',
+      collectedAmount: '0',
+      customerNameSnapshot: 'Profitability Customer',
+    });
+
+    await FuelLogModel.create({
+      date: new Date('2026-02-01'),
+      generatorId: generatorA._id,
+      projectId: project._id,
+      liters: 50,
+      pricePerLiter: '40.00',
+      totalCost: '2000.00',
+      operatingHoursRef: null,
+      consumptionRate: null,
+    });
+    await ExpenseModel.create({
+      category: 'Labor',
+      date: new Date('2026-03-01'),
+      amount: '3000.00',
+      generatorId: generatorB._id,
+      projectId: project._id,
+      description: 'Labor cost',
+      status: 'Confirmed',
+    });
+
+    const from = new Date('2026-01-01');
+    const to = new Date('2026-12-31');
+    const generatorIds = [String(generatorA._id), String(generatorB._id), String(generatorC._id)];
+
+    const perGeneratorResults = new Map(
+      await Promise.all(
+        generatorIds.map(
+          async (generatorId) =>
+            [generatorId, await ProfitabilityEngineService.calculate({ generatorId, from, to })] as const,
+        ),
+      ),
+    );
+
+    const batchResults = await ProfitabilityEngineService.calculateBatch({ generatorIds, from, to });
+
+    expect(batchResults.size).toBe(3);
+    for (const generatorId of generatorIds) {
+      expect(batchResults.get(generatorId)).toEqual(perGeneratorResults.get(generatorId));
+    }
+
+    // Sanity-check the actual values, not just batch===single-loop agreement.
+    expect(batchResults.get(String(generatorA._id))?.revenue).toBe('100000.00');
+    expect(batchResults.get(String(generatorA._id))?.cost.fuel).toBe('2000.00');
+    expect(batchResults.get(String(generatorB._id))?.revenue).toBe('80000.00');
+    expect(batchResults.get(String(generatorB._id))?.cost.labor).toBe('3000.00');
+    expect(batchResults.get(String(generatorC._id))?.revenue).toBe('0.00');
+    expect(batchResults.get(String(generatorC._id))?.netProfit).toBe('0.00');
+  });
+
+  it('calculateBatch returns an empty map for an empty generator list without querying', async () => {
+    const result = await ProfitabilityEngineService.calculateBatch({
+      generatorIds: [],
+      from: new Date('2026-01-01'),
+      to: new Date('2026-12-31'),
+    });
+    expect(result.size).toBe(0);
+  });
 });

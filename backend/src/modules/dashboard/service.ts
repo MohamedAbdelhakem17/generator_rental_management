@@ -271,20 +271,15 @@ export const DashboardService = {
       0,
       PROFITABILITY_CANDIDATE_LIMIT,
     );
-    const profitabilityByGenerator = await Promise.all(
-      profitabilityCandidateIds.map(async (generatorId) => ({
-        generatorId,
-        result: await ProfitabilityEngineService.calculate({
-          generatorId,
-          from: period.from,
-          to: period.to,
-        }),
-      })),
-    );
-    const topGeneratorsProfitability = profitabilityByGenerator
-      .sort((a, b) => Number(b.result.netProfit) - Number(a.result.netProfit))
+    const profitabilityByGeneratorId = await ProfitabilityEngineService.calculateBatch({
+      generatorIds: profitabilityCandidateIds,
+      from: period.from,
+      to: period.to,
+    });
+    const topGeneratorsProfitability = [...profitabilityByGeneratorId.entries()]
+      .sort(([, a], [, b]) => Number(b.netProfit) - Number(a.netProfit))
       .slice(0, TOP_GENERATORS_LIMIT)
-      .map(({ generatorId, result }) => ({
+      .map(([generatorId, result]) => ({
         generatorCode: generatorCodeById.get(generatorId) ?? generatorId,
         netProfit: result.netProfit,
       }));
