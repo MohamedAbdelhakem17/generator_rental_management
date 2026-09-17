@@ -1,8 +1,8 @@
 # Performance Benchmark Results — TASK-034 validation
 
 **Date:** 2026-09-17
-**Script:** `backend/scripts/benchmark/seed-and-benchmark.ts`
-**Run:** `pnpm --filter backend exec tsx scripts/benchmark/seed-and-benchmark.ts`
+**Script:** `backend/src/scripts/benchmark/seed-and-benchmark.ts`
+**Run:** `pnpm --filter backend exec tsx src/scripts/benchmark/seed-and-benchmark.ts`
 
 ## Environment
 
