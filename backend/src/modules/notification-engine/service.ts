@@ -74,6 +74,7 @@ export const NotificationEngineService = {
         page: query.page,
         limit: query.limit,
         sort: '-createdAt',
+        allowedSortFields: ['createdAt'],
       },
     );
   },

@@ -54,7 +54,10 @@ function parseSort(
   const direction: SortOrder = sort.startsWith('-') ? -1 : 1;
   const field = sort.startsWith('-') ? sort.slice(1) : sort;
 
-  if (allowedSortFields && !allowedSortFields.includes(field)) {
+  // TASK-034: fail closed rather than silently accepting an unvalidated sort field — every
+  // call site passing `sort` must also declare its allow-list (a caller that forgets this
+  // will find out immediately via a thrown error, not a quietly-unvalidated field in prod).
+  if (!allowedSortFields || !allowedSortFields.includes(field)) {
     throw new ValidationError('Invalid sort field', [
       { field: 'sort', message: `"${field}" is not a sortable field` },
     ]);

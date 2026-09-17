@@ -33,12 +33,20 @@ interface ErrorEnvelope {
 export class ApiError extends Error {
   readonly status: number;
   readonly fieldErrors: FieldError[];
+  /** TASK-034: seconds until a 429's rate-limit window resets, from the `Retry-After` header. */
+  readonly retryAfterSeconds: number | null;
 
-  constructor(message: string, status: number, fieldErrors: FieldError[] = []) {
+  constructor(
+    message: string,
+    status: number,
+    fieldErrors: FieldError[] = [],
+    retryAfterSeconds: number | null = null,
+  ) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.fieldErrors = fieldErrors;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -57,6 +65,12 @@ export function setUnauthorizedHandler(handler: () => void) {
 }
 
 type QueryParamValue = string | number | boolean | undefined | null;
+
+function retryAfterSecondsFrom(response: Response): number | null {
+  const header = response.headers.get('Retry-After');
+  const seconds = header ? Number(header) : NaN;
+  return Number.isFinite(seconds) ? seconds : null;
+}
 
 function buildUrl(path: string, params?: Record<string, QueryParamValue>): string {
   const url = new URL(path, API_BASE_URL);
@@ -111,7 +125,12 @@ async function requestEnvelope<T>(path: string, options: RequestOptions = {}, is
 
   if (!envelope.success) {
     if (response.status === 401) unauthorizedHandler();
-    throw new ApiError(envelope.message, response.status, envelope.errors);
+    throw new ApiError(
+      envelope.message,
+      response.status,
+      envelope.errors,
+      retryAfterSecondsFrom(response),
+    );
   }
 
   return { data: envelope.data, meta: envelope.meta };

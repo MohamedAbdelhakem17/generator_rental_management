@@ -95,7 +95,14 @@ export default function ExtractDetailPage() {
   });
 
   function invalidate() {
-    return queryClient.invalidateQueries({ queryKey: ['extracts'] });
+    // TASK-034: approve/cancel change the customer's ledger balance (Business Rule 6.4) — also
+    // invalidate their statement so a second open tab/window doesn't show a stale balance.
+    return Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['extracts'] }),
+      extract
+        ? queryClient.invalidateQueries({ queryKey: ['customers', extract.customer.id, 'statement'] })
+        : Promise.resolve(),
+    ]);
   }
 
   async function submitForReview() {

@@ -190,10 +190,14 @@ export const DashboardService = {
       isDeleted: { $ne: true },
       ...customerFilterForBalances,
     }).select('_id');
-    const balances = await Promise.all(
-      activeCustomers.map((customer) => CustomerLedgerService.getBalance(String(customer._id))),
+    // TASK-034: batched into 3 grouped queries total (one per collection) instead of fanning
+    // out getBalance's 3 queries per customer with no cap on active-customer count.
+    const balancesByCustomer = await CustomerLedgerService.getBalancesForCustomers(
+      activeCustomers.map((customer) => String(customer._id)),
     );
-    const positiveBalances = balances.map((balance) => toDecimal(balance)).filter((b) => b.gt(0));
+    const positiveBalances = [...balancesByCustomer.values()]
+      .map((balance) => toDecimal(balance))
+      .filter((b) => b.gt(0));
     const outstandingReceivables = positiveBalances.reduce(
       (sum, balance) => sum.plus(balance),
       new Decimal(0),

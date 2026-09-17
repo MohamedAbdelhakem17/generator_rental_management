@@ -70,4 +70,59 @@ describe('CustomerLedgerService (TASK-023)', () => {
     const balance = await CustomerLedgerService.getBalance(String(customer._id));
     expect(balance).toBe('350000.00');
   });
+
+  it('TASK-034: getBalancesForCustomers (batched) matches getBalance (per-customer) for multiple customers, including one with zero activity', async () => {
+    const customerA = await createCustomer();
+    const customerB = await createCustomer();
+    const customerC = await createCustomer();
+
+    await ExtractModel.create({
+      number: 'EXT-2026-0002',
+      customerId: customerA._id,
+      projectId: '000000000000000000000001',
+      contractIds: ['000000000000000000000002'],
+      period: { start: new Date('2026-01-01'), end: new Date('2026-01-31') },
+      lineItems: [{ type: 'rent', description: 'Rent', amount: '100000.00' }],
+      discounts: '0',
+      vatRateSnapshot: 0.14,
+      totalBeforeVat: '100000.00',
+      vat: '14000.00',
+      finalTotal: '100000.00',
+      status: 'Approved',
+      collectedAmount: '0',
+      customerNameSnapshot: 'Acme Construction',
+    });
+    await ReceiptModel.create({
+      number: 'RC-2026-0002',
+      customerId: customerA._id,
+      date: new Date('2026-02-01'),
+      amount: '40000.00',
+      paymentMethod: 'Cash',
+      status: 'Confirmed',
+    });
+
+    await CreditNoteModel.create({
+      number: 'CN-2026-0002',
+      customerId: customerB._id,
+      amount: '5000.00',
+      reason: 'Goodwill adjustment',
+      status: 'Confirmed',
+    });
+
+    const ids = [String(customerA._id), String(customerB._id), String(customerC._id)];
+    const batched = await CustomerLedgerService.getBalancesForCustomers(ids);
+
+    for (const id of ids) {
+      const individual = await CustomerLedgerService.getBalance(id);
+      expect(batched.get(id)).toBe(individual);
+    }
+    expect(batched.get(String(customerA._id))).toBe('60000.00');
+    expect(batched.get(String(customerB._id))).toBe('-5000.00');
+    expect(batched.get(String(customerC._id))).toBe('0.00');
+  });
+
+  it('TASK-034: getBalancesForCustomers returns an empty map for an empty input without querying', async () => {
+    const result = await CustomerLedgerService.getBalancesForCustomers([]);
+    expect(result.size).toBe(0);
+  });
 });

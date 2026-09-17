@@ -27,6 +27,9 @@ const creditNoteSchema = new Schema<CreditNoteAttrs>(
 );
 
 creditNoteSchema.index({ number: 1 }, { unique: true, name: 'credit_notes_number_idx' });
+/** TASK-034: `CustomerLedgerService.getBalance`/`getStatement` both filter
+ * `{customerId, status:'Confirmed'}` — this was previously an unindexed collection scan. */
+creditNoteSchema.index({ customerId: 1, status: 1 }, { name: 'credit_notes_customer_status_idx' });
 
 export type CreditNoteDocument = HydratedDocument<CreditNoteAttrs>;
 export const CreditNoteModel: Model<CreditNoteAttrs> = model<CreditNoteAttrs>(

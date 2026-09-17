@@ -1,4 +1,5 @@
 import { Decimal } from 'decimal.js';
+import { Types, type Model } from 'mongoose';
 
 import { toDecimal, toDisplayString } from '../../services/money.js';
 import { NotFoundError, ValidationError } from '../../utils/AppError.js';
@@ -42,7 +43,54 @@ function toMoneyString(value: Decimal): string {
   return toDisplayString(value);
 }
 
+/** Runs one `$group` sum per collection across every given customer, instead of N separate
+ * per-customer queries — used where a caller needs many customers' balances at once (the
+ * Dashboard's "Outstanding Receivables"/"Overdue Customers" KPIs). Same three-collection
+ * formula as `getBalance`, just batched (TASK-034: this was a 3N-query fan-out per dashboard
+ * load with no cap on active-customer count). */
+async function sumByCustomer(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  model: Model<any>,
+  match: Record<string, unknown>,
+  sumField: string,
+  customerIds: string[],
+): Promise<Map<string, Decimal>> {
+  const rows: { _id: unknown; total: unknown }[] = await model.aggregate([
+    { $match: { ...match, customerId: { $in: customerIds.map((id) => new Types.ObjectId(id)) } } },
+    { $group: { _id: '$customerId', total: { $sum: `$${sumField}` } } },
+  ]);
+  const result = new Map<string, Decimal>();
+  for (const row of rows) {
+    result.set(String(row._id), toDecimal(row.total as never));
+  }
+  return result;
+}
+
 export const CustomerLedgerService = {
+  async getBalancesForCustomers(customerIds: string[]): Promise<Map<string, string>> {
+    if (customerIds.length === 0) return new Map();
+
+    const [extractTotals, receiptTotals, creditNoteTotals] = await Promise.all([
+      sumByCustomer(
+        ExtractModel,
+        { status: { $in: ['Approved', 'Partially Collected', 'Collected'] } },
+        'finalTotal',
+        customerIds,
+      ),
+      sumByCustomer(ReceiptModel, { status: { $ne: 'Cancelled' } }, 'amount', customerIds),
+      sumByCustomer(CreditNoteModel, { status: 'Confirmed' }, 'amount', customerIds),
+    ]);
+
+    const balances = new Map<string, string>();
+    for (const customerId of customerIds) {
+      const balance = (extractTotals.get(customerId) ?? new Decimal(0))
+        .minus(receiptTotals.get(customerId) ?? new Decimal(0))
+        .minus(creditNoteTotals.get(customerId) ?? new Decimal(0));
+      balances.set(customerId, toMoneyString(balance));
+    }
+    return balances;
+  },
+
   async getBalance(customerId: string): Promise<string> {
     await assertCustomerExists(customerId);
 

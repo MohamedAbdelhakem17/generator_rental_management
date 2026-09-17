@@ -27,10 +27,19 @@ export default function LoginPage() {
   const queryClient = useQueryClient();
   const { status } = useSession();
   const [formError, setFormError] = useState<string | null>(null);
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState<number | null>(null);
 
   useEffect(() => {
     if (status === 'authenticated') router.replace('/');
   }, [status, router]);
+
+  // Section 15: a countdown, not a raw error code, while the login rate limit (TASK-034) is
+  // in effect — ticks down to 0 and clears itself so the form re-enables automatically.
+  useEffect(() => {
+    if (retryAfterSeconds === null || retryAfterSeconds <= 0) return;
+    const timer = setTimeout(() => setRetryAfterSeconds(retryAfterSeconds - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [retryAfterSeconds]);
 
   const loginSchema = useMemo(
     () =>
@@ -54,11 +63,17 @@ export default function LoginPage() {
       await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
       router.replace('/');
     } catch (error) {
+      if (error instanceof ApiError && error.status === 429) {
+        setRetryAfterSeconds(error.retryAfterSeconds ?? 60);
+        return;
+      }
       // FR-002: the backend already returns one generic message for both a wrong password
       // and an unknown email — shown as-is, never mapped to a field-level "not found".
       setFormError(error instanceof ApiError ? error.message : t('login.genericError'));
     }
   }
+
+  const isRateLimited = retryAfterSeconds !== null && retryAfterSeconds > 0;
 
   return (
     <main className="relative flex min-h-dvh items-center justify-center bg-background px-4 py-12" dir={direction}>
@@ -83,7 +98,14 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
-          {formError ? (
+          {isRateLimited ? (
+            <p
+              role="alert"
+              className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+              {t('login.rateLimited', { seconds: String(retryAfterSeconds) })}
+            </p>
+          ) : formError ? (
             <p
               role="alert"
               className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
@@ -117,7 +139,7 @@ export default function LoginPage() {
             {errors.password ? <p className="text-xs text-destructive">{errors.password.message}</p> : null}
           </div>
 
-          <Button type="submit" disabled={isSubmitting} className="mt-1 w-full">
+          <Button type="submit" disabled={isSubmitting || isRateLimited} className="mt-1 w-full">
             {isSubmitting ? t('login.submitting') : t('login.submit')}
           </Button>
         </form>

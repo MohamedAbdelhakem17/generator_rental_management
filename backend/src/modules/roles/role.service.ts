@@ -6,7 +6,12 @@ import { RoleModel, type RoleAttrs, type RoleDocument } from './role.model.js';
 
 export const RoleService = {
   async list(options: { page?: number; limit?: number }): Promise<PaginatedResult<RoleAttrs>> {
-    return paginateQuery(RoleModel, {}, { page: options.page, limit: options.limit, sort: 'name' });
+    return paginateQuery(RoleModel, {}, {
+      page: options.page,
+      limit: options.limit,
+      sort: 'name',
+      allowedSortFields: ['name'],
+    });
   },
 
   async updatePermissions(roleId: string, permissions: PermissionKey[], actorUserId: string): Promise<RoleDocument> {
