@@ -72,7 +72,6 @@ describe('user routes (permission matrix + business rules)', () => {
     const admin = await loginAs('admin@test.com');
 
     const generator = await admin.post('/api/generators').send({
-      code: 'GEN-ASSIGN-1',
       specifications: { kva: 100, brand: 'Cummins', model: 'C100', serialNumber: 'SN-ASSIGN-1' },
       normalFuelConsumption: 10,
     });
@@ -85,7 +84,9 @@ describe('user routes (permission matrix + business rules)', () => {
       assignedGenerators: [generator.body.data.id],
     });
     expect(create.status).toBe(201);
-    expect(create.body.data.assignedGenerators).toEqual([{ id: generator.body.data.id, code: 'GEN-ASSIGN-1' }]);
+    expect(create.body.data.assignedGenerators).toEqual([
+      { id: generator.body.data.id, code: generator.body.data.code },
+    ]);
 
     const unknownGenerator = await admin.post('/api/users').send({
       name: 'Bad Tech',
