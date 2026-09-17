@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from './helpers';
+import { loginAs, registerGeneratorViaUI } from './helpers';
 
 function isoDate(offsetDays: number): string {
   const date = new Date();
@@ -32,18 +32,9 @@ test.describe('Contracts (TASK-012)', () => {
     await page.getByRole('button', { name: 'Add project' }).click();
     await expect(page.getByText(`Added ${projectName}`)).toBeVisible();
 
-    const generatorCodes = [`GEN-E2E-${suffix}-1`, `GEN-E2E-${suffix}-2`];
-    for (const code of generatorCodes) {
-      await page.goto('/generators');
-      await page.getByRole('button', { name: 'New generator' }).click();
-      await page.getByLabel('Code').fill(code);
-      await page.getByLabel('kVA').fill('300');
-      await page.getByLabel('Brand').fill('Cummins');
-      await page.getByLabel('Model').fill('C300D5');
-      await page.getByLabel('Serial number').fill(`SN-${code}`);
-      await page.getByLabel('Normal fuel use (L/h)').fill('18');
-      await page.getByRole('button', { name: 'Register generator' }).click();
-      await expect(page.getByText(`Registered ${code}`)).toBeVisible();
+    const generatorCodes: string[] = [];
+    for (let i = 0; i < 2; i += 1) {
+      generatorCodes.push(await registerGeneratorViaUI(page, { kva: '300', brand: 'Cummins', model: 'C300D5', fuelUse: '18' }));
     }
 
     await page.goto('/contracts');
@@ -124,17 +115,7 @@ test.describe('Contract Conflict Detection (TASK-013)', () => {
     await page.getByRole('button', { name: 'Add project' }).click();
     await expect(page.getByText(`Added ${projectName}`)).toBeVisible();
 
-    const generatorCode = `GEN-CFL-${suffix}`;
-    await page.goto('/generators');
-    await page.getByRole('button', { name: 'New generator' }).click();
-    await page.getByLabel('Code').fill(generatorCode);
-    await page.getByLabel('kVA').fill('300');
-    await page.getByLabel('Brand').fill('Cummins');
-    await page.getByLabel('Model').fill('C300D5');
-    await page.getByLabel('Serial number').fill(`SN-${generatorCode}`);
-    await page.getByLabel('Normal fuel use (L/h)').fill('18');
-    await page.getByRole('button', { name: 'Register generator' }).click();
-    await expect(page.getByText(`Registered ${generatorCode}`)).toBeVisible();
+    const generatorCode = await registerGeneratorViaUI(page, { kva: '300', brand: 'Cummins', model: 'C300D5', fuelUse: '18' });
 
     async function createContractDraft(startOffset: number, endOffset: number): Promise<string> {
       await page.goto('/contracts');

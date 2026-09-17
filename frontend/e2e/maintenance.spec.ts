@@ -1,22 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from './helpers';
+import { loginAs, registerGeneratorViaUI } from './helpers';
 
 test.describe('Maintenance (TASK-018)', () => {
   test('Admin opens, starts, and completes a maintenance record; the generator status reflects it throughout', async ({ page }) => {
     await loginAs(page, 'admin');
-    const suffix = Date.now().toString().slice(-6);
 
-    const generatorCode = `GEN-MAINT-${suffix}`;
-    await page.goto('/generators');
-    await page.getByRole('button', { name: 'New generator' }).click();
-    await page.getByLabel('Code').fill(generatorCode);
-    await page.getByLabel('kVA').fill('200');
-    await page.getByLabel('Brand').fill('Cummins');
-    await page.getByLabel('Model').fill('C200D5');
-    await page.getByLabel('Serial number').fill(`SN-${generatorCode}`);
-    await page.getByLabel('Normal fuel use (L/h)').fill('12');
-    await page.getByRole('button', { name: 'Register generator' }).click();
-    await expect(page.getByText(`Registered ${generatorCode}`)).toBeVisible();
+    const generatorCode = await registerGeneratorViaUI(page, { kva: '200', brand: 'Cummins', model: 'C200D5', fuelUse: '12' });
 
     await page.goto('/maintenance');
     await page.getByRole('button', { name: 'New maintenance' }).click();
@@ -58,19 +47,8 @@ test.describe('Maintenance (TASK-018)', () => {
 
   test('a second Open attempt for a generator with an existing Open record is rejected', async ({ page }) => {
     await loginAs(page, 'admin');
-    const suffix = Date.now().toString().slice(-6);
 
-    const generatorCode = `GEN-MAINT2-${suffix}`;
-    await page.goto('/generators');
-    await page.getByRole('button', { name: 'New generator' }).click();
-    await page.getByLabel('Code').fill(generatorCode);
-    await page.getByLabel('kVA').fill('200');
-    await page.getByLabel('Brand').fill('Cummins');
-    await page.getByLabel('Model').fill('C200D5');
-    await page.getByLabel('Serial number').fill(`SN-${generatorCode}`);
-    await page.getByLabel('Normal fuel use (L/h)').fill('12');
-    await page.getByRole('button', { name: 'Register generator' }).click();
-    await expect(page.getByText(`Registered ${generatorCode}`)).toBeVisible();
+    const generatorCode = await registerGeneratorViaUI(page, { kva: '200', brand: 'Cummins', model: 'C200D5', fuelUse: '12' });
 
     await page.goto('/maintenance');
     await page.getByRole('button', { name: 'New maintenance' }).click();

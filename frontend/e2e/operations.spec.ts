@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs, E2E_ACCOUNTS } from './helpers';
+import { loginAs, E2E_ACCOUNTS, registerGeneratorViaUI } from './helpers';
 
 test.describe('Operations (TASK-015)', () => {
   test('Admin logs a reading, the generator currentMeter updates, and it shows on the profile', async ({ page }) => {
@@ -26,17 +26,7 @@ test.describe('Operations (TASK-015)', () => {
     await page.getByRole('button', { name: 'Add project' }).click();
     await expect(page.getByText(`Added ${projectName}`)).toBeVisible();
 
-    const generatorCode = `GEN-OPS-${suffix}`;
-    await page.goto('/generators');
-    await page.getByRole('button', { name: 'New generator' }).click();
-    await page.getByLabel('Code').fill(generatorCode);
-    await page.getByLabel('kVA').fill('250');
-    await page.getByLabel('Brand').fill('Cummins');
-    await page.getByLabel('Model').fill('C250D5');
-    await page.getByLabel('Serial number').fill(`SN-${generatorCode}`);
-    await page.getByLabel('Normal fuel use (L/h)').fill('15');
-    await page.getByRole('button', { name: 'Register generator' }).click();
-    await expect(page.getByText(`Registered ${generatorCode}`)).toBeVisible();
+    const generatorCode = await registerGeneratorViaUI(page, { kva: '250', brand: 'Cummins', model: 'C250D5', fuelUse: '15' });
 
     await page.goto('/operations');
     await page.getByRole('button', { name: 'New entry' }).click();
@@ -60,19 +50,8 @@ test.describe('Operations (TASK-015)', () => {
 
   test('Section 17/20: a Technician can only log for their assigned generators', async ({ page }) => {
     await loginAs(page, 'admin');
-    const suffix = Date.now().toString().slice(-6);
 
-    const generatorCode = `GEN-TECH-${suffix}`;
-    await page.goto('/generators');
-    await page.getByRole('button', { name: 'New generator' }).click();
-    await page.getByLabel('Code').fill(generatorCode);
-    await page.getByLabel('kVA').fill('100');
-    await page.getByLabel('Brand').fill('Perkins');
-    await page.getByLabel('Model').fill('P100');
-    await page.getByLabel('Serial number').fill(`SN-${generatorCode}`);
-    await page.getByLabel('Normal fuel use (L/h)').fill('10');
-    await page.getByRole('button', { name: 'Register generator' }).click();
-    await expect(page.getByText(`Registered ${generatorCode}`)).toBeVisible();
+    const generatorCode = await registerGeneratorViaUI(page, { kva: '100', brand: 'Perkins', model: 'P100', fuelUse: '10' });
 
     await page.goto('/users');
     await page.getByRole('row', { name: new RegExp(E2E_ACCOUNTS.technician.name) }).getByRole('button').click();

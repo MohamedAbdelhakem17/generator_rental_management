@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from './helpers';
+import { loginAs, registerGeneratorViaUI } from './helpers';
 
 test.describe('Maintenance Schedule Alerts (TASK-019)', () => {
   test('a completed maintenance record followed by an Operation Log that crosses the due meter raises an Overdue alert; opening a new record auto-resolves it', async ({ page }) => {
@@ -26,17 +26,7 @@ test.describe('Maintenance Schedule Alerts (TASK-019)', () => {
     await page.getByRole('button', { name: 'Add project' }).click();
     await expect(page.getByText(`Added ${projectName}`)).toBeVisible();
 
-    const generatorCode = `GEN-SCHED-${suffix}`;
-    await page.goto('/generators');
-    await page.getByRole('button', { name: 'New generator' }).click();
-    await page.getByLabel('Code').fill(generatorCode);
-    await page.getByLabel('kVA').fill('200');
-    await page.getByLabel('Brand').fill('Cummins');
-    await page.getByLabel('Model').fill('C200D5');
-    await page.getByLabel('Serial number').fill(`SN-${generatorCode}`);
-    await page.getByLabel('Normal fuel use (L/h)').fill('12');
-    await page.getByRole('button', { name: 'Register generator' }).click();
-    await expect(page.getByText(`Registered ${generatorCode}`)).toBeVisible();
+    const generatorCode = await registerGeneratorViaUI(page, { kva: '200', brand: 'Cummins', model: 'C200D5', fuelUse: '12' });
 
     // Complete a maintenance record at meter 0 with the default 250-hour cycle ->
     // nextMaintenanceMeter = 250.

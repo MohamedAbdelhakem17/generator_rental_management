@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from './helpers';
+import { loginAs, registerGeneratorViaUI } from './helpers';
 
 function isoDate(offsetDays: number): string {
   const date = new Date();
@@ -42,17 +42,7 @@ test.describe('Extracts (TASK-020/021)', () => {
     await page.getByRole('button', { name: 'Add project' }).click();
     await expect(page.getByText(`Added ${projectName}`)).toBeVisible();
 
-    const generatorCode = `GEN-EXT-${suffix}`;
-    await page.goto('/generators');
-    await page.getByRole('button', { name: 'New generator' }).click();
-    await page.getByLabel('Code').fill(generatorCode);
-    await page.getByLabel('kVA').fill('300');
-    await page.getByLabel('Brand').fill('Cummins');
-    await page.getByLabel('Model').fill('C300D5');
-    await page.getByLabel('Serial number').fill(`SN-${generatorCode}`);
-    await page.getByLabel('Normal fuel use (L/h)').fill('18');
-    await page.getByRole('button', { name: 'Register generator' }).click();
-    await expect(page.getByText(`Registered ${generatorCode}`)).toBeVisible();
+    const generatorCode = await registerGeneratorViaUI(page, { kva: '300', brand: 'Cummins', model: 'C300D5', fuelUse: '18' });
 
     await page.goto('/contracts');
     await page.getByRole('button', { name: 'New contract' }).click();

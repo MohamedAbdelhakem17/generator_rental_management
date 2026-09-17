@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from './helpers';
+import { loginAs, registerGeneratorViaUI } from './helpers';
 
 test.describe('Fuel (TASK-016)', () => {
   test('Admin logs a fill-up, cost is computed, and it shows on the generator profile chart', async ({ page }) => {
@@ -26,17 +26,7 @@ test.describe('Fuel (TASK-016)', () => {
     await page.getByRole('button', { name: 'Add project' }).click();
     await expect(page.getByText(`Added ${projectName}`)).toBeVisible();
 
-    const generatorCode = `GEN-FUEL-${suffix}`;
-    await page.goto('/generators');
-    await page.getByRole('button', { name: 'New generator' }).click();
-    await page.getByLabel('Code').fill(generatorCode);
-    await page.getByLabel('kVA').fill('200');
-    await page.getByLabel('Brand').fill('Cummins');
-    await page.getByLabel('Model').fill('C200D5');
-    await page.getByLabel('Serial number').fill(`SN-${generatorCode}`);
-    await page.getByLabel('Normal fuel use (L/h)').fill('12');
-    await page.getByRole('button', { name: 'Register generator' }).click();
-    await expect(page.getByText(`Registered ${generatorCode}`)).toBeVisible();
+    const generatorCode = await registerGeneratorViaUI(page, { kva: '200', brand: 'Cummins', model: 'C200D5', fuelUse: '12' });
 
     await page.goto('/fuel');
     await page.getByRole('button', { name: 'New entry' }).click();

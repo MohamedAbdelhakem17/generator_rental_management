@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs } from './helpers';
+import { loginAs, registerGeneratorViaUI } from './helpers';
 
 test.describe('Fuel Alerts (TASK-017)', () => {
   test('Admin sees a Critical alert after an abnormal fill-up, acknowledges it, then resolves it', async ({ page }) => {
@@ -26,17 +26,7 @@ test.describe('Fuel Alerts (TASK-017)', () => {
     await page.getByRole('button', { name: 'Add project' }).click();
     await expect(page.getByText(`Added ${projectName}`)).toBeVisible();
 
-    const generatorCode = `GEN-ALRT-${suffix}`;
-    await page.goto('/generators');
-    await page.getByRole('button', { name: 'New generator' }).click();
-    await page.getByLabel('Code').fill(generatorCode);
-    await page.getByLabel('kVA').fill('200');
-    await page.getByLabel('Brand').fill('Cummins');
-    await page.getByLabel('Model').fill('C200D5');
-    await page.getByLabel('Serial number').fill(`SN-${generatorCode}`);
-    await page.getByLabel('Normal fuel use (L/h)').fill('10');
-    await page.getByRole('button', { name: 'Register generator' }).click();
-    await expect(page.getByText(`Registered ${generatorCode}`)).toBeVisible();
+    const generatorCode = await registerGeneratorViaUI(page, { kva: '200', brand: 'Cummins', model: 'C200D5', fuelUse: '10' });
 
     // 20 operating hours, then a fill-up sized for a 20 L/h rate — 100% over the 10 L/h
     // normal rate, well past the Critical band (Business Rule 6.5's default 30%).
