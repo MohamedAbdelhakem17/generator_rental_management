@@ -3,11 +3,13 @@
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import {
   DateRangeFilter,
   type DateRangeValue,
 } from '@/components/data-table/filters/date-range-filter';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
 import { Button } from '@/components/ui/button';
@@ -59,6 +61,7 @@ export function StatementTab({ customerId }: { customerId: string }) {
 
   const [dateRange, setDateRange] = useState<DateRangeValue>({});
   const [isCreatingCreditNote, setIsCreatingCreditNote] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState<StatementEntry | null>(null);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['customers', customerId, 'statement', dateRange.from, dateRange.to],
@@ -148,6 +151,7 @@ export function StatementTab({ customerId }: { customerId: string }) {
                 <th className="px-3 py-2 text-end font-medium">
                   {t('customers.statementRunningBalance')}
                 </th>
+                {canCreateCreditNote ? <th className="px-3 py-2" /> : null}
               </tr>
             </thead>
             <tbody className="divide-y divide-border bg-surface">
@@ -163,6 +167,15 @@ export function StatementTab({ customerId }: { customerId: string }) {
                   <td className="px-3 py-2 text-end tabular-data font-medium">
                     {entry.runningBalance}
                   </td>
+                  {canCreateCreditNote ? (
+                    <td className="px-3 py-2 text-end">
+                      {entry.type === 'Credit Note' ? (
+                        <Button variant="ghost" size="sm" onClick={() => setCancelTarget(entry)}>
+                          {t('customers.cancelCreditNote')}
+                        </Button>
+                      ) : null}
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>
@@ -178,6 +191,25 @@ export function StatementTab({ customerId }: { customerId: string }) {
           onCreated={() => refetch()}
         />
       ) : null}
+
+      <ConfirmDialog
+        open={cancelTarget !== null}
+        onOpenChange={(open) => !open && setCancelTarget(null)}
+        title={t('customers.cancelCreditNoteConfirmTitle')}
+        description={t('customers.cancelCreditNoteConfirmDescription')}
+        confirmLabel={t('customers.cancelCreditNote')}
+        onConfirm={async () => {
+          if (!cancelTarget) return;
+          try {
+            await apiClient.patch(`/api/credit-notes/${cancelTarget.referenceId}/cancel`);
+            toast.success(t('customers.cancelCreditNoteSuccessToast'));
+            await refetch();
+          } catch (err) {
+            toast.error(err instanceof ApiError ? err.message : t('customers.cancelCreditNoteFailedToast'));
+            throw err;
+          }
+        }}
+      />
     </div>
   );
 }

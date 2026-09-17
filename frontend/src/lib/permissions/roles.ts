@@ -48,7 +48,7 @@ export const MODULE_ACCESS: Record<ModuleKey, Role[]> = {
   maintenance: ['admin', 'ops_manager', 'finance_manager', 'accountant', 'technician', 'viewer'],
   extracts: ['admin', 'ops_manager', 'finance_manager', 'accountant', 'viewer'],
   receipts: ['admin', 'finance_manager', 'accountant', 'viewer'],
-  expenses: ['admin', 'finance_manager', 'accountant', 'viewer'],
+  expenses: ['admin', 'finance_manager', 'accountant', 'ops_manager', 'viewer'],
   reports: ['admin', 'ops_manager', 'finance_manager', 'accountant', 'viewer'],
   settings: ['admin', 'finance_manager'],
   audit: ['admin'],

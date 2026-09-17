@@ -1,5 +1,5 @@
 import { toDecimal128 } from '../../services/money.js';
-import { ValidationError } from '../../utils/AppError.js';
+import { ConflictError, NotFoundError, ValidationError } from '../../utils/AppError.js';
 import { AuditService } from '../audit/audit.service.js';
 import { CustomerModel } from '../customers/customer.model.js';
 import { CreditNoteModel, type CreditNoteDocument } from './credit-note.model.js';
@@ -33,6 +33,35 @@ export const CreditNoteService = {
       entityType: 'CreditNote',
       entityId: String(creditNote._id),
       metadata: { after: creditNote.toObject() },
+    });
+
+    return creditNote;
+  },
+
+  /** Section 21: "Credit Note create/cancel audited" — this was the missing half of that pair
+   * (only `create` existed). The Ledger Engine already filters to `status: 'Confirmed'`, so
+   * cancelling here removes the credit note's effect on the customer's balance without any
+   * change needed on the ledger side. */
+  async cancel(creditNoteId: string, actorUserId: string): Promise<CreditNoteDocument> {
+    const creditNote = await CreditNoteModel.findById(creditNoteId);
+    if (!creditNote) {
+      throw new NotFoundError('Credit note not found');
+    }
+    if (creditNote.status === 'Cancelled') {
+      throw new ConflictError('This credit note is already cancelled');
+    }
+
+    const before = { status: creditNote.status };
+    creditNote.status = 'Cancelled';
+    await creditNote.save();
+
+    await AuditService.record({
+      action: 'credit-note.cancel',
+      actorUserId,
+      entityType: 'CreditNote',
+      entityId: String(creditNote._id),
+      before,
+      after: { status: creditNote.status },
     });
 
     return creditNote;

@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 
 import { toDisplayString, type MoneyInput } from '../../services/money.js';
 import { successResponse } from '../../utils/responseEnvelope.js';
-import { parseOrThrow } from '../../utils/validate.js';
+import { idParamSchema, parseOrThrow } from '../../utils/validate.js';
 import { CreditNoteService } from './credit-note.service.js';
 import { createCreditNoteSchema } from './credit-note.validation.js';
 
@@ -32,4 +32,10 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
   const input = parseOrThrow(createCreditNoteSchema, req.body);
   const creditNote = await CreditNoteService.create(input, req.user!.id);
   res.status(201).json(successResponse(toCreditNoteResponse(creditNote as never)));
+}
+
+export async function cancelCreditNote(req: Request, res: Response): Promise<void> {
+  const { id } = parseOrThrow(idParamSchema, req.params);
+  const creditNote = await CreditNoteService.cancel(id, req.user!.id);
+  res.status(200).json(successResponse(toCreditNoteResponse(creditNote as never)));
 }
