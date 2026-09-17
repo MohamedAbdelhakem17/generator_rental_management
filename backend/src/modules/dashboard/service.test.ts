@@ -164,4 +164,88 @@ describe('DashboardService (TASK-027)', () => {
       { generatorCode: 'GEN-002', utilization: 8 },
     ]);
   });
+
+  it('does not throw when overdue-aging and profitability-batch aggregations run against real Decimal128 data (manual-QA repro)', async () => {
+    // Regression guard for a manually-reported "GET /api/dashboard 500" — reproduced against a
+    // real (non-in-memory) MongoDB instance with an overdue Extract + a Generator with an
+    // OperationLog, the two aggregation paths (CustomerLedgerService.getOverdueSummaryForCustomers
+    // and ProfitabilityEngineService.calculateBatch) most recently rewritten in this codebase.
+    // Manual re-verification against the live backend/Atlas DB with this exact data shape
+    // returned HTTP 200 with correct values, so this test locks that in rather than merely
+    // asserting "no throw."
+    await seedTestSettings();
+    const customer = await CustomerModel.create({
+      code: 'C-003',
+      companyName: 'Overdue Customer',
+      contactPerson: 'Sam',
+      phone: '123',
+      taxNumber: 'TAX-3',
+      address: 'Cairo',
+      active: true,
+    });
+
+    const project = await ProjectModel.create({
+      code: 'P-003',
+      name: 'Overdue Project',
+      customerId: customer._id,
+      location: 'Cairo',
+      siteManager: 'Manager',
+      startDate: new Date('2026-01-01'),
+      status: 'Active',
+    });
+
+    const generator = await GeneratorModel.create({
+      code: 'GEN-003',
+      specifications: { kva: 200, brand: 'CAT', model: 'G1', serialNumber: 'SN-003' },
+      currentMeter: 100,
+      normalFuelConsumption: 10,
+      maintenanceCycleHours: 250,
+      status: 'Rented',
+      commercialStatus: 'Assigned',
+    });
+
+    await OperationLogModel.create({
+      date: new Date(),
+      projectId: project._id,
+      generatorId: generator._id,
+      startMeter: 100,
+      endMeter: 108,
+      operatingHours: 8,
+      status: 'Active',
+    });
+
+    const oldEnd = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+    const oldStart = new Date(oldEnd.getTime() - 30 * 24 * 60 * 60 * 1000);
+    await ExtractModel.create({
+      number: 'EX-003',
+      customerId: customer._id,
+      projectId: project._id,
+      contractIds: ['000000000000000000000002'],
+      period: { start: oldStart, end: oldEnd },
+      lineItems: [{ type: 'rent', description: 'Monthly rent', amount: '15000.00' }],
+      discounts: '0',
+      vatRateSnapshot: 0.14,
+      vat: '2100.00',
+      totalBeforeVat: '15000.00',
+      finalTotal: '17100.00',
+      status: 'Approved',
+      collectedAmount: '0',
+      customerNameSnapshot: 'Overdue Customer',
+    });
+
+    const result = await DashboardService.getSummary({
+      from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      to: new Date(),
+    });
+
+    expect(result.financial.outstanding).toBe('17100.00');
+    expect(result.alerts.overdueCustomers).toBe(1);
+    expect(result.fleet.total).toBeGreaterThanOrEqual(1);
+    expect(result.charts.topGeneratorsUtilization).toEqual([
+      { generatorCode: 'GEN-003', utilization: 8 },
+    ]);
+    expect(result.charts.topGeneratorsProfitability).toEqual([
+      { generatorCode: 'GEN-003', netProfit: '0.00' },
+    ]);
+  });
 });
